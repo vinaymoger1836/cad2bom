@@ -29,6 +29,9 @@ RUN pnpm --filter @c2b/web build
 
 # 3) Caddy serves the build and forwards /api/* to the API.
 FROM caddy:2.10-alpine
+# The stock binary carries a file capability (bind to ports < 1024). We listen on 8080 and run
+# with all capabilities dropped, where such a binary cannot even be executed, so remove it.
+RUN apk add --no-cache libcap-utils && setcap -r /usr/bin/caddy && apk del libcap-utils
 COPY infra/Caddyfile /etc/caddy/Caddyfile
 COPY --from=web /src/apps/web/dist /srv
 EXPOSE 8080

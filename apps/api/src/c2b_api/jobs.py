@@ -145,9 +145,16 @@ async def start_job(job_id: UUID, job: JobRow, request: Request) -> JobOut:
             "Nothing to build from",
             "Upload at least one file (a STEP file is best) before starting.",
         )
+    # Claim the transition atomically so two quick clicks cannot start the job twice.
+    if not await repo.claim_start(pool, job_id):
+        raise ProblemError(
+            422, "wrong_state", "Already started", "This job has already been started."
+        )
     await repo.add_event(pool, job_id, "step", "Queued for processing")
     await queue.defer_run_pipeline(job_id)
-    return await _job_out(pool, job)
+    row = await repo.get_job(pool, job_id)
+    assert row is not None
+    return await _job_out(pool, row)
 
 
 @router.get("/jobs/{job_id}/events", tags=["jobs"])

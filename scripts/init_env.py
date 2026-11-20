@@ -3,6 +3,7 @@
 .env is git-ignored. Usage: uv run python scripts/init_env.py   (or `make env`)
 """
 
+import contextlib
 import os
 import secrets
 import sys
@@ -24,10 +25,8 @@ def main() -> int:
         text = text.replace("C2B_UID=1000", f"C2B_UID={os.getuid()}")
         text = text.replace("C2B_GID=1000", f"C2B_GID={os.getgid()}")
     env.write_text(text, encoding="utf-8")
-    try:
+    with contextlib.suppress(OSError):
         env.chmod(0o600)
-    except OSError:
-        pass
     print("created .env with a random database password (git-ignored)")
     return 0
 

@@ -51,6 +51,17 @@ async def set_status(pool: Pool, job_id: UUID, status: str) -> None:
         )
 
 
+async def claim_start(pool: Pool, job_id: UUID) -> bool:
+    """Atomically move uploading -> extracting. False if the job was already started."""
+    async with pool.connection() as conn:
+        cur = await conn.execute(
+            "UPDATE job SET status = 'extracting', updated_at = now()"
+            " WHERE id = %s AND status = 'uploading' RETURNING id",
+            (job_id,),
+        )
+        return await cur.fetchone() is not None
+
+
 async def add_event(
     pool: Pool,
     job_id: UUID,

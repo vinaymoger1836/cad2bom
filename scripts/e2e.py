@@ -62,8 +62,13 @@ def check(ok: bool, what: str, detail: object = "") -> None:
 
 
 def run(cmd: list[str], **kw: object) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(  # noqa: S603
-        cmd, cwd=ROOT, text=True, capture_output=True, check=False, **kw  # type: ignore[call-overload]
+    return subprocess.run(
+        cmd,
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+        **kw,  # type: ignore[call-overload]
     )
 
 
@@ -109,7 +114,7 @@ def main() -> int:
     base = f"http://localhost:{port}"
 
     say("docker compose up --build --wait (first run builds all images; this can take a while)")
-    r = subprocess.run([*COMPOSE, "up", "-d", "--build", "--wait"], cwd=ROOT, check=False)  # noqa: S603
+    r = subprocess.run([*COMPOSE, "up", "-d", "--build", "--wait"], cwd=ROOT, check=False)
     check(r.returncode == 0, "stack is up and healthy")
 
     try:
@@ -157,12 +162,18 @@ def run_checks(base: str) -> None:
         r = c.get(jobs, headers={"Authorization": "Bearer wrong"})
         check(r.status_code == 401, "wrong token is refused")
         r = c.get(jobs, headers=auth)
-        check(r.status_code == 200 and r.json()["status"] == "uploading", "job is readable with token")
+        check(
+            r.status_code == 200 and r.json()["status"] == "uploading", "job is readable with token"
+        )
 
         stored_hash = psql(f"SELECT encode(token_hash, 'hex') FROM job WHERE id = '{job_id}'")
-        check(stored_hash == hashlib.sha256(token.encode()).hexdigest(), "DB stores SHA-256 of token")
-        check(token not in psql(f"SELECT row_to_json(j)::text FROM job j WHERE id = '{job_id}'"),
-              "raw token is not stored anywhere in the job row")
+        check(
+            stored_hash == hashlib.sha256(token.encode()).hexdigest(), "DB stores SHA-256 of token"
+        )
+        check(
+            token not in psql(f"SELECT row_to_json(j)::text FROM job j WHERE id = '{job_id}'"),
+            "raw token is not stored anywhere in the job row",
+        )
 
         # --- uploads: accepted
         def upload(name: str, body: bytes) -> httpx.Response:
@@ -180,26 +191,49 @@ def run_checks(base: str) -> None:
         check(up["sha256"] == hashlib.sha256(STEP_OK).hexdigest(), "sha256 recorded matches")
         in_dir = ROOT / "data" / "jobs" / job_id / "in"
         stored = in_dir / f"{up['id']}.step"
-        check(stored.is_file() and stored.read_bytes() == STEP_OK, "file stored under data/jobs/<id>/in/")
+        check(
+            stored.is_file() and stored.read_bytes() == STEP_OK,
+            "file stored under data/jobs/<id>/in/",
+        )
 
         # --- uploads: refused with clear messages
         r = upload("bracket2.step", b"MZ\x90\x00\x03\x00\x00\x00" + b"\x00" * 1000)
         d = r.json().get("detail", "")
-        check(r.status_code == 415 and r.json()["code"] == "type_mismatch",
-              "program renamed .step is refused (415)", r.text)
-        check("Windows program" in d and "ISO-10303-21" in d, "message says what it is and what was expected", d)
+        check(
+            r.status_code == 415 and r.json()["code"] == "type_mismatch",
+            "program renamed .step is refused (415)",
+            r.text,
+        )
+        check(
+            "Windows program" in d and "ISO-10303-21" in d,
+            "message says what it is and what was expected",
+            d,
+        )
 
         r = upload("huge.step", STEP_OK + b"/* pad */ " * 250_000)  # about 2.5 MB, limit is 1 MB
-        check(r.status_code == 413 and r.json()["code"] == "file_too_large",
-              "over-limit file is refused (413)", r.text)
-        check("limit for CAD files is 1 MB" in r.json()["detail"], "message states the limit", r.json())
+        check(
+            r.status_code == 413 and r.json()["code"] == "file_too_large",
+            "over-limit file is refused (413)",
+            r.text,
+        )
+        check(
+            "limit for CAD files is 1 MB" in r.json()["detail"],
+            "message states the limit",
+            r.json(),
+        )
 
         r = upload("model.sldprt", b"\xd0\xcf\x11\xe0" + b"\x00" * 100)
-        check(r.status_code == 415 and "export it as STEP" in r.json()["detail"],
-              "native CAD gets a helpful refusal", r.text)
+        check(
+            r.status_code == 415 and "export it as STEP" in r.json()["detail"],
+            "native CAD gets a helpful refusal",
+            r.text,
+        )
         r = upload("setup.exe", b"MZ" + b"\x00" * 100)
-        check(r.status_code == 415 and "not accepted" in r.json()["detail"],
-              "unknown type is refused", r.text)
+        check(
+            r.status_code == 415 and "not accepted" in r.json()["detail"],
+            "unknown type is refused",
+            r.text,
+        )
         r = upload("notes.pdf", b"MZ\x90\x00" + b"\x00" * 100)
         check(r.status_code == 415, "exe renamed .pdf is refused", r.text)
         r = upload("empty.step", b"")
@@ -227,8 +261,11 @@ def run_checks(base: str) -> None:
                 break
         check(stub is not None, "SSE delivered the cad-worker stub result", kinds)
         assert stub is not None
-        check(stub.get("status") == "stub" and bool(stub.get("ocp_version")),
-              "cad-worker answered from the sandbox (OpenCascade imported)", stub)
+        check(
+            stub.get("status") == "stub" and bool(stub.get("ocp_version")),
+            "cad-worker answered from the sandbox (OpenCascade imported)",
+            stub,
+        )
         check("status" in kinds, "SSE carried status events", kinds)
 
         deadline = time.monotonic() + 30
@@ -243,13 +280,19 @@ def run_checks(base: str) -> None:
         queues = psql(
             "SELECT queue_name || ':' || status FROM procrastinate_jobs ORDER BY queue_name, status"
         ).splitlines()
-        check("pipeline:succeeded" in queues and "cad:succeeded" in queues,
-              "both queues (pipeline, cad) ran a job", queues)
+        check(
+            "pipeline:succeeded" in queues and "cad:succeeded" in queues,
+            "both queues (pipeline, cad) ran a job",
+            queues,
+        )
 
         # --- demo stream
         ticks = [e for e, _ in sse_events(c, "/api/demo/stream", {}, timeout=20)]
-        check(ticks.count("progress") == 10 and ticks[-1] == "done",
-              "demo SSE stream sends 10 progress events then done", ticks)
+        check(
+            ticks.count("progress") == 10 and ticks[-1] == "done",
+            "demo SSE stream sends 10 progress events then done",
+            ticks,
+        )
 
     # --- sandbox properties of the cad-worker container
     cid = run([*COMPOSE, "ps", "-q", "cad-worker"]).stdout.strip()
@@ -261,13 +304,32 @@ def run_checks(base: str) -> None:
     check(info[3] == "2000000000", "cad-worker CPU limit is 2", info)
     uid = run([*COMPOSE, "exec", "-T", "cad-worker", "id", "-u"]).stdout.strip()
     check(uid != "0", "cad-worker runs as a non-root user", uid)
-    net = run([*COMPOSE, "exec", "-T", "cad-worker", "python", "-c",
-               "import socket;socket.create_connection(('postgres',5432),2)"])
+    net = run(
+        [
+            *COMPOSE,
+            "exec",
+            "-T",
+            "cad-worker",
+            "python",
+            "-c",
+            "import socket;socket.create_connection(('postgres',5432),2)",
+        ]
+    )
     check(net.returncode != 0, "cad-worker cannot reach the database or anything else")
 
     # --- git hygiene
-    for path in [".env", "data/jobs/x", "packages/ts-types/index.d.ts", "node_modules", ".venv",
-                 "apps/web/dist", "x/__pycache__", ".mypy_cache", ".ruff_cache"]:
+    for path in [
+        ".env",
+        "data/jobs/x",
+        "packages/ts-types/index.d.ts",
+        "node_modules/x",
+        ".venv/x",
+        "apps/web/dist/index.html",
+        "x/__pycache__/y.pyc",
+        ".mypy_cache/x",
+        ".ruff_cache/x",
+        "server.log",
+    ]:
         ig = run(["git", "check-ignore", "-q", path])
         check(ig.returncode == 0, f"git ignores {path}")
 
