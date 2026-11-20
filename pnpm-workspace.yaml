@@ -1,0 +1,7 @@
+packages:
+  - apps/web
+  - packages/ts-types
+
+# pnpm 10+ blocks dependency install scripts unless allowed; esbuild needs its binary.
+onlyBuiltDependencies:
+  - esbuild

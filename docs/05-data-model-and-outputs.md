@@ -3,63 +3,134 @@
 ## 1. Core types (Pydantic v2, abbreviated)
 
 ```python
-Source = Literal["user","bom_file","cad_meta","cad_geom","std_table","library",
-                 "datasheet","vision","llm","engine"]
+Source = Literal[
+    "user",
+    "bom_file",
+    "cad_meta",
+    "cad_geom",
+    "std_table",
+    "library",
+    "datasheet",
+    "vision",
+    "llm",
+    "engine",
+]
+
 
 class Prov(BaseModel, Generic[T]):
-    value: T; unit: str | None = None
-    source: Source; confidence: confloat(ge=0, le=1)
-    rules: list[str] = []          # rule ids, e.g. ["R-STD-012","R-CLS-104"]
-    ref: str | None = None         # "cad:N-0042", "bom:row 17", "pdf:att_03#p2", "photo:att_05"
+    value: T
+    unit: str | None = None
+    source: Source
+    confidence: confloat(ge=0, le=1)
+    rules: list[str] = []  # rule ids, e.g. ["R-STD-012","R-CLS-104"]
+    ref: str | None = None  # "cad:N-0042", "bom:row 17", "pdf:att_03#p2", "photo:att_05"
     note: str | None = None
 
+
 class Job(BaseModel):
-    id: UUID; share_token_hash: str; created_at: datetime; expires_at: datetime
-    library_version: str; profile: str            # organisation profile (numbering, defaults)
-    product: ProductInfo                          # name, type, description, variants, annual volume
+    id: UUID
+    share_token_hash: str
+    created_at: datetime
+    expires_at: datetime
+    library_version: str
+    profile: str  # organisation profile (numbering, defaults)
+    product: ProductInfo  # name, type, description, variants, annual volume
     consent_native_conversion: bool = False
-    status: Literal["uploading","extracting","building","review","approved","failed"]
+    status: Literal["uploading", "extracting", "building", "review", "approved", "failed"]
+
 
 class CadNode(BaseModel):
-    id: str; parent: str | None; kind: Literal["assembly","part","reference"]
-    name: str; product_name: str | None; props: dict[str, str]
-    shape_id: str | None; instance_count: int; transform: list[float]
-    excluded: str | None = None                  # reason when filtered
+    id: str
+    parent: str | None
+    kind: Literal["assembly", "part", "reference"]
+    name: str
+    product_name: str | None
+    props: dict[str, str]
+    shape_id: str | None
+    instance_count: int
+    transform: list[float]
+    excluded: str | None = None  # reason when filtered
+
 
 class ShapeFeatures(BaseModel):
-    shape_id: str; signature: str
-    volume_mm3: float; area_mm2: float; obb_mm: tuple[float,float,float]
-    face_hist: dict[str, float]; cylinders: list[Cyl]; rot_symmetry: float
-    const_thickness_mm: float | None; wall_sample_mm: list[float]
-    thin_plate: bool; helix_evidence: bool; closed: bool
+    shape_id: str
+    signature: str
+    volume_mm3: float
+    area_mm2: float
+    obb_mm: tuple[float, float, float]
+    face_hist: dict[str, float]
+    cylinders: list[Cyl]
+    rot_symmetry: float
+    const_thickness_mm: float | None
+    wall_sample_mm: list[float]
+    thin_plate: bool
+    helix_evidence: bool
+    closed: bool
+
 
 class Designation(BaseModel):
-    standard: str; family: str; size: str; length_mm: float | None; score: float
+    standard: str
+    family: str
+    size: str
+    length_mm: float | None
+    score: float
+
 
 class BomLine(BaseModel):
-    id: str; parent: str | None; level: int; find_no: int
-    part_number: Prov[str] | None; revision: str = "A"
-    description: Prov[str]; noun: str; modifiers: list[str]
-    cls: Prov[str]                                # taxonomy code
+    id: str
+    parent: str | None
+    level: int
+    find_no: int
+    part_number: Prov[str] | None
+    revision: str = "A"
+    description: Prov[str]
+    noun: str
+    modifiers: list[str]
+    cls: Prov[str]  # taxonomy code
     designation: Designation | None
-    qty_per_parent: Prov[float]; uom: str; qty_total: float
-    material: Prov[str] | None; finish: Prov[str] | None; mass_g: Prov[float] | None
-    make_buy: Prov[Literal["make","buy","supplier_made"]] | None
-    refdes: list[str] = []; mpn: str | None = None; manufacturer: str | None = None
-    cad_nodes: list[str] = []; shape_group: str | None = None
-    origin: Literal["user_bom","cad","std_recogniser","gap_rule","skeleton","llm","engine"]
-    review: Literal["given","derived","suggested","accepted","rejected"]
-    phantom: bool = False; buy_as_assembly: bool = False
-    confidence: float; open_items: list[str] = []; raw: dict | None = None   # verbatim user row
+    qty_per_parent: Prov[float]
+    uom: str
+    qty_total: float
+    material: Prov[str] | None
+    finish: Prov[str] | None
+    mass_g: Prov[float] | None
+    make_buy: Prov[Literal["make", "buy", "supplier_made"]] | None
+    refdes: list[str] = []
+    mpn: str | None = None
+    manufacturer: str | None = None
+    cad_nodes: list[str] = []
+    shape_group: str | None = None
+    origin: Literal["user_bom", "cad", "std_recogniser", "gap_rule", "skeleton", "llm", "engine"]
+    review: Literal["given", "derived", "suggested", "accepted", "rejected"]
+    phantom: bool = False
+    buy_as_assembly: bool = False
+    confidence: float
+    open_items: list[str] = []
+    raw: dict | None = None  # verbatim user row
+
 
 class Question(BaseModel):
-    id: str; line_ids: list[str]; kind: Literal["choice","number","text","confirm"]
-    text: str; options: list[str] = []; evidence: list[str]; blocking: bool; answer: Any | None
+    id: str
+    line_ids: list[str]
+    kind: Literal["choice", "number", "text", "confirm"]
+    text: str
+    options: list[str] = []
+    evidence: list[str]
+    blocking: bool
+    answer: Any | None
+
 
 class BomVersion(BaseModel):
-    job_id: UUID; version: int; ebom: list[BomLine]; mbom: list[MbomLine]
-    open_items: list[OpenItem]; excluded: list[CadNode]; stats: BomStats
-    library_version: str; llm_calls: int; created_at: datetime
+    job_id: UUID
+    version: int
+    ebom: list[BomLine]
+    mbom: list[MbomLine]
+    open_items: list[OpenItem]
+    excluded: list[CadNode]
+    stats: BomStats
+    library_version: str
+    llm_calls: int
+    created_at: datetime
 ```
 
 ## 2. Storage

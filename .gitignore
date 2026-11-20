@@ -1,2 +1,61 @@
 /docs/10-claude-code-handoff.md
 CLAUDE.md
+
+# --- Secrets (owner rule 1) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.jks
+id_rsa*
+id_ed25519*
+secrets/
+credentials*.json
+
+# --- Local data: uploads, converted files, exports, GLB ---
+/data/
+
+# --- LLM cassettes that contain user data ---
+cassettes/**/user-*
+cassettes-private/
+
+# --- Python ---
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# --- Node / web build output ---
+node_modules/
+dist/
+build/
+.vite/
+*.tsbuildinfo
+.eslintcache
+
+# --- Generated TypeScript types (from Pydantic) ---
+/packages/ts-types/
+
+# --- Logs, OS and editor clutter ---
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*~

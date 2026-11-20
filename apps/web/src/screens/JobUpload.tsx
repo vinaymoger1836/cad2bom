@@ -1,0 +1,475 @@
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { Link, useLocation, useParams } from "react-router";
+import type { JobEvent, JobOut } from "@c2b/ts-types";
+import { Qa, Term, WhatHappens } from "../components/Help";
+import { ProgressPanel, type ProgressItem } from "../components/ProgressPanel";
+import {
+  ApiError,
+  getConfig,
+  getJob,
+  startJob,
+  uploadFile,
+  type AppConfig,
+} from "../lib/api";
+import { followJob, readSse } from "../lib/sse";
+import { loadToken, saveToken } from "../lib/storage";
+
+type ItemState = "queued" | "uploading" | "done" | "error";
+
+interface UploadItem {
+  key: number;
+  name: string;
+  size: number;
+  state: ItemState;
+  progress: number;
+  message?: string;
+}
+
+const NATIVE = [".sldprt", ".sldasm", ".f3d"];
+
+function fmtSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${Math.round(bytes / 1024).toString()} KB`;
+  return `${bytes.toString()} bytes`;
+}
+
+function extOf(name: string): string {
+  const i = name.lastIndexOf(".");
+  return i < 0 ? "" : name.slice(i).toLowerCase();
+}
+
+/** Quick pre-check so people get an answer before a big upload. The server stays authoritative. */
+function precheck(file: File, cfg: AppConfig): string | null {
+  const ext = extOf(file.name);
+  if (NATIVE.includes(ext)) {
+    return `${file.name} is a native CAD file. These are not supported yet. Please export it as STEP (AP242 if you can) and upload that instead.`;
+  }
+  if (!cfg.accepted_extensions.includes(ext)) {
+    return `${file.name} has type ${ext || "(no extension)"}, which is not accepted. Accepted types: ${cfg.accepted_extensions.join(", ")}.`;
+  }
+  const isCad = cfg.cad_extensions.includes(ext);
+  const limit = (isCad ? cfg.max_cad_mb : cfg.max_other_mb) * 1024 * 1024;
+  if (file.size > limit) {
+    return `${file.name} is ${fmtSize(file.size)}; the limit for ${isCad ? "CAD files" : "this kind of file"} is ${(isCad ? cfg.max_cad_mb : cfg.max_other_mb).toString()} MB.`;
+  }
+  if (file.size === 0) return `${file.name} is empty (0 bytes).`;
+  return null;
+}
+
+function resolveToken(id: string, hash: string): string | null {
+  const fromHash = hash.replace(/^#/, "");
+  if (fromHash) {
+    saveToken(id, fromHash);
+    return fromHash;
+  }
+  return loadToken(id);
+}
+
+export function JobUpload() {
+  const { id = "" } = useParams();
+  const { hash } = useLocation();
+  const [token] = useState(() => resolveToken(id, hash));
+  const [cfg, setCfg] = useState<AppConfig | null>(null);
+  const [job, setJob] = useState<JobOut | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [items, setItems] = useState<UploadItem[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
+  const [events, setEvents] = useState<ProgressItem[]>([]);
+  const [copied, setCopied] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const nextKey = useRef(1);
+
+  // Load config and the job.
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    getConfig()
+      .then((c) => {
+        if (!cancelled) setCfg(c);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setLoadError(e instanceof ApiError ? e.message : "Could not load settings.");
+      });
+    getJob(id, token)
+      .then((j) => {
+        if (!cancelled) setJob(j);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setLoadError(e instanceof ApiError ? e.message : "Could not load this job.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, token]);
+
+  const started = job !== null && job.status !== "uploading";
+
+  // Follow progress once the build has started (also replays history when you come back).
+  useEffect(() => {
+    if (!token || !started) return;
+    const ctrl = new AbortController();
+    void followJob(
+      id,
+      token,
+      ctrl.signal,
+      (m) => {
+        try {
+          const ev = JSON.parse(m.data) as JobEvent;
+          setEvents((prev) =>
+            prev.some((p) => p.id === ev.id) ? prev : [...prev, { id: ev.id, kind: ev.kind, message: ev.message }],
+          );
+          const next = (ev.data as { status?: string }).status;
+          if (ev.kind === "status" && typeof next === "string") {
+            setJob((j) => (j ? { ...j, status: next as JobOut["status"] } : j));
+          }
+        } catch {
+          /* ignore a malformed frame */
+        }
+      },
+      () => {
+        /* connection state is not shown in P0 */
+      },
+    );
+    return () => {
+      ctrl.abort();
+    };
+  }, [id, token, started]);
+
+  const patch = useCallback((key: number, p: Partial<UploadItem>) => {
+    setItems((prev) => prev.map((it) => (it.key === key ? { ...it, ...p } : it)));
+  }, []);
+
+  async function addFiles(files: File[]) {
+    if (!token || !cfg || files.length === 0) return;
+    const fresh: { item: UploadItem; file: File }[] = files.map((file) => {
+      const problem = precheck(file, cfg);
+      return {
+        file,
+        item: {
+          key: nextKey.current++,
+          name: file.name,
+          size: file.size,
+          state: problem ? "error" : "queued",
+          progress: 0,
+          ...(problem ? { message: problem } : {}),
+        },
+      };
+    });
+    setItems((prev) => [...prev, ...fresh.map((f) => f.item)]);
+    setUploading(true);
+    for (const { item, file } of fresh) {
+      if (item.state === "error") continue;
+      patch(item.key, { state: "uploading" });
+      try {
+        await uploadFile(id, token, file, (f) => {
+          patch(item.key, { progress: f });
+        }).promise;
+        patch(item.key, { state: "done", progress: 1 });
+      } catch (e) {
+        patch(item.key, {
+          state: "error",
+          message: e instanceof ApiError ? e.message : `Uploading ${file.name} failed.`,
+        });
+      }
+    }
+    setUploading(false);
+    try {
+      setJob(await getJob(id, token));
+    } catch {
+      /* the list refreshes on the next action */
+    }
+  }
+
+  function onPick(e: ChangeEvent<HTMLInputElement>) {
+    const list = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    void addFiles(list);
+  }
+
+  function onDrop(e: DragEvent<HTMLElement>) {
+    e.preventDefault();
+    setDragging(false);
+    void addFiles(Array.from(e.dataTransfer.files));
+  }
+
+  async function onStart() {
+    if (!token) return;
+    setStartError(null);
+    try {
+      setJob(await startJob(id, token));
+    } catch (e) {
+      setStartError(e instanceof ApiError ? e.message : "Could not start. Please try again.");
+    }
+  }
+
+  async function copyLink() {
+    const url = `${window.location.origin}/j/${id}#${token ?? ""}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => {
+        setCopied(false);
+      }, 3000);
+    } catch {
+      setStartError("Could not copy automatically. Select the link and copy it by hand.");
+    }
+  }
+
+  if (!token) {
+    return (
+      <div className="stack">
+        <h1>This job needs its full link</h1>
+        <p role="alert" className="alert alert-warning">
+          This page was opened without its access key. Use the complete link you got when you created
+          the job (it ends with <code>#</code> and a long code), or{" "}
+          <Link to="/">start a new BoM</Link>.
+        </p>
+      </div>
+    );
+  }
+
+  const status = job?.status ?? "uploading";
+  const sawStub = events.some((e) => e.kind === "cad_stub");
+  const failed = status === "failed";
+  const fraction = failed ? 0.5 : sawStub ? 1 : status === "extracting" ? 0.5 : started ? 0.2 : 0;
+  const hasUploads = (job?.uploads.length ?? 0) > 0;
+
+  return (
+    <div className="stack">
+      <div className="page-head">
+        <h1>{job?.product.name ?? "Loading…"}</h1>
+        {job ? <span className={`badge badge-${failed ? "failed" : "info"}`}>Status: {status}</span> : null}
+      </div>
+
+      <WhatHappens>
+        <p>
+          Add the files you have. Each file is checked by its content (not just its name) and stored
+          privately for this job. When you press <strong>Start building</strong>, we read the CAD file
+          and report progress here.
+        </p>
+        <p className="small muted">
+          In this early version the CAD reader only checks that your file opens. Real parts and
+          structure arrive in a later release.
+        </p>
+      </WhatHappens>
+
+      {loadError ? (
+        <p role="alert" className="alert alert-danger">
+          {loadError}
+        </p>
+      ) : null}
+
+      <section className="card" aria-labelledby="link-title">
+        <h2 id="link-title">Your private link</h2>
+        <p className="small">
+          Keep this link. It is the only way back into this job, and anyone who has it can open it.
+        </p>
+        <div className="link-row">
+          <input
+            readOnly
+            aria-label="Private job link"
+            value={`${window.location.origin}/j/${id}#${token}`}
+            onFocus={(e) => {
+              e.currentTarget.select();
+            }}
+          />
+          <button type="button" className="btn btn-secondary" onClick={() => void copyLink()}>
+            Copy link
+          </button>
+        </div>
+        <p role="status" className="small muted">
+          {copied ? "Link copied." : ""}
+        </p>
+      </section>
+
+      <section className="card" aria-labelledby="files-title">
+        <h2 id="files-title">Add your files</h2>
+        <label
+          className={`dropzone${dragging ? " dropzone-over" : ""}${status !== "uploading" ? " dropzone-disabled" : ""}`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => {
+            setDragging(false);
+          }}
+          onDrop={onDrop}
+        >
+          <input
+            type="file"
+            multiple
+            className="visually-hidden"
+            disabled={status !== "uploading" || !cfg}
+            accept={cfg?.accepted_extensions.join(",")}
+            onChange={onPick}
+          />
+          <span className="dropzone-title">Drop files here, or press to choose</span>
+          <span className="small muted">
+            <Term word="STEP" meaning="A neutral 3D CAD file format (.step or .stp) that most CAD programs can export." />{" "}
+            files up to {cfg?.max_cad_mb ?? "…"} MB; photos, parts lists and PDFs up to{" "}
+            {cfg?.max_other_mb ?? "…"} MB.
+          </span>
+        </label>
+
+        {items.length > 0 ? (
+          <ul className="file-list" aria-label="Files you added in this session">
+            {items.map((it) => (
+              <li key={it.key} className={`file file-${it.state}`}>
+                <div className="file-row">
+                  <span className="file-name">{it.name}</span>
+                  <span className="muted small">{fmtSize(it.size)}</span>
+                  <span className={`badge badge-${it.state === "error" ? "failed" : it.state === "done" ? "done" : "info"}`}>
+                    {it.state === "queued"
+                      ? "Waiting"
+                      : it.state === "uploading"
+                        ? "Uploading"
+                        : it.state === "done"
+                          ? "Added"
+                          : "Not added"}
+                  </span>
+                </div>
+                {it.state === "uploading" ? (
+                  <progress max={1} value={it.progress} aria-label={`Uploading ${it.name}`} />
+                ) : null}
+                {it.state === "error" && it.message ? (
+                  <p role="alert" className="alert alert-danger small">
+                    {it.message}
+                  </p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {job && job.uploads.length > 0 ? (
+          <>
+            <h3>Stored for this job</h3>
+            <ul className="stored">
+              {job.uploads.map((u) => (
+                <li key={u.id}>
+                  <span className="file-name">{u.filename}</span>{" "}
+                  <span className="muted small">
+                    {u.detected_type.toUpperCase()}, {fmtSize(u.size_bytes)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : null}
+      </section>
+
+      <section className="card" aria-labelledby="build-title">
+        <h2 id="build-title">Build</h2>
+        {!started ? (
+          <>
+            <p className="small">
+              {hasUploads
+                ? "Ready when you are. You cannot add more files after this."
+                : "Add at least one file to continue."}
+            </p>
+            <div className="actions">
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={!hasUploads || uploading}
+                onClick={() => void onStart()}
+              >
+                Start building
+              </button>
+              <DemoPreview />
+            </div>
+          </>
+        ) : (
+          <ProgressPanel
+            title="Building your BoM"
+            items={events}
+            fraction={fraction}
+            state={failed ? "failed" : sawStub ? "done" : "running"}
+            note={
+              sawStub
+                ? "The CAD reader opened your file. Reading parts and building the structure comes in a later release."
+                : undefined
+            }
+          />
+        )}
+        {startError ? (
+          <p role="alert" className="alert alert-danger">
+            {startError}
+          </p>
+        ) : null}
+      </section>
+
+      <Qa
+        items={[
+          {
+            q: "Why was my file refused?",
+            a: "We check what is really inside the file. A program renamed to .step, a file over the size limit, or a type we do not read yet are refused with a message that says which.",
+          },
+          {
+            q: "Where are my files stored?",
+            a: "On the server running this app, in a private folder for this job, outside the website’s public files. CAD files are only opened by a separate sandboxed reader with no internet access.",
+          },
+          {
+            q: "Can I use SolidWorks or Fusion files?",
+            a: "Not yet. Export a STEP file (AP242 gives the best result) and upload that.",
+          },
+        ]}
+      />
+    </div>
+  );
+}
+
+/** Shows the live progress pattern using the public demo stream (no job data involved). */
+function DemoPreview() {
+  const [items, setItems] = useState<ProgressItem[] | null>(null);
+  const [done, setDone] = useState(false);
+  const ctrl = useRef<AbortController | null>(null);
+
+  useEffect(
+    () => () => {
+      ctrl.current?.abort();
+    },
+    [],
+  );
+
+  async function run() {
+    ctrl.current?.abort();
+    const c = new AbortController();
+    ctrl.current = c;
+    setItems([]);
+    setDone(false);
+    try {
+      await readSse("/demo/stream", {
+        signal: c.signal,
+        onMessage: (m) => {
+          if (m.event === "done") {
+            setDone(true);
+            return;
+          }
+          const d = JSON.parse(m.data) as { step: number; message: string };
+          setItems((prev) => [...(prev ?? []), { id: d.step, kind: "demo", message: d.message }]);
+        },
+      });
+    } catch {
+      /* aborted or offline: nothing to show */
+    }
+  }
+
+  return (
+    <div className="demo">
+      <button type="button" className="btn btn-quiet" onClick={() => void run()}>
+        Preview how progress looks
+      </button>
+      {items ? (
+        <ProgressPanel
+          title="Demo progress"
+          items={items}
+          fraction={items.length / 10}
+          state={done ? "done" : "running"}
+          note="This is only a preview. No files are used."
+        />
+      ) : null}
+    </div>
+  );
+}

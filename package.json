@@ -1,0 +1,20 @@
+{
+  "name": "cad2bom",
+  "private": true,
+  "version": "0.0.0",
+  "description": "CAD-to-BoM monorepo (web workspace). Python lives in the uv workspace, see pyproject.toml.",
+  "packageManager": "pnpm@11.18.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "gen:types": "uv run python -m c2b_domain.export_schema && json2ts -i packages/ts-types/schema -o packages/ts-types/src",
+    "dev": "pnpm gen:types && pnpm --filter @c2b/web dev",
+    "build": "pnpm gen:types && pnpm --filter @c2b/web build",
+    "typecheck": "pnpm gen:types && pnpm --filter @c2b/web typecheck",
+    "lint": "pnpm --filter @c2b/web lint"
+  },
+  "devDependencies": {
+    "json-schema-to-typescript": "^16.0.0"
+  }
+}

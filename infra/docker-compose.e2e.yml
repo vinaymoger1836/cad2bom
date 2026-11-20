@@ -1,0 +1,6 @@
+# Overlay used by `make e2e`: a 1 MB CAD limit so the over-limit refusal can be tested with a
+# ~2 MB payload instead of a 200 MB one. Nothing else changes.
+services:
+  api:
+    environment:
+      C2B_MAX_CAD_MB: "1"

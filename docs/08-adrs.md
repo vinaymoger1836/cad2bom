@@ -43,3 +43,23 @@ Status: **Accepted** (owner, 2026-11-20) unless marked *Proposed*. New decisions
 
 ### ADR-010 — ECAD import later
 **Decision:** v1 takes PCB BoMs as files (CSV/XLSX with refdes). IPC-2581/ODB++/KiCad import is a later phase.
+
+## Proposed during implementation
+
+### ADR-011 — Shared `packages/jobs` for settings, database and the queue app (*Proposed*, P0)
+**Context:** The API must defer procrastinate tasks and read/write job rows; the worker needs the same settings, schema and queue names. `packages/domain` must stay pure Pydantic (mypy strict, no I/O), and the API must not import worker code.
+**Decision:** Add `packages/jobs` (`c2b_jobs`): environment settings, plain-psycopg repository, SQL migrations (advisory-lock protected), the procrastinate `App`, and the queue and task names. The API defers tasks by name (`configure_task`); the worker registers the implementations.
+**Alternatives:** Put this in `packages/domain` (breaks its purity); in `apps/worker` and import from the API (couples two apps); duplicate it (drift).
+**Consequences:** One more package than the layout in docs/10 §2. Migrations live in `packages/jobs/src/c2b_jobs/migrations/`.
+
+### ADR-012 — cad-worker reached over a Unix socket, not the database (*Proposed*, P0)
+**Context:** ADR-003 requires the cad-worker to have no network, but docs/02 shows it consuming the `cad` queue, which lives in Postgres. A parser for untrusted files should not hold database credentials or a route to Postgres.
+**Decision:** The `worker` service consumes the `cad` queue and forwards each request to the cad-worker as one JSON line over a Unix socket on a shared volume. The cad-worker runs with `network_mode: none`, a read-only root filesystem, no capabilities, CPU 2 / RAM 3 GB / PIDs 256, input data mounted read-only. The 120 s per-file limit is enforced by running each extraction in a child process that is killed on timeout (compose cannot enforce wall time). One extraction at a time (procrastinate `lock`).
+**Alternatives:** cad-worker joins an `internal: true` network with Postgres only (matches the diagram, but puts a database credential inside the sandbox); a TCP service on an internal network (still a network).
+**Consequences:** The diagram edge `Q → CW` becomes `Q → worker → socket → CW`. The `worker` must be healthy-gated on the cad-worker socket. Real extraction output (GLB, features) must be written to a separate writable mount in P2.
+
+### ADR-013 — Job link and access token (*Proposed*, P0)
+**Context:** Jobs are reachable only by an unguessable link (docs/02 §6); there are no accounts.
+**Decision:** `POST /jobs` returns `link = /j/<job_id>#<token>`. The token is 32 random bytes (urlsafe) shown once; only its SHA-256 is stored and compared in constant time. The token travels in the URL fragment (never sent to servers or logged) and in an `Authorization: Bearer` header. SSE is read with `fetch` streaming so the token never appears in a query string. Unknown job and wrong token give the same 401. The job id is a UUID4 used as a directory name, not as a secret.
+**Alternatives:** Token in the path or query (leaks into logs and referrers); slow password hash (no benefit for 256-bit random tokens); cookie sessions (need CSRF handling and cannot be shared by link).
+**Consequences:** Losing the link loses access; the UI says so. Rotating or revoking a token needs a later endpoint.

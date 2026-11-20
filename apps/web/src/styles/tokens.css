@@ -1,0 +1,92 @@
+/*
+ * Design tokens. Every colour exists once as light-dark(<light>, <dark>), so both themes come
+ * from one definition. The theme follows the system by default; the toggle sets
+ * data-theme="light" | "dark" on <html>, which only changes `color-scheme`.
+ *
+ * Contrast notes: text on surface >= 7:1, muted text >= 4.5:1, accent on surface >= 4.5:1.
+ * The table and viewer groups are used from P7 so the review screen inherits both themes.
+ */
+:root {
+  color-scheme: light dark;
+
+  /* Surfaces and text */
+  --c-bg: light-dark(#f4f6f9, #0d1117);
+  --c-surface: light-dark(#ffffff, #151b23);
+  --c-surface-2: light-dark(#eef1f5, #1b232d);
+  --c-border: light-dark(#cfd6df, #2c3643);
+  --c-border-strong: light-dark(#8f9aa9, #5b6878);
+  --c-text: light-dark(#141a22, #e7ebf1);
+  --c-text-muted: light-dark(#4b5667, #a6b0bd);
+
+  /* Brand and states */
+  --c-accent: light-dark(#1f5fd1, #7aa7ff);
+  --c-accent-hover: light-dark(#184eb0, #a1c0ff);
+  --c-accent-contrast: light-dark(#ffffff, #0a1220);
+  --c-accent-soft: light-dark(#e6efff, #17253f);
+  --c-success: light-dark(#066a42, #5fd3a0);
+  --c-success-soft: light-dark(#e3f6ec, #11291f);
+  --c-warning: light-dark(#7d5200, #f2c35b);
+  --c-warning-soft: light-dark(#fff3d6, #2d2410);
+  --c-danger: light-dark(#b3261e, #ff8b80);
+  --c-danger-soft: light-dark(#fdeceb, #331614);
+  --c-focus: light-dark(#1f5fd1, #a1c0ff);
+
+  /* Review table (P7) */
+  --c-table-header: light-dark(#eef1f5, #1b232d);
+  --c-table-row-hover: light-dark(#f1f5fb, #1a2330);
+  --c-table-row-selected: light-dark(#dfe9ff, #1d2f52);
+  --c-table-guide: light-dark(#d5dbe4, #323d4b);
+
+  /* 3D viewer (P7) */
+  --c-viewer-bg: light-dark(#e9edf2, #10151c);
+  --c-viewer-grid: light-dark(#c3cbd6, #2a3441);
+  --c-viewer-highlight: light-dark(#1f5fd1, #7aa7ff);
+  --c-viewer-dim: light-dark(#b9c1cc, #3a4452);
+
+  /* Type */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.5rem;
+  --fs-2xl: 2rem;
+  --lh: 1.55;
+
+  /* Space, shape, depth */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow: 0 1px 2px light-dark(rgb(20 26 34 / 0.08), rgb(0 0 0 / 0.5)),
+    0 4px 16px light-dark(rgb(20 26 34 / 0.06), rgb(0 0 0 / 0.35));
+  --focus-ring: 3px solid var(--c-focus);
+
+  /* Motion (collapsed to ~0 under prefers-reduced-motion, see app.css) */
+  --dur-fast: 120ms;
+  --dur: 220ms;
+  --dur-slow: 480ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0.01ms;
+    --dur: 0.01ms;
+    --dur-slow: 0.01ms;
+  }
+}

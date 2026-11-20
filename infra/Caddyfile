@@ -1,0 +1,40 @@
+# Front door. Listens on 8080 inside the container (no privileged port needed); the host port is
+# set by C2B_HTTP_PORT. For a public deployment put a domain here and remove `auto_https off`.
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# Scripts stay strict ('self' only). Styles allow inline attributes (React/Radix positioning).
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+		-Server
+	}
+
+	# API: no response compression here so event streams are never buffered.
+	handle_path /api/* {
+		request_body {
+			# Backstop above the app's own limits (200 MB CAD); the API gives the clear message.
+			max_size 300MB
+		}
+		reverse_proxy api:8000 {
+			flush_interval -1
+			transport http {
+				read_timeout 20m
+				write_timeout 20m
+			}
+		}
+	}
+
+	handle {
+		encode zstd gzip
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

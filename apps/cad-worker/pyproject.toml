@@ -1,0 +1,28 @@
+[project]
+name = "c2b-cad-worker"
+version = "0.0.0"
+description = "Sandboxed OpenCascade worker: no network, no database, Unix-socket only (ADR-012)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "cadquery>=2.5",
+  "cadquery-ocp>=7.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/c2b_cad_worker"]
+
+[project.scripts]
+c2b-cad-worker = "c2b_cad_worker.server:main"
+
+[tool.mypy]
+python_version = "3.12"
+platform = "linux"  # the code runs in Linux containers
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = ["OCP", "OCP.*"]
+ignore_missing_imports = true

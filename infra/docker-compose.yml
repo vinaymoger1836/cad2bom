@@ -1,0 +1,159 @@
+# CAD-to-BoM stack. Run from the repository root:
+#   docker compose --env-file .env -f infra/docker-compose.yml up -d --build --wait
+# (`make up` does this and creates .env on first use.)
+
+name: cad2bom
+
+x-app-user: &app-user "${C2B_UID:-1000}:${C2B_GID:-1000}"
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+
+x-limits-env: &limits-env
+  C2B_DATA_DIR: /data
+  C2B_MAX_CAD_MB: ${C2B_MAX_CAD_MB:-200}
+  C2B_MAX_OTHER_MB: ${C2B_MAX_OTHER_MB:-25}
+  C2B_MAX_FILES_PER_JOB: ${C2B_MAX_FILES_PER_JOB:-50}
+  C2B_CAD_TIMEOUT_S: ${C2B_CAD_TIMEOUT_S:-120}
+  C2B_CAD_SOCKET: /run/c2b/cad.sock
+
+services:
+  # One-shot: makes data/ and the cad socket volume writable by the app user, then exits.
+  init:
+    image: busybox:1.37
+    user: "0:0"
+    network_mode: none
+    restart: "no"
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE]
+    command:
+      - sh
+      - -c
+      - >-
+        mkdir -p /data/jobs &&
+        (chown ${C2B_UID:-1000}:${C2B_GID:-1000} /data /data/jobs || true) &&
+        chmod 750 /data /data/jobs &&
+        chown ${C2B_UID:-1000}:${C2B_GID:-1000} /run/c2b &&
+        chmod 770 /run/c2b
+    volumes:
+      - ../data:/data
+      - c2b-cadsock:/run/c2b
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-c2b}
+      POSTGRES_DB: ${POSTGRES_DB:-c2b}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run `make env` to create .env}
+    volumes:
+      - c2b-pgdata:/var/lib/postgresql/data
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    image: c2b/api:dev
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    <<: *hardening
+    user: *app-user
+    environment:
+      <<: *limits-env
+      C2B_DATABASE_URL: postgresql://${POSTGRES_USER:-c2b}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-c2b}
+    volumes:
+      - ../data:/data
+    tmpfs:
+      - /tmp
+    networks: [edge, backend]
+    depends_on:
+      init: {condition: service_completed_successfully}
+      postgres: {condition: service_healthy}
+
+  worker:
+    image: c2b/worker:dev
+    build:
+      context: ..
+      dockerfile: apps/worker/Dockerfile
+    <<: *hardening
+    user: *app-user
+    environment:
+      <<: *limits-env
+      C2B_DATABASE_URL: postgresql://${POSTGRES_USER:-c2b}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-c2b}
+    volumes:
+      - ../data:/data:ro
+      - c2b-cadsock:/run/c2b
+    tmpfs:
+      - /tmp
+    networks: [backend]
+    depends_on:
+      api: {condition: service_healthy}
+      cad-worker: {condition: service_healthy}
+
+  # Sandbox for untrusted CAD files (ADR-003, ADR-012): no network at all, no database
+  # credentials, read-only root, CPU/RAM/PID limits, 120 s per file enforced in the process.
+  cad-worker:
+    image: c2b/cad-worker:dev
+    build:
+      context: ..
+      dockerfile: apps/cad-worker/Dockerfile
+    <<: *hardening
+    user: *app-user
+    network_mode: none
+    cpus: 2
+    mem_limit: 3g
+    memswap_limit: 3g
+    pids_limit: 256
+    ulimits:
+      nofile: {soft: 1024, hard: 1024}
+    stop_grace_period: 10s
+    environment:
+      C2B_DATA_DIR: /data
+      C2B_CAD_TIMEOUT_S: ${C2B_CAD_TIMEOUT_S:-120}
+      C2B_CAD_SOCKET: /run/c2b/cad.sock
+    volumes:
+      - ../data:/data:ro
+      - c2b-cadsock:/run/c2b
+    tmpfs:
+      - /tmp:size=512m,mode=1777,noexec,nosuid
+    depends_on:
+      init: {condition: service_completed_successfully}
+
+  caddy:
+    image: c2b/caddy:dev
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    <<: *hardening
+    user: *app-user
+    ports:
+      - "${C2B_HTTP_PORT:-8080}:8080"
+    tmpfs:
+      - /data
+      - /config
+      - /tmp
+    networks: [edge]
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/api/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+networks:
+  edge: {}
+  backend: {}
+
+volumes:
+  c2b-pgdata: {}
+  c2b-cadsock: {}
