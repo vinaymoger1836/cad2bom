@@ -98,6 +98,40 @@ async def _build_bom_for_job(
         photo_opt_in=True,
     )
 
+    # Step 4 fallback ladder & agent summary (docs/02 §3, docs/04 §9)
+    from c2b_agents.pipeline import resolve_draft_with_ladder
+    from c2b_agents.router import LlmRouter
+
+    product_desc = ""
+    job_row = await repo.get_job(db, jid)
+    if job_row and job_row.get("product"):
+        product_desc = job_row["product"].get("description", "")
+
+    router = LlmRouter()
+    bom_draft = await resolve_draft_with_ladder(
+        draft=bom_draft,
+        library=library,
+        router=router,
+        extract=extract_obj,
+        product_desc=product_desc,
+    )
+
+    # Persist audited LLM calls to database
+    for call in router.call_logs:
+        await repo.record_llm_call(
+            pool=db,
+            job_id=jid,
+            role=call.role,
+            model=call.model,
+            prompt_tokens=call.prompt_tokens,
+            completion_tokens=call.completion_tokens,
+            total_tokens=call.total_tokens,
+            latency_ms=call.latency_ms,
+            fallback_reason=call.fallback_reason,
+            line_id=call.line_id,
+            cassette_key=call.cassette_key,
+        )
+
     # Checkpoint step 11
     await repo.add_event(db, jid, "step", "Step 11: Validation and confidence")
 
