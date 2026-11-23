@@ -14,6 +14,8 @@ from c2b_api.errors import ProblemError
 from c2b_api.magic import ACCEPTED_EXTENSIONS
 from c2b_domain import (
     BomDraft,
+    ChatRequest,
+    ChatResponse,
     JobCreate,
     JobCreated,
     JobOut,
@@ -252,6 +254,51 @@ async def review_suggestion_endpoint(
         {"suggestion_id": suggestion_id, "review": body.review},
     )
     return {"status": "ok", "suggestion_id": suggestion_id, "review": body.review}
+
+
+@router.post("/jobs/{job_id}/chat", tags=["jobs"])
+async def chat_endpoint(
+    job_id: UUID,
+    job: JobRow,
+    body: ChatRequest,
+    request: Request,
+) -> ChatResponse:
+    """Agent chat grounded in job data; change proposals return as suggestions only (docs/05 §4)."""
+    pool = _pool(request)
+    bom_data = await repo.get_bom(pool, job_id)
+    draft: BomDraft | None = None
+    if bom_data:
+        draft = BomDraft.model_validate(bom_data)
+
+    from c2b_agents.agent import ChatAgent
+
+    agent = ChatAgent()
+    response = await agent.chat(
+        job_id=str(job_id),
+        message=body.message,
+        draft=draft,
+        history=body.history,
+    )
+
+    # If new suggestions were proposed, persist them to the draft BoM
+    if response.suggestions and draft:
+        existing_s_ids = {s.id for s in draft.suggestions}
+        added_count = 0
+        for s in response.suggestions:
+            if s.id not in existing_s_ids:
+                draft.suggestions.append(s)
+                added_count += 1
+        if added_count > 0:
+            await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True))
+            await repo.add_event(
+                pool,
+                job_id,
+                "suggestion_proposed",
+                f"Agent proposed {added_count} suggestion(s) from chat",
+                {"count": added_count, "suggestions": [s.id for s in response.suggestions]},
+            )
+
+    return response
 
 
 @router.get("/jobs/{job_id}/files", tags=["uploads"])

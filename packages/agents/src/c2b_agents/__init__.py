@@ -19,6 +19,7 @@ from c2b_agents.ladder import (
     run_l5_description_wording,
     run_l6_datasheet_field,
 )
+from c2b_agents.pipeline import resolve_draft_with_ladder
 from c2b_agents.router import LlmRouter
 
 __all__ = [
@@ -28,6 +29,7 @@ __all__ = [
     "ChatAgent",
     "LlmRouter",
     "get_agent_config",
+    "resolve_draft_with_ladder",
     "run_l1_classify",
     "run_l2_material_family",
     "run_l3_header_mapping",
