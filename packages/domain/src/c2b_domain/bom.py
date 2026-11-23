@@ -51,14 +51,25 @@ class Suggestion(BaseModel):
     origin: str = "cad"  # "cad", "gap_rule", "skeleton", "photo", "user"
     review: SuggestionReview = "suggested"
     cad_name: str | None = None
-    cls: str = Field(
+    cls: str | None = Field(
+        default=None,
         validation_alias="class",
         serialization_alias="class",
     )
     qty_total: float | None = None
-    text: str
+    text: str = ""
     rule: str | None = None
     level: str = "ebom"
+
+    # Fields for modification proposals (e.g. chat agent, material ladder):
+    line_id: str | None = None
+    action: str = "add"  # "add", "modify", "remove"
+    field: str | None = None  # e.g. "material", "quantity"
+    value: Any | None = None
+    confidence: float = 0.50
+    rule_ids: list[str] = Field(default_factory=list)
+    reason: str | None = None
+    status: str = "suggested"
 
 
 class ColumnMapping(BaseModel):

@@ -1,0 +1,18 @@
+{
+  "key": "5da36393bab73850",
+  "role": "extractor",
+  "model": "groq/llama-3.1-8b-instant",
+  "prompt_summary": "L6 invalid test",
+  "response": {
+    "field": "voltage",
+    "value": "230V",
+    "unit": "V",
+    "page": 1,
+    "quote": "The device operates on nominal mains."
+  },
+  "prompt_tokens": 100,
+  "completion_tokens": 30,
+  "total_tokens": 130,
+  "latency_ms": 90,
+  "created_at": "2026-11-23T10:20:54.354344+00:00"
+}

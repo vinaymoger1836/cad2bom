@@ -86,6 +86,14 @@ class CassetteStore:
                     return Cassette(**data)
                 if "ambiguous column to resolve: 'item'" in prompt_lower and "item" in summary:
                     return Cassette(**data)
+                # Body matching for L1: e.g. "part name: body1" and "body1" in summary
+                for body_idx in range(1, 15):
+                    b_name = f"body{body_idx}"
+                    if f"part name: {b_name}" in prompt_lower and b_name in summary:
+                        return Cassette(**data)
+                # L4 gap candidates matching
+                if "identify missing components" in prompt_lower and "gap" in summary:
+                    return Cassette(**data)
             except Exception:
                 continue
 

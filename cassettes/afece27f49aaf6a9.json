@@ -1,0 +1,18 @@
+{
+  "key": "afece27f49aaf6a9",
+  "role": "extractor",
+  "model": "groq/llama-3.1-8b-instant",
+  "prompt_summary": "L6 valid test",
+  "response": {
+    "field": "power",
+    "value": "75",
+    "unit": "W",
+    "page": 1,
+    "quote": "with rated power of 75 W."
+  },
+  "prompt_tokens": 100,
+  "completion_tokens": 30,
+  "total_tokens": 130,
+  "latency_ms": 90,
+  "created_at": "2026-11-23T10:20:54.345340+00:00"
+}

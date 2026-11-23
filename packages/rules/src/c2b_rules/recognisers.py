@@ -219,6 +219,10 @@ def recognize_iso2338(
     for row in table.sizes:
         d_nom = float(row.get("d", 0.0))
         if abs(d_meas - d_nom) <= tol_d:
+            l_min = float(row.get("l_min", 0.0))
+            l_max = float(row.get("l_max", 1e9))
+            if l_meas < (l_min - length_tol_mm) or l_meas > (l_max + length_tol_mm):
+                continue
             snapped = snap_length(l_meas, table.lengths_mm or [], tol_mm=length_tol_mm)
             if snapped is not None:
                 size_name = str(row.get("size", str(round(d_meas))))
