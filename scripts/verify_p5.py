@@ -17,6 +17,10 @@ Acceptance criteria (docs/10 §4, docs/10 §5 P5):
 
 from __future__ import annotations
 
+import os
+
+os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = "True"
+
 import json
 import time
 from pathlib import Path
@@ -33,36 +37,47 @@ from c2b_rules.engine import build_ebom
 
 def test_b1_and_b2_zero_llm_calls(library) -> tuple[int, int]:
     """Assert B1 and B2 make exactly zero LLM calls."""
-    print("\n--- Verifying Zero LLM Calls for B1 and B2 ---")
+    print("\n--- Verifying Zero LLM Calls for B1 and B2 ---", flush=True)
     router = LlmRouter()
 
     # B1 Fastener Zoo
+    t0 = time.perf_counter()
     b1_step = Path("golden/B1_fastener_zoo/input/fastener_zoo.step")
     b1_cad = extract_step(b1_step)
+    print(f"  [1/4] Extracted B1 in {time.perf_counter() - t0:.2f}s", flush=True)
+    print("  [DEBUG] Calling build_ebom for B1...", flush=True)
     b1_draft = build_ebom(b1_cad, library, "B1")
+    print("  [DEBUG] Finished build_ebom for B1. Calling resolve_draft_with_ladder...", flush=True)
     # Run ladder resolution
     import asyncio
+    t1 = time.perf_counter()
     b1_draft = asyncio.run(
         resolve_draft_with_ladder(b1_draft, library, router, b1_cad, product_desc="")
     )
+    print("  [DEBUG] Finished resolve_draft_with_ladder for B1.", flush=True)
+    print(f"  [2/4] Resolved B1 ladder in {time.perf_counter() - t1:.2f}s", flush=True)
 
     b1_calls = len(router.call_logs)
-    print(f"  B1 Fastener Zoo: {len(b1_draft.ebom)} lines, {b1_calls} LLM calls.")
+    print(f"  B1 Fastener Zoo: {len(b1_draft.ebom)} lines, {b1_calls} LLM calls.", flush=True)
     assert b1_calls == 0, f"B1 made {b1_calls} LLM calls; expected exactly 0!"
 
     # B2 Bracket Assembly
+    t2 = time.perf_counter()
     b2_step = Path("golden/B2_bracket/input/bracket_assembly.step")
     b2_cad = extract_step(b2_step)
+    print(f"  [3/4] Extracted B2 in {time.perf_counter() - t2:.2f}s", flush=True)
     b2_draft = build_ebom(b2_cad, library, "B2")
+    t3 = time.perf_counter()
     b2_draft = asyncio.run(
         resolve_draft_with_ladder(b2_draft, library, router, b2_cad, product_desc="")
     )
+    print(f"  [4/4] Resolved B2 ladder in {time.perf_counter() - t3:.2f}s", flush=True)
 
     b2_calls = len(router.call_logs)
-    print(f"  B2 Bracket Assembly: {len(b2_draft.ebom)} lines, {b2_calls} LLM calls.")
+    print(f"  B2 Bracket Assembly: {len(b2_draft.ebom)} lines, {b2_calls} LLM calls.", flush=True)
     assert b2_calls == 0, f"B2 made {b2_calls} LLM calls; expected exactly 0!"
 
-    print("  Zero LLM calls for B1 and B2: PASS")
+    print("  Zero LLM calls for B1 and B2: PASS", flush=True)
     return (b1_calls, b2_calls)
 
 

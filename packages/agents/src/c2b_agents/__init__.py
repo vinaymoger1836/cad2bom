@@ -8,6 +8,11 @@ Strictly adheres to:
 - ADR-009: LiteLLM router on Groq and Gemini free tiers.
 """
 
+import os
+
+# Prevent LiteLLM from making slow/failing remote requests on import
+os.environ.setdefault("LITELLM_LOCAL_MODEL_COST_MAP", "True")
+
 from c2b_agents.agent import ChatAgent
 from c2b_agents.cassettes import Cassette, CassetteStore
 from c2b_agents.config import AgentConfig, get_agent_config

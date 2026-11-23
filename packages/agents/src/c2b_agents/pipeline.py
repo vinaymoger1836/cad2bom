@@ -31,7 +31,7 @@ async def resolve_draft_with_ladder(
     confirm_l3_immediately: bool = True,
 ) -> BomDraft:
     """Execute LLM fallback ladder steps L1-L6 on a draft BoM where needed."""
-    print("START resolve_draft_with_ladder", flush=True)
+    print("    [ladder] entering resolve_draft_with_ladder", flush=True)
     node_map = {n.id: n for n in (extract.nodes if extract else [])}
     shape_map = extract.shapes if extract else {}
 
@@ -40,9 +40,12 @@ async def resolve_draft_with_ladder(
     if library and library.confidence and library.confidence.thresholds:
         class_threshold = float(library.confidence.thresholds.get("class", 0.75))
 
+    print(f"    [ladder] check ebom lines count={len(draft.ebom)} threshold={class_threshold}", flush=True)
     for line in draft.ebom:
         cls_val = line.cls if isinstance(line.cls, str) else line.cls.value
         conf_val = line.confidence
+
+        print(f"    [ladder] line {line.id} cls={cls_val} conf={conf_val} origin={line.origin}", flush=True)
 
         # Only run L1 if line is from CAD and score is below threshold or unclassified
         if (cls_val == "unclassified" or conf_val < class_threshold) and line.origin == "cad":

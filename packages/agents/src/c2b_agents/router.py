@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import os
+
+os.environ.setdefault("LITELLM_LOCAL_MODEL_COST_MAP", "True")
+
 import json
 import logging
-import os
 import time
 from dataclasses import dataclass
 from typing import Any, TypeVar
