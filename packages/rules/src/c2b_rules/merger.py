@@ -143,7 +143,6 @@ def merge_cad_and_user_bom(
     # Track user rows matched
     for u_row in user_rows:
         best_cad: BomLine | None = None
-        match_reason: str = "no_match"
 
         for c_line in cad_lines:
             if c_line.id in matched_cad_ids:
