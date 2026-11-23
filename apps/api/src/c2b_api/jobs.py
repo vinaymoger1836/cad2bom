@@ -212,6 +212,11 @@ async def confirm_mapping(
     return {"status": "ok", "message": "Column mapping confirmed"}
 
 
+class LineEditRequest(BaseModel):
+    field: str
+    value: Any
+
+
 @router.post("/jobs/{job_id}/questions/{question_id}/answer", tags=["jobs"])
 async def answer_question_endpoint(
     job_id: UUID,
@@ -221,9 +226,22 @@ async def answer_question_endpoint(
     request: Request,
 ) -> dict[str, Any]:
     pool = _pool(request)
-    ok = await repo.answer_question(pool, job_id, question_id, body.answer)
-    if not ok:
-        raise ProblemError(404, "not_found", f"Question {question_id} not found")
+    bom_data = await repo.get_bom(pool, job_id)
+    if not bom_data:
+        raise ProblemError(404, "not_found", "BoM draft not found")
+
+    from c2b_domain.bom import BomDraft
+    from c2b_library.loader import load_library
+    from c2b_rules.dependency import apply_question_answer
+
+    library, _ = load_library(Path("library"))
+    draft = BomDraft.model_validate(bom_data)
+    try:
+        draft = apply_question_answer(draft, question_id, body.answer, library)
+    except ValueError as exc:
+        raise ProblemError(404, "not_found", str(exc))
+
+    await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True))
     await repo.add_event(
         pool,
         job_id,
@@ -243,9 +261,22 @@ async def review_suggestion_endpoint(
     request: Request,
 ) -> dict[str, Any]:
     pool = _pool(request)
-    ok = await repo.review_suggestion(pool, job_id, suggestion_id, body.review)
-    if not ok:
-        raise ProblemError(404, "not_found", f"Suggestion {suggestion_id} not found")
+    bom_data = await repo.get_bom(pool, job_id)
+    if not bom_data:
+        raise ProblemError(404, "not_found", "BoM draft not found")
+
+    from c2b_domain.bom import BomDraft
+    from c2b_library.loader import load_library
+    from c2b_rules.dependency import apply_suggestion_review
+
+    library, _ = load_library(Path("library"))
+    draft = BomDraft.model_validate(bom_data)
+    try:
+        draft = apply_suggestion_review(draft, suggestion_id, body.review, library)
+    except ValueError as exc:
+        raise ProblemError(404, "not_found", str(exc))
+
+    await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True))
     await repo.add_event(
         pool,
         job_id,
@@ -254,6 +285,98 @@ async def review_suggestion_endpoint(
         {"suggestion_id": suggestion_id, "review": body.review},
     )
     return {"status": "ok", "suggestion_id": suggestion_id, "review": body.review}
+
+
+@router.patch("/jobs/{job_id}/lines/{line_id}", tags=["jobs"])
+async def edit_line_endpoint(
+    job_id: UUID,
+    job: JobRow,
+    line_id: str,
+    body: LineEditRequest,
+    request: Request,
+) -> dict[str, Any]:
+    pool = _pool(request)
+    bom_data = await repo.get_bom(pool, job_id)
+    if not bom_data:
+        raise ProblemError(404, "not_found", "BoM draft not found")
+
+    from c2b_domain.bom import BomDraft
+    from c2b_library.loader import load_library
+    from c2b_rules.dependency import apply_user_line_edit
+
+    library, _ = load_library(Path("library"))
+    draft = BomDraft.model_validate(bom_data)
+    try:
+        draft = apply_user_line_edit(draft, line_id, body.field, body.value, library)
+    except ValueError as exc:
+        raise ProblemError(404, "not_found", str(exc))
+
+    await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True))
+    await repo.add_event(pool, job_id, "user_edit", f"Edited {line_id}.{body.field}")
+    return {"status": "ok", "line_id": line_id, "field": body.field, "value": body.value}
+
+
+@router.post("/jobs/{job_id}/approve", tags=["jobs"])
+async def approve_bom_endpoint(
+    job_id: UUID,
+    job: JobRow,
+    request: Request,
+) -> dict[str, Any]:
+    """Validate and freeze an approved version of the BoM (docs/04 §11, docs/05 §4)."""
+    pool = _pool(request)
+    bom_data = await repo.get_bom(pool, job_id)
+    if not bom_data:
+        raise ProblemError(404, "not_found", "BoM draft not found")
+
+    from c2b_domain.bom import BomDraft
+    from c2b_library.loader import load_library
+    from c2b_rules.validator import validate_draft
+
+    library, _ = load_library(Path("library"))
+    draft = BomDraft.model_validate(bom_data)
+    report = validate_draft(draft, library)
+
+    if not report.valid:
+        blocking_msgs = [f"[{i.code}] {i.message}" for i in report.blocking_issues]
+        raise ProblemError(
+            409,
+            "approval_blocked",
+            "BoM approval is blocked by unresolved items",
+            "; ".join(blocking_msgs),
+        )
+
+    # Freeze version
+    version_num = await repo.freeze_bom_version(pool, job_id, draft.model_dump(by_alias=True))
+    await repo.add_event(pool, job_id, "bom_approved", f"Approved BoM version {version_num}")
+    return {
+        "status": "approved",
+        "version": version_num,
+        "job_id": str(job_id),
+    }
+
+
+@router.get("/jobs/{job_id}/versions", tags=["jobs"])
+async def list_versions_endpoint(
+    job_id: UUID,
+    job: JobRow,
+    request: Request,
+) -> list[dict[str, Any]]:
+    pool = _pool(request)
+    return await repo.list_bom_versions(pool, job_id)
+
+
+@router.get("/jobs/{job_id}/versions/{version}", tags=["jobs"])
+async def get_version_endpoint(
+    job_id: UUID,
+    job: JobRow,
+    version: int,
+    request: Request,
+) -> dict[str, Any]:
+    pool = _pool(request)
+    v_data = await repo.get_bom_version(pool, job_id, version)
+    if not v_data:
+        raise ProblemError(404, "not_found", f"Version {version} not found")
+    return v_data
 
 
 @router.post("/jobs/{job_id}/chat", tags=["jobs"])

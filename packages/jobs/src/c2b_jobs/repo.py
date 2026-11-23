@@ -320,3 +320,57 @@ async def list_llm_calls(
         )
         rows = await cur.fetchall()
         return list(rows)
+
+
+async def freeze_bom_version(
+    pool: Pool,
+    job_id: UUID,
+    data: dict[str, Any],
+) -> int:
+    """Freeze an approved draft BoM as a new immutable version in bom_version."""
+    async with pool.connection() as conn:
+        cur = await conn.execute(
+            "SELECT COALESCE(MAX(version), 0) + 1 AS next_ver FROM bom_version WHERE job_id = %s",
+            (job_id,),
+        )
+        row = await cur.fetchone()
+        next_ver = int(row["next_ver"]) if row else 1
+
+        data["version"] = next_ver
+        await conn.execute(
+            """
+            INSERT INTO bom_version (job_id, version, data, created_at)
+            VALUES (%s, %s, %s, now())
+            """,
+            (job_id, next_ver, Jsonb(data)),
+        )
+        return next_ver
+
+
+async def list_bom_versions(
+    pool: Pool,
+    job_id: UUID,
+) -> list[dict[str, Any]]:
+    """List all frozen BoM versions for a job."""
+    async with pool.connection() as conn:
+        cur = await conn.execute(
+            "SELECT version, created_at, data FROM bom_version WHERE job_id = %s ORDER BY version ASC",
+            (job_id,),
+        )
+        rows = await cur.fetchall()
+        return list(rows)
+
+
+async def get_bom_version(
+    pool: Pool,
+    job_id: UUID,
+    version: int,
+) -> dict[str, Any] | None:
+    """Get a specific frozen BoM version for a job."""
+    async with pool.connection() as conn:
+        cur = await conn.execute(
+            "SELECT data FROM bom_version WHERE job_id = %s AND version = %s",
+            (job_id, version),
+        )
+        row = await cur.fetchone()
+        return None if row is None else dict(row["data"])

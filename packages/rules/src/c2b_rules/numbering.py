@@ -60,10 +60,16 @@ def assign_part_numbers(
 ) -> list[BomLine]:
     """Assign part numbers to unnumbered lines using the profile scheme."""
     prefixes = DEFAULT_PREFIXES
-    if library and library.profile and library.profile.numbering:
-        p_prefs = getattr(library.profile.numbering, "prefixes", None)
-        if isinstance(p_prefs, dict):
-            prefixes = p_prefs
+    if library and library.profiles:
+        prof = (
+            library.profiles.get(profile_name)
+            or library.profiles.get(f"profiles/{profile_name}.yaml")
+            or next(iter(library.profiles.values()), None)
+        )
+        if prof and hasattr(prof, "numbering") and prof.numbering:
+            p_prefs = getattr(prof.numbering, "prefixes", None)
+            if isinstance(p_prefs, dict):
+                prefixes = p_prefs
 
     category_counters: dict[str, int] = {}
     current_seq = start_seq

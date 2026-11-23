@@ -87,16 +87,18 @@ def apply_question_answer(
     question.answer = answer
 
     # Apply answer to target lines if applicable
+    import re
+    match = re.search(r"\b(\d+(?:\.\d+)?)\b", str(answer))
     for lid in question.line_ids:
         line = next((l for l in draft.ebom if l.id == lid), None)
-        if line:
-            # Handle blade count question or quantity conflict question
-            if question.kind == "choice":
-                try:
-                    num_val = float(str(answer).strip())
-                    line.qty_per_parent = num_val
-                except ValueError:
-                    pass
+        if line and match:
+            num_val = float(match.group(1))
+            if line.parent:
+                parent_line = next((l for l in draft.ebom if l.id == line.parent), None)
+                if parent_line:
+                    parent_line.qty_per_parent = num_val
+                    parent_line.qty_total = num_val
+            line.qty_per_parent = num_val if not line.parent else line.qty_per_parent
 
     recalculate_draft(draft, library)
     return draft

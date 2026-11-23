@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from c2b_domain.bom import (
     BomDraft,
     BomLine,
+    BomVersion,
     ChatMessage,
     ChatRequest,
     ChatResponse,
@@ -21,11 +22,14 @@ from c2b_domain.bom import (
     Designation,
     JobSummary,
     LlmCallRecord,
+    MbomLine,
     PhotoFinding,
     Question,
     Suggestion,
     TableMapping,
     UserBomRow,
+    ValidationIssue,
+    ValidationReport,
 )
 from c2b_domain.cad import (
     CadExtractResult,
@@ -59,6 +63,10 @@ MODELS: list[type[BaseModel]] = [
     CadExtractResult,
     Designation,
     BomLine,
+    MbomLine,
+    BomVersion,
+    ValidationIssue,
+    ValidationReport,
     BomDraft,
     Question,
     Suggestion,
