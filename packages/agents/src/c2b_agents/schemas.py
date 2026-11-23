@@ -11,7 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from c2b_library.models import Library
+from c2b_library.loader import Library
 
 
 def get_taxonomy_codes(library: Library | None = None) -> list[str]:

@@ -33,7 +33,7 @@ from c2b_domain.bom import (
 )
 from c2b_domain.cad import CadNode, ShapeFeatures
 from c2b_domain.prov import Source
-from c2b_library.models import Library
+from c2b_library.loader import Library
 
 log = logging.getLogger(__name__)
 

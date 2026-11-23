@@ -1,0 +1,12 @@
+{
+  "key": "agent_m4_stainless",
+  "role": "agent",
+  "model": "groq/llama-3.3-70b-versatile",
+  "prompt_summary": "Chat agent response for make all M4 screws stainless",
+  "response": "I have processed your request to make all M4 screws stainless. I have prepared suggestions for the 4 matching M4 screw lines to update their material to stainless steel (A2). In accordance with our governance rules, your BoM lines remain unchanged until you review and accept these suggestions.",
+  "prompt_tokens": 310,
+  "completion_tokens": 55,
+  "total_tokens": 365,
+  "latency_ms": 190,
+  "created_at": "2026-11-23T08:57:45.030679+00:00"
+}

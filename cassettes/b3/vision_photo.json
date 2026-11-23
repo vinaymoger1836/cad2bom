@@ -1,0 +1,14 @@
+{
+  "findings": [
+    {
+      "description": "Ceiling fan motor housing and 3 blades visible in photo",
+      "class": "electrical.motor.ac_induction",
+      "count": 1,
+      "detected_text": [
+        "230V AC",
+        "75W"
+      ],
+      "confidence": 0.35
+    }
+  ]
+}

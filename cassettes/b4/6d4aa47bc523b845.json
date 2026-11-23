@@ -1,0 +1,25 @@
+{
+  "key": "6d4aa47bc523b845",
+  "role": "extractor",
+  "model": "groq/llama-3.1-8b-instant",
+  "prompt_summary": "B4 header mapping for ambiguous column 'Item'",
+  "response": {
+    "mappings": {
+      "Item": "description",
+      "Pos": "find_no",
+      "Teilenummer": "part_number",
+      "Menge": "quantity",
+      "Unit": "uom",
+      "Designator": "refdes",
+      "Hersteller": "manufacturer",
+      "MPN": "mpn",
+      "Bemerkung": "notes"
+    },
+    "reason": "header 'Item' scores for find_no (also claimed by 'Pos'); values are long text descriptions"
+  },
+  "prompt_tokens": 180,
+  "completion_tokens": 65,
+  "total_tokens": 245,
+  "latency_ms": 120,
+  "created_at": "2026-11-23T08:57:44.670625+00:00"
+}
