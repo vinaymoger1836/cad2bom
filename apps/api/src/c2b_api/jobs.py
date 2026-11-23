@@ -10,7 +10,7 @@ from c2b_api import sse, uploads
 from c2b_api.auth import JobRow, hash_token, new_token
 from c2b_api.errors import ProblemError
 from c2b_api.magic import ACCEPTED_EXTENSIONS
-from c2b_domain import JobCreate, JobCreated, JobOut, JobUpdate, ProductInfo, UploadOut
+from c2b_domain import BomDraft, JobCreate, JobCreated, JobOut, JobUpdate, ProductInfo, UploadOut
 from c2b_jobs import queue, repo
 from c2b_jobs.repo import Pool
 from c2b_jobs.settings import get_settings
@@ -106,6 +106,23 @@ async def get_model_glb(
         media_type="model/gltf-binary",
         filename="model.glb",
     )
+
+
+@router.get("/jobs/{job_id}/bom", tags=["jobs"])
+async def get_job_bom(
+    job_id: UUID,
+    job: JobRow,
+    request: Request,
+) -> BomDraft:
+    bom_data = await repo.get_bom(_pool(request), job_id)
+    if bom_data is None:
+        raise ProblemError(
+            404,
+            "not_found",
+            "BoM not found",
+            "No BoM has been generated for this job yet.",
+        )
+    return BomDraft.model_validate(bom_data)
 
 
 @router.get("/jobs/{job_id}/files", tags=["uploads"])

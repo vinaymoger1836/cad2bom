@@ -3,7 +3,11 @@ name = "c2b-rules"
 version = "0.0.0"
 description = "Deterministic rules engine (no LLM imports, ever; CLAUDE.md rule 1)"
 requires-python = ">=3.12,<3.13"
-dependencies = ["c2b-domain"]
+dependencies = [
+  "c2b-domain",
+  "c2b-library",
+  "pyyaml>=6",
+]
 
 [build-system]
 requires = ["hatchling"]

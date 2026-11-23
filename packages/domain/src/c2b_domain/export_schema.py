@@ -10,6 +10,11 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from c2b_domain.bom import (
+    BomDraft,
+    BomLine,
+    Designation,
+)
 from c2b_domain.cad import (
     CadExtractResult,
     CadNode,
@@ -40,6 +45,9 @@ MODELS: list[type[BaseModel]] = [
     ShapeFeatures,
     CadNotice,
     CadExtractResult,
+    Designation,
+    BomLine,
+    BomDraft,
 ]
 
 

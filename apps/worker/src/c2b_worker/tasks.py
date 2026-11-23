@@ -101,3 +101,36 @@ async def cad_extract(job_id: str, upload_id: str) -> None:
     # Move status to building
     await repo.set_status(db, jid, "building")
     await repo.add_event(db, jid, "status", "Building BoM", {"status": "building"})
+
+    # Phase 3 rules engine execution: steps 4-6 and 11
+    from pathlib import Path
+
+    from c2b_domain.cad import CadExtractResult
+    from c2b_library.loader import load_library
+    from c2b_rules.engine import build_ebom
+
+    library, _ = load_library(Path("library"))
+    if library is None:
+        log.error("Failed to load library for job %s", job_id)
+        await _fail(jid, "Internal error: could not load library definitions")
+        return
+
+    # Checkpoint step 4
+    await repo.add_event(db, jid, "step", "Step 4: Classification and recognition")
+    # Checkpoint step 5
+    await repo.add_event(db, jid, "step", "Step 5: Materials and mass")
+    # Checkpoint step 6
+    await repo.add_event(db, jid, "step", "Step 6: EBOM Structure")
+
+    extract_obj = CadExtractResult.model_validate(result)
+    bom_draft = build_ebom(extract_obj, library, job_id=job_id)
+
+    # Checkpoint step 11
+    await repo.add_event(db, jid, "step", "Step 11: Validation and confidence")
+
+    # Persist draft BoM
+    await repo.save_bom(db, jid, bom_draft.model_dump(by_alias=True))
+
+    # Move status to review
+    await repo.set_status(db, jid, "review")
+    await repo.add_event(db, jid, "status", "Ready for review", {"status": "review"})

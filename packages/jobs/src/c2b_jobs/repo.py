@@ -194,3 +194,28 @@ async def get_cad_extract(pool: Pool, job_id: UUID) -> dict[str, Any] | None:
         )
         row = await cur.fetchone()
         return None if row is None else dict(row["data"])
+
+
+async def save_bom(
+    pool: Pool,
+    job_id: UUID,
+    data: dict[str, Any],
+) -> None:
+    async with pool.connection() as conn:
+        await conn.execute(
+            "INSERT INTO job_bom (job_id, data, updated_at)"
+            " VALUES (%s, %s, now())"
+            " ON CONFLICT (job_id) DO UPDATE"
+            " SET data = EXCLUDED.data, updated_at = now()",
+            (job_id, Jsonb(data)),
+        )
+
+
+async def get_bom(pool: Pool, job_id: UUID) -> dict[str, Any] | None:
+    async with pool.connection() as conn:
+        cur = await conn.execute(
+            "SELECT data FROM job_bom WHERE job_id = %s",
+            (job_id,),
+        )
+        row = await cur.fetchone()
+        return None if row is None else dict(row["data"])
