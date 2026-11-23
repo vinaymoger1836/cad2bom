@@ -7,7 +7,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from c2b_domain.prov import Prov, Source
 
 MakeBuyType = Literal["make", "buy", "supplier_made"]
-ReviewStatus = Literal["accepted", "edited", "derived", "flagged"]
+ReviewStatus = Literal["accepted", "edited", "derived", "flagged", "given", "suggested"]
+QuestionKind = Literal["choice", "number", "text", "confirm"]
+SuggestionReview = Literal["suggested", "accepted", "rejected"]
 
 
 class Designation(BaseModel):
@@ -21,6 +23,119 @@ class Designation(BaseModel):
     length_mm: float | None = None
     score: float = 1.0
     key: str | None = None
+
+
+class Question(BaseModel):
+    """A blocking or non-blocking question for the user (docs/05 §1)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str  # "Q-001", "Q-002", ...
+    kind: QuestionKind = "choice"
+    blocking: bool = True
+    line_ids: list[str] = Field(default_factory=list)
+    text: str
+    options: list[str] = Field(default_factory=list)
+    evidence: list[str] = Field(default_factory=list)
+    answer: Any | None = None
+    note: str | None = None
+
+
+class Suggestion(BaseModel):
+    """A proposed addition or change the user accepts or rejects (docs/05 §1)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str  # "S-001", "S-002", ...
+    origin: str = "cad"  # "cad", "gap_rule", "skeleton", "photo", "user"
+    review: SuggestionReview = "suggested"
+    cad_name: str | None = None
+    cls: str = Field(
+        alias="class",
+        validation_alias="class",
+        serialization_alias="class",
+    )
+    qty_total: float | None = None
+    text: str
+    rule: str | None = None
+    level: str = "ebom"
+
+
+class ColumnMapping(BaseModel):
+    """Mapping for a single column in a BoM file."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    field: str
+    by: str = "rules"  # "rules", "extractor_L3", "user"
+    score: float = 1.0
+    confirmed_by_user: bool = False
+    why: str | None = None
+
+
+class TableMapping(BaseModel):
+    """Detected and confirmed table boundary and column mapping."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    header_row: int
+    title_block_rows: list[int] = Field(default_factory=list)
+    footer_rows: list[int] = Field(default_factory=list)
+    columns: dict[str, ColumnMapping] = Field(default_factory=dict)
+    ambiguous_columns: list[str] = Field(default_factory=list)
+    assertions: list[str] = Field(default_factory=list)
+
+
+class UserBomRow(BaseModel):
+    """One row extracted and normalised from a user BoM file."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    row: int
+    raw: dict[str, Any]
+    part_number: str | None = None
+    description: str | None = None
+    qty: float = 1.0
+    uom: str = "EA"
+    uom_raw: str | None = None
+    refdes: list[str] = Field(default_factory=list)
+    refdes_count_matches_qty: bool = True
+    manufacturer: str | None = None
+    mpn: str | None = None
+    material: str | None = None
+    notes: str | None = None
+    find_no: int | None = None
+    level: int = 1
+    origin: str = "user_bom"
+    review: str = "given"
+    class_acceptable: list[str] = Field(default_factory=list)
+
+
+class DatasheetSpec(BaseModel):
+    """Specification extracted from a datasheet PDF."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    spec_type: str  # "dimension", "mass", "material", "voltage", "current", "power", "ip_rating"
+    value: Any
+    unit: str | None = None
+    raw_text: str
+    page: int
+    ref: str  # "pdf:filename.pdf#p2"
+    confidence: float = 0.85
+
+
+class PhotoFinding(BaseModel):
+    """Visual item finding from product photos."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    item_description: str
+    candidate_class: str | None = None
+    count: int = 1
+    detected_text: list[str] = Field(default_factory=list)
+    confidence: float = 0.40
+    ref: str = ""
 
 
 class BomLine(BaseModel):
@@ -46,14 +161,18 @@ class BomLine(BaseModel):
     designation: Designation | None = None
     qty_per_parent: Prov[float] | float
     uom: str = "EA"
+    uom_raw: str | None = None
     qty_total: float = 1.0
     material: Prov[str] | dict[str, Any] | str | None = None
     finish: Prov[str] | dict[str, Any] | str | None = None
     mass_g: Prov[float] | float | None = None
     make_buy: Prov[MakeBuyType] | MakeBuyType | None = None
     refdes: list[str] = Field(default_factory=list)
+    refdes_count_matches_qty: bool = True
     mpn: str | None = None
     manufacturer: str | None = None
+    cad_nodes: list[str] = Field(default_factory=list)
+    class_acceptable: list[str] = Field(default_factory=list)
     origin: str = "cad"
     review: ReviewStatus = "derived"
     phantom: bool = False
@@ -80,12 +199,25 @@ class BomDraft(BaseModel):
     mbom: list[dict[str, Any]] = Field(default_factory=list)
     stats: dict[str, Any] = Field(default_factory=dict)
     open_items: list[str] = Field(default_factory=list)
+    questions: list[Question] = Field(default_factory=list)
+    suggestions: list[Suggestion] = Field(default_factory=list)
+    mapping: TableMapping | None = None
+    user_rows_raw: list[dict[str, Any]] = Field(default_factory=list)
 
 
 __all__ = [
     "BomDraft",
     "BomLine",
+    "ColumnMapping",
+    "DatasheetSpec",
     "Designation",
     "MakeBuyType",
+    "PhotoFinding",
+    "Question",
+    "QuestionKind",
     "ReviewStatus",
+    "Suggestion",
+    "SuggestionReview",
+    "TableMapping",
+    "UserBomRow",
 ]
