@@ -146,7 +146,7 @@ entries:
   - { tokens: [duct, ducting], class: sheetmetal.duct, weight: 0.65 }
   - { tokens: [weldment, "welded frame", "weld assembly"], class: sheetmetal.weldment, weight: 0.7 }
   - { tokens: ["sheet metal cover", "metal cover"], class: sheetmetal.cover, weight: 0.65 }
-  - { tokens: [cover, lid, "top cover", "cover plate"], class: moulded.cover, weight: 0.45 }
+  - { tokens: [cover, lid, "top cover", "cover plate"], class: moulded.cover, weight: 0.6 }
   - { tokens: [cover, lid], class: sheetmetal.cover, weight: 0.4 }
   - { tokens: ["glass cover", "cover glass"], class: glass.cover, weight: 0.7 }
   - { tokens: ["machined block", "aluminium block", "aluminum block", block, "billet block"], class: machined.block, weight: 0.55 }

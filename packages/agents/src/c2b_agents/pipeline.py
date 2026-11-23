@@ -16,7 +16,7 @@ from c2b_domain.bom import BomDraft, BomLine, ColumnMapping, Question
 from c2b_domain.cad import CadExtractResult
 from c2b_domain.prov import Prov
 from c2b_library.loader import Library
-from c2b_rules.descriptions import generate_description
+from c2b_rules.descriptions import build_description
 from c2b_rules.explainer import explain_line
 
 log = logging.getLogger(__name__)
@@ -101,17 +101,18 @@ async def resolve_draft_with_ladder(
                     modifiers = cls_def.modifiers if cls_def else []
 
                     # Regenerate noun-first description
-                    line.noun = noun
-                    line.modifiers = list(modifiers)
-                    line.description = generate_description(
-                        cls=chosen_cls,
-                        noun=noun,
-                        modifiers=modifiers,
-                        designation=line.designation,
-                        material=line.material,
-                        dimensions=None,
-                        template=cls_def.description_template if cls_def else None,
+                    desc_str, noun, modifiers, is_exact = build_description(
+                        cls_code=chosen_cls,
+                        desig=line.designation,
+                        shape=features,
+                        grade_label=None,
+                        mat_display=None,
+                        library=library,
                     )
+                    line.noun = noun
+                    line.modifiers = modifiers
+                    line.description = desc_str
+                    line.description_exact = is_exact
 
                     # LLM-sourced lines appear in open items per contract
                     line.open_items.append(f"LLM-sourced class: {l1_reason}")

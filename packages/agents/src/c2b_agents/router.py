@@ -291,6 +291,14 @@ class LlmRouter:
         last_exc: Exception | None = None
 
         for model in models_to_try:
+            # Fail fast if provider API key is not configured
+            if model.startswith("groq/") and not os.environ.get("GROQ_API_KEY"):
+                log.info("GROQ_API_KEY not set; skipping live call to %s", model)
+                continue
+            if model.startswith("gemini/") and not os.environ.get("GEMINI_API_KEY"):
+                log.info("GEMINI_API_KEY not set; skipping live call to %s", model)
+                continue
+
             for attempt in range(self.config.retry_max):
                 t0 = time.perf_counter()
                 try:
@@ -303,6 +311,7 @@ class LlmRouter:
                         "model": model,
                         "messages": messages,
                         "temperature": 0.0,
+                        "timeout": 10,
                     }
 
                     if schema:
