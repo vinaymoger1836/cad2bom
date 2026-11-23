@@ -46,8 +46,9 @@ def _counts(conn: psycopg.Connection[Any], version: str) -> dict[str, int]:
         "library_rule",
     ):
         row = conn.execute(
-            f"SELECT count(*) FROM {table} WHERE version = %s", (version,)
-        ).fetchone()  # noqa: S608
+            f"SELECT count(*) FROM {table} WHERE version = %s",  # noqa: S608
+            (version,),
+        ).fetchone()
         out[table] = int(row[0]) if row else 0
     return out
 
@@ -122,7 +123,8 @@ def store(lib: Library, conn: psycopg.Connection[Any]) -> LoadResult:
                 ],
             )
             cur.executemany(
-                "INSERT INTO library_synonym (version, token, class, lang, weight, kind, context, file) "
+                "INSERT INTO library_synonym "
+                "(version, token, class, lang, weight, kind, context, file) "
                 "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
                 [
                     (
@@ -189,7 +191,8 @@ def search_db(
     SELECT * FROM (
       SELECT 'class' AS kind, code AS key, noun AS label,
              GREATEST(similarity(lower(code || ' ' || noun), %(q)s),
-                      CASE WHEN lower(code || ' ' || noun) LIKE %(like)s THEN 0.6 ELSE 0 END) AS score
+                      CASE WHEN lower(code || ' ' || noun) LIKE %(like)s
+                           THEN 0.6 ELSE 0 END) AS score
         FROM library_class WHERE version = %(v)s
       UNION ALL
       SELECT 'synonym', token, class,
@@ -198,7 +201,8 @@ def search_db(
       UNION ALL
       SELECT 'material', code, display,
              GREATEST(similarity(lower(code || ' ' || display), %(q)s),
-                      CASE WHEN lower(code || ' ' || display || ' ' || designations::text) LIKE %(like)s
+                      CASE WHEN lower(code || ' ' || display || ' '
+                                      || designations::text) LIKE %(like)s
                            THEN 0.6 ELSE 0 END)
         FROM library_material WHERE version = %(v)s
       UNION ALL

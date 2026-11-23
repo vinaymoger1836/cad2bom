@@ -75,11 +75,11 @@ def _write_case_yaml(out: Path, case: str, data: dict[str, Any]) -> None:
 
 
 def _stats(ebom: list[dict[str, Any]], spec: Spec) -> dict[str, Any]:
-    leaves = [l for l in ebom if l.get("cad_volume_mm3") is not None]
+    leaves = [line for line in ebom if line.get("cad_volume_mm3") is not None]
     return {
         "ebom_lines": len(ebom),
         "leaf_lines": len(leaves),
-        "solid_instances": sum(l["qty_total"] for l in leaves),
+        "solid_instances": sum(line["qty_total"] for line in leaves),
         "mass_total_g": mass_rollup_g(ebom),
     }
 
@@ -238,7 +238,7 @@ def build_b3(lib: Library, out: Path) -> None:
         "Nothing is added to the BoM before a suggestion is accepted.",
         "The photo is placeholder grey; vision findings come from the cassette recorded in P5.",
     ]
-    blade_line = next(l for l in bom["ebom"] if l["cad_name"] == "Blade")
+    blade_line = next(line for line in bom["ebom"] if line["cad_name"] == "Blade")
     questions = [
         {
             "id": "Q-001",
@@ -457,7 +457,7 @@ def build_b5(lib: Library, out: Path, b2_spec: Spec) -> None:
     _write_step(b2_spec, d / "input" / "bracket_assembly.step")
     raw_rows = xlsx.write_b5(d / "input" / "user_bom.xlsx")
     ebom, _ = build_ebom(ctx, b2_spec)
-    by_name = {l["cad_name"]: l for l in ebom}
+    by_name = {line["cad_name"]: line for line in ebom}
     screw = by_name["Part1"]
     questions = [
         {
@@ -533,7 +533,6 @@ B6_DETAILS = (
 
 
 def build_b6(lib: Library, out: Path) -> None:
-    ctx = Ctx(lib)
     spec = cases.case_b6(lib)
     d = out / DIRS["B6"]
     _write_step(spec, d / "input" / "unknown_product.step")

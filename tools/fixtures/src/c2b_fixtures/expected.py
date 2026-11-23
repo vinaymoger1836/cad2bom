@@ -130,12 +130,12 @@ def build_ebom(ctx: Ctx, root: Spec) -> tuple[list[dict[str, Any]], dict[str, fl
 
 
 def mass_rollup_g(lines: list[dict[str, Any]]) -> float:
-    return round(sum(l["qty_total"] * l["mass_g"] for l in lines if l.get("mass_g")), 4)
+    return round(sum(row["qty_total"] * row["mass_g"] for row in lines if row.get("mass_g")), 4)
 
 
 def build_mbom(ctx: Ctx, ebom: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Collapse phantoms: their children move up to the phantom's parent (docs/04 §10)."""
-    by_id = {l["id"]: l for l in ebom}
+    by_id = {line["id"]: line for line in ebom}
     out: list[dict[str, Any]] = []
     fn = ctx.profile.find_numbers
 
@@ -168,7 +168,7 @@ def build_mbom(ctx: Ctx, ebom: list[dict[str, Any]]) -> list[dict[str, Any]]:
             }
         )
     # resolve parent refs to MBOM ids and assign find numbers per parent
-    ref_to_m = {l["ebom_refs"][0]: l["id"] for l in out}
+    ref_to_m = {row["ebom_refs"][0]: row["id"] for row in out}
     counters: dict[str | None, int] = {}
     for m in out:
         if m["parent"]:

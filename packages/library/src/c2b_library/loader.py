@@ -1,4 +1,7 @@
-"""Read `library/` into validated models. YAML is parsed with `safe_load` only (CLAUDE.md rule 12)."""
+"""Read `library/` into validated models.
+
+YAML is parsed with `safe_load` only (CLAUDE.md rule 12).
+"""
 
 import hashlib
 from dataclasses import dataclass, field

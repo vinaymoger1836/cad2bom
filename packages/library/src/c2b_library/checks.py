@@ -1,6 +1,7 @@
 """Library consistency checks (docs/06 §8). Schema validation happens in the loader; these are
 the cross-file checks: references, standard-table sanity, synonym collisions, rule ids."""
 
+import itertools
 import re
 import unicodedata
 from collections import defaultdict
@@ -48,7 +49,10 @@ def class_codes(lib: Library) -> set[str]:
 
 
 def class_refs(lib: Library) -> set[str]:
-    """Valid targets of a class reference: explicit classes plus branch prefixes (e.g. `fastener`)."""
+    """Valid targets of a class reference: explicit classes plus branch prefixes.
+
+    For example, `fastener`.
+    """
     codes = class_codes(lib)
     refs = set(codes)
     for code in codes:
@@ -335,7 +339,7 @@ def _check_one_table(rel: str, t: StandardTable) -> list[Issue]:
 
     if t.lengths_mm:
         ls = t.lengths_mm
-        if any(b <= a for a, b in zip(ls, ls[1:], strict=False)):
+        if any(b <= a for a, b in itertools.pairwise(ls)):
             out.append(Issue("error", "L-STD-009", rel, "lengths_mm is not strictly ascending"))
     missing = [s for s in t.expected_sizes if s not in names]
     if missing:
