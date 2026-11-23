@@ -1,0 +1,23 @@
+# Make/buy rules (docs/04 §10). STARTER SET for P1; the volume bands arrive in P6.
+stage: makebuy
+id_prefix: R-MKB
+rules:
+  - id: R-MKB-001
+    stage: makebuy
+    when:
+      any:
+        - source_is: std_table
+        - parent_class_is: fastener
+    then: { make_buy: buy }
+    weight: 0.95
+    note: "Standard parts and fasteners are bought"
+  - id: R-MKB-002
+    stage: makebuy
+    when:
+      any:
+        - class_is: sheetmetal.bracket
+        - class_is: moulded.housing
+        - class_is: machined.turned
+    then: { make_buy: supplier_made }
+    weight: 0.7
+    note: "Custom geometry classes: made to your drawing by a supplier unless made in-house"

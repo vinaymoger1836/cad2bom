@@ -1,0 +1,429 @@
+{
+  "case": "B4",
+  "title": "Power bank BoM file",
+  "library_version": "2026.11.0",
+  "inputs": [
+    "input/supplier_bom.xlsx"
+  ],
+  "assertions": [
+    "Every user line is unchanged in `raw` (the cell values as read from the file, including padding spaces).",
+    "Part numbers are normalised only by trimming (canonical form); units pcs/nos become EA.",
+    "Grouped refdes are split (R1-R4, R7 -> 5 designators) and counted; counts equal Menge on every line.",
+    "Gap suggestions are present and exactly those in suggestions.json; nothing is added before acceptance."
+  ],
+  "lines": [
+    {
+      "id": "L-0001",
+      "raw": {
+        "row": 7,
+        "Pos": 1,
+        "Teilenummer": " PB-0001 ",
+        "Item": "PCBA, BMS + boost converter, 10000mAh power bank",
+        "Menge": 1,
+        "Unit": "pcs",
+        "Designator": null,
+        "Hersteller": "Example Electronics",
+        "MPN": null,
+        "Bemerkung": "Main board REV C"
+      },
+      "part_number": "PB-0001",
+      "description": "PCBA, BMS + boost converter, 10000mAh power bank",
+      "qty": 1,
+      "uom": "EA",
+      "uom_raw": "pcs",
+      "refdes": [],
+      "refdes_count_matches_qty": true,
+      "class_acceptable": [
+        "electrical.pcba.bms",
+        "electrical.pcba"
+      ],
+      "origin": "user_bom",
+      "review": "given"
+    },
+    {
+      "id": "L-0002",
+      "raw": {
+        "row": 8,
+        "Pos": 2,
+        "Teilenummer": "PB-0002",
+        "Item": "Li-ion cell 18650 3.7V 3500mAh",
+        "Menge": 3,
+        "Unit": "nos",
+        "Designator": "BT1-BT3",
+        "Hersteller": "Samsung SDI",
+        "MPN": "INR18650-35E",
+        "Bemerkung": null
+      },
+      "part_number": "PB-0002",
+      "description": "Li-ion cell 18650 3.7V 3500mAh",
+      "qty": 3,
+      "uom": "EA",
+      "uom_raw": "nos",
+      "refdes": [
+        "BT1",
+        "BT2",
+        "BT3"
+      ],
+      "refdes_count_matches_qty": true,
+      "class_acceptable": [
+        "electrical.battery.li_ion"
+      ],
+      "origin": "user_bom",
+      "review": "given"
+    },
+    {
+      "id": "L-0003",
+      "raw": {
+        "row": 9,
+        "Pos": 3,
+        "Teilenummer": "PB-0003",
+        "Item": "USB-C receptacle 24-pin, right-angle SMD",
+        "Menge": 1,
+        "Unit": "pcs",
+        "Designator": "J1",
+        "Hersteller": "Example Connectors",
+        "MPN": "TYPEC-24-RA",
+        "Bemerkung": null
+      },
+      "part_number": "PB-0003",
+      "description": "USB-C receptacle 24-pin, right-angle SMD",
+      "qty": 1,
+      "uom": "EA",
+      "uom_raw": "pcs",
+      "refdes": [
+        "J1"
+      ],
+      "refdes_count_matches_qty": true,
+      "class_acceptable": [
+        "electrical.connector.usb_c"
+      ],
+      "origin": "user_bom",
+      "review": "given"
+    },
+    {
+      "id": "L-0004",
+      "raw": {
+        "row": 10,
+        "Pos": 4,
+        "Teilenummer": "PB-0004",
+        "Item": "USB-A receptacle, vertical",
+        "Menge": 1,
+        "Unit": "pcs",
+        "Designator": "J2",
+        "Hersteller": null,
+        "MPN": null,
+        "Bemerkung": null
+      },
+      "part_number": "PB-0004",
+      "description": "USB-A receptacle, vertical",
+      "qty": 1,
+      "uom": "EA",
+      "uom_raw": "pcs",
+      "refdes": [
+        "J2"
+      ],
+      "refdes_count_matches_qty": true,
+      "class_acceptable": [
+        "electrical.connector.usb_a"
+      ],
+      "origin": "user_bom",
+      "review": "given"
+    },
+    {
+      "id": "L-0005",
+      "raw": {
+        "row": 11,
+        "Pos": 5,
+        "Teilenummer": "PB-0005",
+        "Item": "LED 0603 green",
+        "Menge": 4,
+        "Unit": "pcs",
+        "Designator": "D1-D4",
+        "Hersteller": "Everlight",
+        "MPN": "19-217/GHC",
+        "Bemerkung": "charge level indicator"
+      },
+      "part_number": "PB-0005",
+      "description": "LED 0603 green",
+      "qty": 4,
+      "uom": "EA",
+      "uom_raw": "pcs",
+      "refdes": [
+        "D1",
+        "D2",
+        "D3",
+        "D4"
+      ],
+      "refdes_count_matches_qty": true,
+      "class_acceptable": [
+        "electrical.component.led"
+      ],
+      "origin": "user_bom",
+      "review": "given"
+    },
+    {
+      "id": "L-0006",
+      "raw": {
+        "row": 12,
+        "Pos": 6,
+        "Teilenummer": "PB-0006",
+        "Item": "Resistor 10k 1% 0603",
+        "Menge": 5,
+        "Unit": "pcs",
+        "Designator": "R1-R4, R7",
+        "Hersteller": "Yageo",
+        "MPN": "RC0603FR-0710KL",
+        "Bemerkung": null
+      },
+      "part_number": "PB-0006",
+      "description": "Resistor 10k 1% 0603",
+      "qty": 5,
+      "uom": "EA",
+      "uom_raw": "pcs",
+      "refdes": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R7"
+      ],
+      "refdes_count_matches_qty": true,
+      "class_acceptable": [
+        "electrical.component.resistor"
+      ],
+      "origin": "user_bom",
+      "review": "given"
+    },
+    {
+      "id": "L-0007",
+      "raw": {
+        "row": 13,
+        "Pos": 7,
+        "Teilenummer": "PB-0007",
+        "Item": "Capacitor 100nF 16V X7R 0603",
+        "Menge": 4,
+        "Unit": "pcs",
+        "Designator": "C1-C3, C5",
+        "Hersteller": "Murata",
+        "MPN": "GRM188R71C104KA01D",
+        "Bemerkung": null
+      },
+      "part_number": "PB-0007",
+      "description": "Capacitor 100nF 16V X7R 0603",
+      "qty": 4,
+      "uom": "EA",
+      "uom_raw": "pcs",
+      "refdes": [
+        "C1",
+        "C2",
+        "C3",
+        "C5"
+      ],
+      "refdes_count_matches_qty": true,
+      "class_acceptable": [
+        "electrical.component.capacitor"
+      ],
+      "origin": "user_bom",
+      "review": "given"
+    },
+    {
+      "id": "L-0008",
+      "raw": {
+        "row": 14,
+        "Pos": 8,
+        "Teilenummer": "PB-0008",
+        "Item": "IC, battery charger / boost converter",
+        "Menge": 1,
+        "Unit": "nos",
+        "Designator": "U1",
+        "Hersteller": null,
+        "MPN": "IP5310",
+        "Bemerkung": null
+      },
+      "part_number": "PB-0008",
+      "description": "IC, battery charger / boost converter",
+      "qty": 1,
+      "uom": "EA",
+      "uom_raw": "nos",
+      "refdes": [
+        "U1"
+      ],
+      "refdes_count_matches_qty": true,
+      "class_acceptable": [
+        "electrical.component.ic"
+      ],
+      "origin": "user_bom",
+      "review": "given"
+    },
+    {
+      "id": "L-0009",
+      "raw": {
+        "row": 15,
+        "Pos": 9,
+        "Teilenummer": "PB-0009",
+        "Item": "Inductor 1uH 4A",
+        "Menge": 1,
+        "Unit": "pcs",
+        "Designator": "L1",
+        "Hersteller": null,
+        "MPN": null,
+        "Bemerkung": null
+      },
+      "part_number": "PB-0009",
+      "description": "Inductor 1uH 4A",
+      "qty": 1,
+      "uom": "EA",
+      "uom_raw": "pcs",
+      "refdes": [
+        "L1"
+      ],
+      "refdes_count_matches_qty": true,
+      "class_acceptable": [
+        "electrical.component.inductor"
+      ],
+      "origin": "user_bom",
+      "review": "given"
+    },
+    {
+      "id": "L-0010",
+      "raw": {
+        "row": 16,
+        "Pos": 10,
+        "Teilenummer": "PB-0010",
+        "Item": "Tactile switch 3x4x2",
+        "Menge": 1,
+        "Unit": "pcs",
+        "Designator": "SW1",
+        "Hersteller": null,
+        "MPN": null,
+        "Bemerkung": null
+      },
+      "part_number": "PB-0010",
+      "description": "Tactile switch 3x4x2",
+      "qty": 1,
+      "uom": "EA",
+      "uom_raw": "pcs",
+      "refdes": [
+        "SW1"
+      ],
+      "refdes_count_matches_qty": true,
+      "class_acceptable": [
+        "electrical.switch.tactile"
+      ],
+      "origin": "user_bom",
+      "review": "given"
+    },
+    {
+      "id": "L-0011",
+      "raw": {
+        "row": 17,
+        "Pos": 11,
+        "Teilenummer": "PB-0011",
+        "Item": "Housing, top, ABS, black",
+        "Menge": 1,
+        "Unit": "pcs",
+        "Designator": null,
+        "Hersteller": null,
+        "MPN": null,
+        "Bemerkung": "tooling in progress"
+      },
+      "part_number": "PB-0011",
+      "description": "Housing, top, ABS, black",
+      "qty": 1,
+      "uom": "EA",
+      "uom_raw": "pcs",
+      "refdes": [],
+      "refdes_count_matches_qty": true,
+      "class_acceptable": [
+        "moulded.housing.top",
+        "moulded.housing"
+      ],
+      "origin": "user_bom",
+      "review": "given"
+    },
+    {
+      "id": "L-0012",
+      "raw": {
+        "row": 18,
+        "Pos": 12,
+        "Teilenummer": "PB-0012",
+        "Item": "Housing, bottom, ABS, black",
+        "Menge": 1,
+        "Unit": "pcs",
+        "Designator": null,
+        "Hersteller": null,
+        "MPN": null,
+        "Bemerkung": null
+      },
+      "part_number": "PB-0012",
+      "description": "Housing, bottom, ABS, black",
+      "qty": 1,
+      "uom": "EA",
+      "uom_raw": "pcs",
+      "refdes": [],
+      "refdes_count_matches_qty": true,
+      "class_acceptable": [
+        "moulded.housing.bottom",
+        "moulded.housing"
+      ],
+      "origin": "user_bom",
+      "review": "given"
+    },
+    {
+      "id": "L-0013",
+      "raw": {
+        "row": 19,
+        "Pos": 13,
+        "Teilenummer": "PB-0013",
+        "Item": "Screw PT 2.0x6 self-tapping",
+        "Menge": 4,
+        "Unit": "pcs",
+        "Designator": null,
+        "Hersteller": null,
+        "MPN": null,
+        "Bemerkung": null
+      },
+      "part_number": "PB-0013",
+      "description": "Screw PT 2.0x6 self-tapping",
+      "qty": 4,
+      "uom": "EA",
+      "uom_raw": "pcs",
+      "refdes": [],
+      "refdes_count_matches_qty": true,
+      "class_acceptable": [
+        "fastener.screw.self_tapping",
+        "fastener.screw"
+      ],
+      "origin": "user_bom",
+      "review": "given"
+    },
+    {
+      "id": "L-0014",
+      "raw": {
+        "row": 20,
+        "Pos": 14,
+        "Teilenummer": "PB-0014",
+        "Item": "Rating label 40x20mm",
+        "Menge": 1,
+        "Unit": "nos",
+        "Designator": null,
+        "Hersteller": null,
+        "MPN": null,
+        "Bemerkung": null
+      },
+      "part_number": "PB-0014",
+      "description": "Rating label 40x20mm",
+      "qty": 1,
+      "uom": "EA",
+      "uom_raw": "nos",
+      "refdes": [],
+      "refdes_count_matches_qty": true,
+      "class_acceptable": [
+        "label.rating",
+        "label.generic"
+      ],
+      "origin": "user_bom",
+      "review": "given"
+    }
+  ]
+}

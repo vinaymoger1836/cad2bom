@@ -1,0 +1,31 @@
+# Parallel pins (dowels), unhardened, tolerance m6 / h8. d nominal diameter, c chamfer (approx).
+# The recogniser takes the shank length from the model and snaps it to lengths_mm within 0.3 mm.
+standard: ISO 2338
+key: ISO2338
+aliases: [DIN 7, DIN7, DIN 6325, DIN6325, EN ISO 2338]
+family: dowel_pin
+class: fastener.pin.dowel
+edition: "1997"
+tolerance_mm: { d: 0.05, c: 0.3 }
+dims: [d, c]
+monotonic: [c]
+expected_sizes: ["1", "1.5", "2", "2.5", "3", "4", "5", "6", "8", "10", "12", "16", "20", "25"]
+lengths_mm: [2, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 120, 140, 160, 180, 200]
+sizes:
+  - { size: "1",   d: 1,   c: 0.2,  l_min: 3,  l_max: 10 }
+  - { size: "1.5", d: 1.5, c: 0.3,  l_min: 4,  l_max: 16 }
+  - { size: "2",   d: 2,   c: 0.35, l_min: 4,  l_max: 20 }
+  - { size: "2.5", d: 2.5, c: 0.4,  l_min: 5,  l_max: 24 }
+  - { size: "3",   d: 3,   c: 0.5,  l_min: 6,  l_max: 30 }
+  - { size: "4",   d: 4,   c: 0.63, l_min: 8,  l_max: 40 }
+  - { size: "5",   d: 5,   c: 0.8,  l_min: 10, l_max: 50 }
+  - { size: "6",   d: 6,   c: 1.2,  l_min: 12, l_max: 60 }
+  - { size: "8",   d: 8,   c: 1.6,  l_min: 14, l_max: 80 }
+  - { size: "10",  d: 10,  c: 2,    l_min: 18, l_max: 95 }
+  - { size: "12",  d: 12,  c: 2.5,  l_min: 22, l_max: 140 }
+  - { size: "16",  d: 16,  c: 3,    l_min: 26, l_max: 180 }
+  - { size: "20",  d: 20,  c: 3.5,  l_min: 35, l_max: 200 }
+  - { size: "25",  d: 25,  c: 4,    l_min: 50, l_max: 200 }
+source: "ISO 2338 nominal diameters and chamfers entered from the author's recollection; length ranges per diameter are guide values."
+verify: true
+note: "Spot-check d=6 (c 1.2) and d=10 (c 2). DIN 6325 (hardened, m6) is aliased for designation only."

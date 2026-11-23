@@ -1,0 +1,16 @@
+# Product-type skeleton (docs/06 §1). Expected classes for a ceiling fan: a class missing from the
+# BoM becomes a gap suggestion (docs/04 §7.3 source 3). Starter list; verify with a domain expert.
+id: ceiling_fan
+display: Ceiling fan
+match_keywords: [ceiling fan, ceiling-fan, deckenventilator, fan with light]
+expected:
+  - { class: electrical.motor.ac_induction, min_count: 1, note: "Motor (usually modelled as one housing solid)" }
+  - { class: moulded.blade, min_count: 3, note: "Blades; the count is checked against the details text (3, 4 or 5)" }
+  - { class: electrical.capacitor_motor, min_count: 1, note: "Run capacitor (usually not modelled)" }
+  - { class: electrical.switch.pull_chain, min_count: 1, note: "Speed / light control (pull chain or remote receiver)" }
+  - { class: electrical.cable.power_cord, min_count: 1, note: "Mains supply wiring" }
+  - { class: label.rating, min_count: 1, note: "Rating label" }
+  - { class: documentation.manual, min_count: 1, note: "Instruction manual" }
+  - { class: packaging.carton, min_count: 1, note: "Shipper carton" }
+source: "Author's general knowledge of ceiling fans, not a catalogue or standard."
+verify: true

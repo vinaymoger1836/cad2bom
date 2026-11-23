@@ -1,0 +1,552 @@
+{
+  "case": "B1",
+  "title": "Fastener zoo",
+  "library_version": "2026.11.0",
+  "profile": "default",
+  "inputs": [
+    "input/fastener_zoo.step"
+  ],
+  "root": {
+    "name": "B1_FASTENER_ZOO",
+    "class": "assembly.product"
+  },
+  "ebom": [
+    {
+      "id": "L-0001",
+      "parent": null,
+      "level": 1,
+      "find_no": 10,
+      "cad_name": "Part1",
+      "class": "fastener.screw.socket_head",
+      "noun": "SCREW",
+      "modifiers": [
+        "CAP",
+        "SOCKET HEAD"
+      ],
+      "designation": {
+        "standard": "ISO 4762",
+        "key": "ISO4762",
+        "family": "socket_head_cap_screw",
+        "size": "M3",
+        "length_mm": 10
+      },
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "SCREW, CAP, SOCKET HEAD, M3X10, ISO 4762, STEEL 8.8 ZINC PLATED",
+      "description_exact": true,
+      "make_buy": "buy",
+      "origin": "std_recogniser",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 133.84,
+      "material": {
+        "value": "steel_8_8",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 1.0506,
+      "open_items": [
+        "grade assumed: STEEL 8.8 ZINC PLATED"
+      ]
+    },
+    {
+      "id": "L-0002",
+      "parent": null,
+      "level": 1,
+      "find_no": 20,
+      "cad_name": "Part2",
+      "class": "fastener.screw.socket_head",
+      "noun": "SCREW",
+      "modifiers": [
+        "CAP",
+        "SOCKET HEAD"
+      ],
+      "designation": {
+        "standard": "ISO 4762",
+        "key": "ISO4762",
+        "family": "socket_head_cap_screw",
+        "size": "M4",
+        "length_mm": 12
+      },
+      "qty_per_parent": 8,
+      "uom": "EA",
+      "qty_total": 8,
+      "description": "SCREW, CAP, SOCKET HEAD, M4X12, ISO 4762, STEEL 8.8 ZINC PLATED",
+      "description_exact": true,
+      "make_buy": "buy",
+      "origin": "std_recogniser",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 289.15,
+      "material": {
+        "value": "steel_8_8",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 2.2698,
+      "open_items": [
+        "grade assumed: STEEL 8.8 ZINC PLATED"
+      ]
+    },
+    {
+      "id": "L-0003",
+      "parent": null,
+      "level": 1,
+      "find_no": 30,
+      "cad_name": "Part3",
+      "class": "fastener.screw.socket_head",
+      "noun": "SCREW",
+      "modifiers": [
+        "CAP",
+        "SOCKET HEAD"
+      ],
+      "designation": {
+        "standard": "ISO 4762",
+        "key": "ISO4762",
+        "family": "socket_head_cap_screw",
+        "size": "M5",
+        "length_mm": 16
+      },
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "SCREW, CAP, SOCKET HEAD, M5X16, ISO 4762, STEEL 8.8 ZINC PLATED",
+      "description_exact": true,
+      "make_buy": "buy",
+      "origin": "std_recogniser",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 563.24,
+      "material": {
+        "value": "steel_8_8",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 4.4214,
+      "open_items": [
+        "grade assumed: STEEL 8.8 ZINC PLATED"
+      ]
+    },
+    {
+      "id": "L-0004",
+      "parent": null,
+      "level": 1,
+      "find_no": 40,
+      "cad_name": "Part4",
+      "class": "fastener.screw.socket_head",
+      "noun": "SCREW",
+      "modifiers": [
+        "CAP",
+        "SOCKET HEAD"
+      ],
+      "designation": {
+        "standard": "ISO 4762",
+        "key": "ISO4762",
+        "family": "socket_head_cap_screw",
+        "size": "M6",
+        "length_mm": 20
+      },
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "SCREW, CAP, SOCKET HEAD, M6X20, ISO 4762, STEEL 8.8 ZINC PLATED",
+      "description_exact": true,
+      "make_buy": "buy",
+      "origin": "std_recogniser",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 971.77,
+      "material": {
+        "value": "steel_8_8",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 7.6284,
+      "open_items": [
+        "grade assumed: STEEL 8.8 ZINC PLATED"
+      ]
+    },
+    {
+      "id": "L-0005",
+      "parent": null,
+      "level": 1,
+      "find_no": 50,
+      "cad_name": "Part5",
+      "class": "fastener.screw.socket_head",
+      "noun": "SCREW",
+      "modifiers": [
+        "CAP",
+        "SOCKET HEAD"
+      ],
+      "designation": {
+        "standard": "ISO 4762",
+        "key": "ISO4762",
+        "family": "socket_head_cap_screw",
+        "size": "M8",
+        "length_mm": 25
+      },
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "SCREW, CAP, SOCKET HEAD, M8X25, ISO 4762, STEEL 8.8 ZINC PLATED",
+      "description_exact": true,
+      "make_buy": "buy",
+      "origin": "std_recogniser",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 2193.79,
+      "material": {
+        "value": "steel_8_8",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 17.2213,
+      "open_items": [
+        "grade assumed: STEEL 8.8 ZINC PLATED"
+      ]
+    },
+    {
+      "id": "L-0006",
+      "parent": null,
+      "level": 1,
+      "find_no": 60,
+      "cad_name": "Part6",
+      "class": "fastener.nut.hex",
+      "noun": "NUT",
+      "modifiers": [
+        "HEX"
+      ],
+      "designation": {
+        "standard": "ISO 4032",
+        "key": "ISO4032",
+        "family": "hex_nut_style1",
+        "size": "M4",
+        "length_mm": null
+      },
+      "qty_per_parent": 8,
+      "uom": "EA",
+      "qty_total": 8,
+      "description": "NUT, HEX, M4, ISO 4032, STEEL 8.8 ZINC PLATED",
+      "description_exact": true,
+      "make_buy": "buy",
+      "origin": "std_recogniser",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 95.58,
+      "material": {
+        "value": "steel_8_8",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 0.7503,
+      "open_items": [
+        "grade assumed: STEEL 8.8 ZINC PLATED"
+      ]
+    },
+    {
+      "id": "L-0007",
+      "parent": null,
+      "level": 1,
+      "find_no": 70,
+      "cad_name": "Part7",
+      "class": "fastener.nut.hex",
+      "noun": "NUT",
+      "modifiers": [
+        "HEX"
+      ],
+      "designation": {
+        "standard": "ISO 4032",
+        "key": "ISO4032",
+        "family": "hex_nut_style1",
+        "size": "M6",
+        "length_mm": null
+      },
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "NUT, HEX, M6, ISO 4032, STEEL 8.8 ZINC PLATED",
+      "description_exact": true,
+      "make_buy": "buy",
+      "origin": "std_recogniser",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 303.31,
+      "material": {
+        "value": "steel_8_8",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 2.381,
+      "open_items": [
+        "grade assumed: STEEL 8.8 ZINC PLATED"
+      ]
+    },
+    {
+      "id": "L-0008",
+      "parent": null,
+      "level": 1,
+      "find_no": 80,
+      "cad_name": "Part8",
+      "class": "fastener.washer.plain",
+      "noun": "WASHER",
+      "modifiers": [
+        "PLAIN"
+      ],
+      "designation": {
+        "standard": "ISO 7089",
+        "key": "ISO7089",
+        "family": "plain_washer_normal",
+        "size": "M4",
+        "length_mm": null
+      },
+      "qty_per_parent": 8,
+      "uom": "EA",
+      "qty_total": 8,
+      "description": "WASHER, PLAIN, M4, ISO 7089, STEEL ZINC PLATED",
+      "description_exact": true,
+      "make_buy": "buy",
+      "origin": "std_recogniser",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 39.28,
+      "material": {
+        "value": "steel_200hv",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 0.3083,
+      "open_items": [
+        "grade assumed: STEEL ZINC PLATED"
+      ]
+    },
+    {
+      "id": "L-0009",
+      "parent": null,
+      "level": 1,
+      "find_no": 90,
+      "cad_name": "Part9",
+      "class": "fastener.washer.plain",
+      "noun": "WASHER",
+      "modifiers": [
+        "PLAIN"
+      ],
+      "designation": {
+        "standard": "ISO 7089",
+        "key": "ISO7089",
+        "family": "plain_washer_normal",
+        "size": "M6",
+        "length_mm": null
+      },
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "WASHER, PLAIN, M6, ISO 7089, STEEL ZINC PLATED",
+      "description_exact": true,
+      "make_buy": "buy",
+      "origin": "std_recogniser",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 129.48,
+      "material": {
+        "value": "steel_200hv",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 1.0164,
+      "open_items": [
+        "grade assumed: STEEL ZINC PLATED"
+      ]
+    },
+    {
+      "id": "L-0010",
+      "parent": null,
+      "level": 1,
+      "find_no": 100,
+      "cad_name": "Part10",
+      "class": "bearing.ball.deep_groove",
+      "noun": "BEARING",
+      "modifiers": [
+        "BALL",
+        "DEEP GROOVE"
+      ],
+      "designation": {
+        "standard": "ISO 15",
+        "key": "ISO15",
+        "family": "deep_groove_ball_bearing",
+        "size": "6201",
+        "length_mm": null
+      },
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "BEARING, BALL, DEEP GROOVE, 6201",
+      "description_exact": true,
+      "make_buy": "buy",
+      "origin": "std_recogniser",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 6889.39,
+      "material": {
+        "value": "steel_100cr6",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "mass_g": 53.8061,
+      "open_items": [
+        "material assumed: Bearing steel 100Cr6 / AISI 52100"
+      ]
+    },
+    {
+      "id": "L-0011",
+      "parent": null,
+      "level": 1,
+      "find_no": 110,
+      "cad_name": "Part11",
+      "class": "fastener.pin.dowel",
+      "noun": "DOWEL PIN",
+      "modifiers": [
+        "PARALLEL"
+      ],
+      "designation": {
+        "standard": "ISO 2338",
+        "key": "ISO2338",
+        "family": "dowel_pin",
+        "size": "6",
+        "length_mm": 20
+      },
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "DOWEL PIN, PARALLEL, 6X20, ISO 2338, STEEL",
+      "description_exact": true,
+      "make_buy": "buy",
+      "origin": "std_recogniser",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 546.14,
+      "material": {
+        "value": "steel_c45",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "mass_g": 4.2872,
+      "open_items": [
+        "grade assumed: STEEL"
+      ]
+    },
+    {
+      "id": "L-0012",
+      "parent": null,
+      "level": 1,
+      "find_no": 120,
+      "cad_name": "Part12",
+      "class": "seal.o_ring",
+      "noun": "O-RING",
+      "modifiers": [],
+      "designation": {
+        "standard": "ISO 3601-1",
+        "key": "ISO3601",
+        "family": "o_ring_metric",
+        "size": "20x2",
+        "length_mm": null
+      },
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "O-RING, 20X2, ISO 3601-1, NBR 70",
+      "description_exact": true,
+      "make_buy": "buy",
+      "origin": "std_recogniser",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 217.13,
+      "material": {
+        "value": "nbr_70",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "mass_g": 0.2714,
+      "open_items": [
+        "grade assumed: NBR 70"
+      ]
+    }
+  ],
+  "stats": {
+    "ebom_lines": 12,
+    "leaf_lines": 12,
+    "solid_instances": 33,
+    "mass_total_g": 118.711
+  },
+  "shapes_volume_mm3": {
+    "Part1": 133.84,
+    "Part2": 289.15,
+    "Part3": 563.24,
+    "Part4": 971.77,
+    "Part5": 2193.79,
+    "Part6": 95.58,
+    "Part7": 303.31,
+    "Part8": 39.28,
+    "Part9": 129.48,
+    "Part10": 6889.39,
+    "Part11": 546.14,
+    "Part12": 217.13
+  },
+  "llm_calls": 0,
+  "assertions": [
+    "Every item is recognised with the correct standard, size and length (designation block).",
+    "Quantities are exact (qty_total).",
+    "No LLM call is made (llm_calls == 0).",
+    "Descriptions equal the expected strings (profile template; description_exact is true).",
+    "Standard-part grade is the profile default, source=library, confidence 0.5, listed in open items.",
+    "Part volumes match shapes_volume_mm3 within 0.5%."
+  ]
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "S-001",
+    "class": "documentation.manual",
+    "rule": "R-GAP-002",
+    "origin": "gap_rule",
+    "level": "ebom",
+    "text": "Add a user manual?",
+    "review": "suggested"
+  },
+  {
+    "id": "S-002",
+    "class": "packaging.carton",
+    "rule": "R-GAP-003",
+    "origin": "gap_rule",
+    "level": "mbom",
+    "text": "Add a shipper carton?",
+    "review": "suggested"
+  },
+  {
+    "id": "S-003",
+    "class": "label.transport",
+    "rule": "R-GAP-004",
+    "origin": "gap_rule",
+    "level": "ebom",
+    "text": "Lithium cells are present: add a transport label?",
+    "review": "suggested"
+  },
+  {
+    "id": "S-004",
+    "class": "consumable.solder",
+    "rule": "archetype:power_bank",
+    "origin": "skeleton",
+    "level": "mbom",
+    "text": "Power banks usually need solder for hand or wave soldered joints. Add it?",
+    "review": "suggested"
+  }
+]

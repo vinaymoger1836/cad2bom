@@ -1,0 +1,80 @@
+# Metric O-rings. d1 inside diameter, d2 cross-section. ISO 3601-1 defines the size series; the
+# rows below are common metric catalogue sizes (not the complete ISO 3601 list). AS568 inch sizes
+# are for a later version (docs/06 §4). Cross-section tolerance is wider than ID tolerance on
+# purpose: modelled O-rings are often approximated.
+standard: ISO 3601-1
+key: ISO3601
+aliases: [ISO 3601, DIN 3771, DIN3771, ISO 3601-1:2012]
+family: o_ring_metric
+class: seal.o_ring
+edition: "2012"
+tolerance_mm: { d1: 0.25, d2: 0.1 }
+dims: [d1, d2]
+group_by: d2
+expected_sizes: ["10x1.5", "20x2", "20x2.5", "20x3", "30x2", "30x3", "50x3", "50x4"]
+sizes:
+  # d2 = 1.5
+  - { size: "2.5x1.5", d1: 2.5, d2: 1.5 }
+  - { size: "3x1.5",   d1: 3,   d2: 1.5 }
+  - { size: "4x1.5",   d1: 4,   d2: 1.5 }
+  - { size: "5x1.5",   d1: 5,   d2: 1.5 }
+  - { size: "6x1.5",   d1: 6,   d2: 1.5 }
+  - { size: "8x1.5",   d1: 8,   d2: 1.5 }
+  - { size: "10x1.5",  d1: 10,  d2: 1.5 }
+  - { size: "12x1.5",  d1: 12,  d2: 1.5 }
+  # d2 = 2
+  - { size: "3x2",     d1: 3,   d2: 2 }
+  - { size: "4x2",     d1: 4,   d2: 2 }
+  - { size: "5x2",     d1: 5,   d2: 2 }
+  - { size: "6x2",     d1: 6,   d2: 2 }
+  - { size: "8x2",     d1: 8,   d2: 2 }
+  - { size: "10x2",    d1: 10,  d2: 2 }
+  - { size: "12x2",    d1: 12,  d2: 2 }
+  - { size: "14x2",    d1: 14,  d2: 2 }
+  - { size: "16x2",    d1: 16,  d2: 2 }
+  - { size: "18x2",    d1: 18,  d2: 2 }
+  - { size: "20x2",    d1: 20,  d2: 2 }
+  - { size: "22x2",    d1: 22,  d2: 2 }
+  - { size: "25x2",    d1: 25,  d2: 2 }
+  - { size: "28x2",    d1: 28,  d2: 2 }
+  - { size: "30x2",    d1: 30,  d2: 2 }
+  - { size: "35x2",    d1: 35,  d2: 2 }
+  - { size: "40x2",    d1: 40,  d2: 2 }
+  # d2 = 2.5
+  - { size: "5x2.5",   d1: 5,   d2: 2.5 }
+  - { size: "8x2.5",   d1: 8,   d2: 2.5 }
+  - { size: "10x2.5",  d1: 10,  d2: 2.5 }
+  - { size: "12x2.5",  d1: 12,  d2: 2.5 }
+  - { size: "15x2.5",  d1: 15,  d2: 2.5 }
+  - { size: "20x2.5",  d1: 20,  d2: 2.5 }
+  - { size: "25x2.5",  d1: 25,  d2: 2.5 }
+  - { size: "30x2.5",  d1: 30,  d2: 2.5 }
+  - { size: "40x2.5",  d1: 40,  d2: 2.5 }
+  # d2 = 3
+  - { size: "10x3",    d1: 10,  d2: 3 }
+  - { size: "12x3",    d1: 12,  d2: 3 }
+  - { size: "15x3",    d1: 15,  d2: 3 }
+  - { size: "20x3",    d1: 20,  d2: 3 }
+  - { size: "25x3",    d1: 25,  d2: 3 }
+  - { size: "30x3",    d1: 30,  d2: 3 }
+  - { size: "35x3",    d1: 35,  d2: 3 }
+  - { size: "40x3",    d1: 40,  d2: 3 }
+  - { size: "50x3",    d1: 50,  d2: 3 }
+  - { size: "60x3",    d1: 60,  d2: 3 }
+  # d2 = 4
+  - { size: "20x4",    d1: 20,  d2: 4 }
+  - { size: "30x4",    d1: 30,  d2: 4 }
+  - { size: "40x4",    d1: 40,  d2: 4 }
+  - { size: "50x4",    d1: 50,  d2: 4 }
+  - { size: "60x4",    d1: 60,  d2: 4 }
+  - { size: "70x4",    d1: 70,  d2: 4 }
+  - { size: "80x4",    d1: 80,  d2: 4 }
+  # d2 = 5
+  - { size: "30x5",    d1: 30,  d2: 5 }
+  - { size: "40x5",    d1: 40,  d2: 5 }
+  - { size: "50x5",    d1: 50,  d2: 5 }
+  - { size: "70x5",    d1: 70,  d2: 5 }
+  - { size: "90x5",    d1: 90,  d2: 5 }
+source: "Common metric O-ring catalogue sizes (ID x cross-section) entered from the author's recollection of supplier catalogues. NOT the complete ISO 3601-1 size series and the preferred cross-sections 1.78/2.62/3.53/5.33 (inch-derived) are not included."
+verify: true
+note: "Spot-check that 20x2 is stocked by your O-ring supplier. Material is not in the table: the profile default seal_elastomer (NBR 70) applies."

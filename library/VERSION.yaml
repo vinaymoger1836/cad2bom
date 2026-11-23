@@ -1,0 +1,7 @@
+# Library version: YYYY.MM.patch. Jobs pin the version they ran with (docs/06 intro).
+# A loaded version is immutable: change content -> bump this file, or `c2b-library load` refuses.
+version: "2026.11.0"
+date: 2026-11-20
+changelog:
+  - "P1 initial library: taxonomy, materials, 16 standard tables, EN + DE synonyms, headers, units, default profile, confidence weights, starter rules, two archetypes."
+  - "All standard-part values were entered from the author's knowledge of the standards and have NOT been checked against the purchased standard documents; every table carries verify: true unless noted."

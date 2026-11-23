@@ -1,0 +1,18 @@
+# Validation rules (docs/04 §11). STARTER SET for P1; implemented in P6.
+stage: validate
+id_prefix: R-VAL
+rules:
+  - id: R-VAL-001
+    stage: validate
+    when:
+      expr: "qty_per_parent <= 0"
+    then: { flag: blocking_quantity }
+    weight: 1.0
+    note: "A quantity of zero or below blocks approval"
+  - id: R-VAL-002
+    stage: validate
+    when:
+      source_is: llm
+    then: { flag: open_item_llm_value }
+    weight: 1.0
+    note: "Every LLM-sourced value appears in the open items list"

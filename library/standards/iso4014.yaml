@@ -1,0 +1,32 @@
+# Hexagon head bolts, partial thread (product grades A and B). Head dimensions equal ISO 4017;
+# thread length b depends on the screw length. DIN 931 is the superseded equivalent.
+standard: ISO 4014
+key: ISO4014
+aliases: [DIN 931, DIN931, EN ISO 4014]
+family: hex_head_bolt_partial_thread
+class: fastener.bolt.hex
+edition: "2011"
+tolerance_mm: { d: 0.15, s: 0.25, k: 0.25 }
+dims: [d, s, k]
+monotonic: [s, k]
+expected_sizes: [M3, M4, M5, M6, M8, M10, M12, M14, M16, M18, M20, M22, M24]
+lengths_mm: [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 180, 200, 220, 240, 260, 280, 300]
+# b125 = thread length for l <= 125 mm (2d + 6). Longer screws have a longer thread (2d + 12 up to
+# 200 mm, 2d + 25 above); the recogniser uses the shank, not the thread, so it is data only.
+sizes:
+  - { size: M3,   d: 3,   P: 0.5,  s: 5.5,  k: 2,    b125: 12, l_min: 20, l_max: 30 }
+  - { size: M4,   d: 4,   P: 0.7,  s: 7,    k: 2.8,  b125: 14, l_min: 25, l_max: 40 }
+  - { size: M5,   d: 5,   P: 0.8,  s: 8,    k: 3.5,  b125: 16, l_min: 25, l_max: 50 }
+  - { size: M6,   d: 6,   P: 1,    s: 10,   k: 4,    b125: 18, l_min: 30, l_max: 60 }
+  - { size: M8,   d: 8,   P: 1.25, s: 13,   k: 5.3,  b125: 22, l_min: 30, l_max: 80 }
+  - { size: M10,  d: 10,  P: 1.5,  s: 16,   k: 6.4,  b125: 26, l_min: 40, l_max: 100 }
+  - { size: M12,  d: 12,  P: 1.75, s: 18,   k: 7.5,  b125: 30, l_min: 50, l_max: 120 }
+  - { size: M14,  d: 14,  P: 2,    s: 21,   k: 8.8,  b125: 34, l_min: 60, l_max: 140 }
+  - { size: M16,  d: 16,  P: 2,    s: 24,   k: 10,   b125: 38, l_min: 60, l_max: 160 }
+  - { size: M18,  d: 18,  P: 2.5,  s: 27,   k: 11.5, b125: 42, l_min: 70, l_max: 180 }
+  - { size: M20,  d: 20,  P: 2.5,  s: 30,   k: 12.5, b125: 46, l_min: 70, l_max: 200 }
+  - { size: M22,  d: 22,  P: 2.5,  s: 34,   k: 14,   b125: 50, l_min: 80, l_max: 220 }
+  - { size: M24,  d: 24,  P: 3,    s: 36,   k: 15,   b125: 54, l_min: 90, l_max: 240 }
+source: "ISO 4014 head dimensions identical to ISO 4017 (entered from the author's recollection); thread length rule b = 2d + 6 for l <= 125 mm; length ranges are guide values."
+verify: true
+note: "Spot-check thread length b125 for M10 (26) and M12 (30)."

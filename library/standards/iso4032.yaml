@@ -1,0 +1,32 @@
+# Hexagon nuts, style 1, product grades A and B. DIN 934 is the older near-equivalent
+# (DIN 934 uses different s for M10, M12, M14, M22; recognised as an alias only with a note).
+standard: ISO 4032
+key: ISO4032
+aliases: [DIN 934, DIN934, EN ISO 4032]
+family: hex_nut_style1
+class: fastener.nut.hex
+edition: "2012"
+tolerance_mm: { d: 0.2, s: 0.25, m: 0.3 }
+dims: [d, s, m]
+monotonic: [s, m]
+expected_sizes: [M2, M2.5, M3, M4, M5, M6, M8, M10, M12, M14, M16, M18, M20, M22, M24]
+# d nominal thread; P coarse pitch; s across flats (max); m nut height (max).
+sizes:
+  - { size: M2,   d: 2,   P: 0.4,  s: 4,    m: 1.6 }
+  - { size: M2.5, d: 2.5, P: 0.45, s: 5,    m: 2 }
+  - { size: M3,   d: 3,   P: 0.5,  s: 5.5,  m: 2.4 }
+  - { size: M4,   d: 4,   P: 0.7,  s: 7,    m: 3.2 }
+  - { size: M5,   d: 5,   P: 0.8,  s: 8,    m: 4.7 }
+  - { size: M6,   d: 6,   P: 1,    s: 10,   m: 5.2 }
+  - { size: M8,   d: 8,   P: 1.25, s: 13,   m: 6.8 }
+  - { size: M10,  d: 10,  P: 1.5,  s: 16,   m: 8.4 }
+  - { size: M12,  d: 12,  P: 1.75, s: 18,   m: 10.8 }
+  - { size: M14,  d: 14,  P: 2,    s: 21,   m: 12.8 }
+  - { size: M16,  d: 16,  P: 2,    s: 24,   m: 14.8 }
+  - { size: M18,  d: 18,  P: 2.5,  s: 27,   m: 15.8 }
+  - { size: M20,  d: 20,  P: 2.5,  s: 30,   m: 18 }
+  - { size: M22,  d: 22,  P: 2.5,  s: 34,   m: 19.4 }
+  - { size: M24,  d: 24,  P: 3,    s: 36,   m: 21.5 }
+source: "ISO 4032 dimensions (s, m max) entered from the author's recollection and common supplier catalogue tables."
+verify: true
+note: "Spot-check M6 (s 10, m 5.2) and M12 (s 18, m 10.8)."

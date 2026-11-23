@@ -1,0 +1,105 @@
+# BoM file header synonyms and value patterns (docs/06 §7, docs/03 §4). The header mapper scores
+# each column per target field: header_match_weight * (header regex matches) +
+# value_match_weight * (share of cells fitting value_kind, if >= value_min_share).
+# A required field that is unmapped, or two fields within ambiguity_margin on one column, goes to the
+# L3 fallback (docs/04 §9) or becomes a question. Regexes are matched against the trimmed,
+# case-folded header text.
+header_row_min_cells: 3
+scoring:
+  header_match_weight: 0.6
+  value_match_weight: 0.4
+  accept_threshold: 0.6
+  ambiguity_margin: 0.15
+
+fields:
+  find_no:
+    header_patterns:
+      - { lang: en, regex: '^(item|item no\.?|find( no\.?)?|pos\.?|position|line|line no\.?|s\.?\s?no\.?|sr\.?\s?no\.?|#|no\.)$' }
+      - { lang: de, regex: '^(pos\.?|position|lfd\.?\s?nr\.?|nr\.?)$' }
+    value_kind: level_dotted
+    note: "Often 1,2,3 or 1.1, 1.2 (dotted = indent levels)."
+  part_number:
+    required: true
+    header_patterns:
+      - { lang: en, regex: '^(p/?n\.?|part\s?(no\.?|number|#)|item\s?(code|number)|item\s?no\.?|material\s?(no\.?|number)|article( no\.?| number)?|sku|code|drawing\s?(no\.?|number)|dwg\s?no\.?|doc(ument)?\s?no\.?)$' }
+      - { lang: de, regex: '^(teilenummer|teile-?nr\.?|artikel-?nr\.?|artikelnummer|sachnummer|zeichnungsnummer|zeichnungs-?nr\.?|bestellnummer|bestell-?nr\.?)$' }
+    value_kind: part_number_like
+  description:
+    required: true
+    header_patterns:
+      - { lang: en, regex: '^(desc(ription)?\.?|part\s?description|item\s?description|name|part\s?name|component|designation|title)$' }
+      - { lang: de, regex: '^(beschreibung|benennung|bezeichnung|artikelbezeichnung|teilebezeichnung)$' }
+    value_kind: long_text
+  quantity:
+    required: true
+    header_patterns:
+      - { lang: en, regex: '^(qty\.?|quantity|qnty|q.?ty|nos\.?|no\.? of pcs|pcs|count|req\.?\s?qty|required qty|per assy\.?|qty/assy)$' }
+      - { lang: de, regex: '^(menge|anzahl|stück|stk\.?|stückzahl|st\.)$' }
+    value_kind: positive_number
+    value_min_share: 0.9
+  uom:
+    header_patterns:
+      - { lang: en, regex: '^(uom|unit|units|u/m|unit of measure|um)$' }
+      - { lang: de, regex: '^(einheit|me|mengeneinheit)$' }
+    value_kind: unit_token
+  refdes:
+    header_patterns:
+      - { lang: en, regex: '^(ref\.?\s?des\.?|refdes|reference(s)?|designator(s)?|ref\.?|location)$' }
+      - { lang: de, regex: '^(bauteilbezeichnung|referenz|position(en)? auf (der )?leiterplatte|bestückungsplatz)$' }
+    value_kind: refdes_list
+    note: "Electronics BoMs: grouped like R1-R4, R7, C3."
+  level:
+    header_patterns:
+      - { lang: en, regex: '^(level|lvl|indent|bom level|hierarchy)$' }
+      - { lang: de, regex: '^(ebene|stufe|strukturstufe)$' }
+    value_kind: level_dotted
+  revision:
+    header_patterns:
+      - { lang: en, regex: '^(rev\.?|revision|issue|ver\.?|version)$' }
+      - { lang: de, regex: '^(rev\.?|revision|index|änderungsstand|aenderungsstand)$' }
+    value_kind: text
+  material:
+    header_patterns:
+      - { lang: en, regex: '^(material|mat\.?|matl\.?|material spec(ification)?|spec)$' }
+      - { lang: de, regex: '^(werkstoff|material|werkstoffbezeichnung)$' }
+    value_kind: text
+  finish:
+    header_patterns:
+      - { lang: en, regex: '^(finish|surface|surface treatment|coating|plating)$' }
+      - { lang: de, regex: '^(oberfläche|oberflaeche|oberflächenbehandlung|oberflaechenbehandlung|beschichtung)$' }
+    value_kind: text
+  mass:
+    header_patterns:
+      - { lang: en, regex: '^(mass|weight|wt\.?|unit weight|mass \(g\)|weight \(g\)|weight \(kg\)|mass \(kg\))$' }
+      - { lang: de, regex: '^(masse|gewicht|stückgewicht|stueckgewicht)( \[?(g|kg)\]?)?$' }
+    value_kind: positive_number
+  mpn:
+    header_patterns:
+      - { lang: en, regex: '^(mpn|mfr\.?\s?p/?n\.?|mfg\.?\s?p/?n\.?|manufacturer part( no\.?| number)?|mfr\.? part( no\.?| number)?|supplier part( no\.?| number)?|spn)$' }
+      - { lang: de, regex: '^(herstellernummer|hersteller-?teilenummer|herstellerteilenummer|hersteller-?nr\.?|lieferantenteilenummer)$' }
+    value_kind: part_number_like
+  manufacturer:
+    header_patterns:
+      - { lang: en, regex: '^(manufacturer|mfr\.?|mfg\.?|make|brand|vendor|supplier)$' }
+      - { lang: de, regex: '^(hersteller|lieferant|marke)$' }
+    value_kind: text
+  value:
+    header_patterns:
+      - { lang: en, regex: '^(value|val\.?|component value|rating)$' }
+      - { lang: de, regex: '^(wert|nennwert)$' }
+    value_kind: text
+  footprint:
+    header_patterns:
+      - { lang: en, regex: '^(footprint|package|pcb footprint|case|case/package)$' }
+      - { lang: de, regex: '^(gehäuse|gehaeuse|bauform|footprint)$' }
+    value_kind: text
+  notes:
+    header_patterns:
+      - { lang: en, regex: '^(notes?|remarks?|comments?|comment|info|additional info)$' }
+      - { lang: de, regex: '^(bemerkung(en)?|anmerkung(en)?|hinweis(e)?|kommentar)$' }
+    value_kind: long_text
+  make_buy:
+    header_patterns:
+      - { lang: en, regex: '^(make/buy|make or buy|m/b|source|sourcing|procurement)$' }
+      - { lang: de, regex: '^(eigenfertigung/fremdbezug|ef/fb|beschaffungsart)$' }
+    value_kind: text

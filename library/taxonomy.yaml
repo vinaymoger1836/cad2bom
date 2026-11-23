@@ -1,0 +1,465 @@
+# Class taxonomy (docs/06 §2). Code = family.group[.type], three levels at most.
+# Fields not set on a class come from `defaults`. noun + modifiers feed the noun-first description
+# (docs/04 §10); `description_template` placeholders must be listed in template_fields.
+#   size        designated size incl. length for screws, e.g. M4x12; bore x OD x width for bearings
+#   standard    standard designation, e.g. ISO 4762
+#   grade       grade / property class text from the profile default or the user
+#   dims        other key dimensions for custom parts, e.g. 120x40x2
+# usually_modelled: false -> a user line with no CAD match is not flagged (docs/04 §7.2).
+# buy_as_assembly: true -> the assembly becomes ONE buy line; children are notes (docs/04 §7.1).
+# unspsc: optional 8-digit UNSPSC commodity code for purchasing systems (verify before use).
+template_fields: [noun, modifiers, size, standard, grade, material, finish, dims, length, designation, rating, colour]
+default_template: "{noun}, {modifiers}, {dims}, {material}"
+defaults:
+  uom: EA
+  make_buy_default: buy
+  usually_modelled: true
+  buy_as_assembly: false
+
+classes:
+  # ===== FASTENERS ==================================================================================
+  - { code: fastener.screw, noun: SCREW, modifiers: [], description_template: "{noun}, {size}, {standard}, {grade}", material_default_profile_key: fastener_steel, note: "Generic screw: used when only 'screw-like' is known (docs/04 §4)" }
+  - { code: fastener.screw.socket_head, noun: SCREW, modifiers: [CAP, SOCKET HEAD], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO4762, DIN912, ASME_B18_3], material_default_profile_key: fastener_steel, unspsc: "31161502" }
+  - { code: fastener.screw.hex_head, noun: SCREW, modifiers: [HEX HEAD], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO4017, DIN933], material_default_profile_key: fastener_steel, unspsc: "31161502" }
+  - { code: fastener.screw.button_head, noun: SCREW, modifiers: [BUTTON HEAD, SOCKET], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO7380], material_default_profile_key: fastener_steel, unspsc: "31161502" }
+  - { code: fastener.screw.countersunk, noun: SCREW, modifiers: [COUNTERSUNK, SOCKET], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO10642, DIN7991], material_default_profile_key: fastener_steel, unspsc: "31161502" }
+  - { code: fastener.screw.pan_head, noun: SCREW, modifiers: [PAN HEAD], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO7045, ISO1207], material_default_profile_key: fastener_steel, unspsc: "31161502" }
+  - { code: fastener.screw.cheese_head, noun: SCREW, modifiers: [CHEESE HEAD], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO1207, DIN84], material_default_profile_key: fastener_steel }
+  - { code: fastener.screw.flat_head, noun: SCREW, modifiers: [COUNTERSUNK, SLOTTED OR CROSS], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO7046, ISO2009], material_default_profile_key: fastener_steel }
+  - { code: fastener.screw.set, noun: SCREW, modifiers: [SET, SOCKET], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO4026, ISO4027, ISO4029], material_default_profile_key: fastener_steel }
+  - { code: fastener.screw.self_tapping, noun: SCREW, modifiers: [SELF TAPPING], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO1481, ISO7049], material_default_profile_key: fastener_steel }
+  - { code: fastener.screw.thread_forming, noun: SCREW, modifiers: [THREAD FORMING], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO7085], material_default_profile_key: fastener_steel }
+  - { code: fastener.screw.shoulder, noun: SCREW, modifiers: [SHOULDER], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO7379], material_default_profile_key: fastener_steel }
+  - { code: fastener.screw.thumb, noun: SCREW, modifiers: [THUMB], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [DIN464, DIN653], material_default_profile_key: fastener_steel }
+  - { code: fastener.screw.wood, noun: SCREW, modifiers: [WOOD], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [DIN7505], material_default_profile_key: fastener_steel }
+  - { code: fastener.screw.captive, noun: SCREW, modifiers: [CAPTIVE, PANEL], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", material_default_profile_key: fastener_steel }
+  - { code: fastener.bolt, noun: BOLT, modifiers: [], description_template: "{noun}, {size}, {standard}, {grade}", material_default_profile_key: fastener_steel, note: "Generic bolt" }
+  - { code: fastener.bolt.hex, noun: BOLT, modifiers: [HEX HEAD], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO4014, DIN931], material_default_profile_key: fastener_steel, unspsc: "31161501" }
+  - { code: fastener.bolt.carriage, noun: BOLT, modifiers: [CARRIAGE], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [DIN603, DIN607], material_default_profile_key: fastener_steel }
+  - { code: fastener.bolt.flange, noun: BOLT, modifiers: [HEX FLANGE], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO4162, DIN6921], material_default_profile_key: fastener_steel }
+  - { code: fastener.bolt.eye, noun: BOLT, modifiers: [EYE], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [DIN444], material_default_profile_key: fastener_steel }
+  - { code: fastener.bolt.anchor, noun: ANCHOR BOLT, modifiers: [], description_template: "{noun}, {size}, {grade}", material_default_profile_key: fastener_steel }
+  - { code: fastener.stud, noun: STUD, modifiers: [], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [DIN938, DIN939, DIN976], material_default_profile_key: fastener_steel }
+  - { code: fastener.threaded_rod, noun: THREADED ROD, modifiers: [], uom: M, description_template: "{noun}, {size}, {standard}, {grade}", standard_families: [DIN975], material_default_profile_key: fastener_steel }
+  - { code: fastener.nut, noun: NUT, modifiers: [], description_template: "{noun}, {size}, {standard}, {grade}", material_default_profile_key: fastener_steel, note: "Generic nut" }
+  - { code: fastener.nut.hex, noun: NUT, modifiers: [HEX], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO4032, DIN934, ISO4035], material_default_profile_key: fastener_steel, unspsc: "31161601" }
+  - { code: fastener.nut.nyloc, noun: NUT, modifiers: [HEX, NYLON INSERT LOCK], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO10511, ISO7040, DIN985], material_default_profile_key: fastener_steel }
+  - { code: fastener.nut.flange, noun: NUT, modifiers: [HEX FLANGE], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO4161, DIN6923], material_default_profile_key: fastener_steel }
+  - { code: fastener.nut.cap, noun: NUT, modifiers: [CAP, DOME], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [DIN1587, DIN986], material_default_profile_key: fastener_steel }
+  - { code: fastener.nut.wing, noun: NUT, modifiers: [WING], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [DIN315], material_default_profile_key: fastener_steel }
+  - { code: fastener.nut.square, noun: NUT, modifiers: [SQUARE], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [DIN557, DIN562], material_default_profile_key: fastener_steel }
+  - { code: fastener.nut.t_slot, noun: NUT, modifiers: [T-SLOT], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", material_default_profile_key: fastener_steel, note: "For aluminium extrusion profiles" }
+  - { code: fastener.nut.cage, noun: CAGE NUT, modifiers: [], description_template: "{noun}, {size}, {grade}", material_default_profile_key: fastener_steel }
+  - { code: fastener.nut.weld, noun: NUT, modifiers: [WELD], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [DIN929], material_default_profile_key: fastener_steel }
+  - { code: fastener.nut.rivet, noun: RIVET NUT, modifiers: [BLIND], description_template: "{noun}, {modifiers}, {size}, {grade}", material_default_profile_key: fastener_steel }
+  - { code: fastener.insert.threaded, noun: THREADED INSERT, modifiers: [], description_template: "{noun}, {modifiers}, {size}, {material}", material_default_profile_key: fastener_steel }
+  - { code: fastener.insert.helical, noun: THREAD INSERT, modifiers: [HELICAL COIL], description_template: "{noun}, {modifiers}, {size}, {material}", standard_families: [DIN8140], material_default_profile_key: fastener_ss }
+  - { code: fastener.insert.press, noun: INSERT, modifiers: [PRESS-IN, THREADED], description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: fastener.washer, noun: WASHER, modifiers: [], description_template: "{noun}, {size}, {standard}, {grade}", material_default_profile_key: washer_steel, note: "Generic washer" }
+  - { code: fastener.washer.plain, noun: WASHER, modifiers: [PLAIN], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO7089, ISO7090, ISO7092], material_default_profile_key: washer_steel, unspsc: "31161701" }
+  - { code: fastener.washer.fender, noun: WASHER, modifiers: [PLAIN, LARGE OD], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO7093, DIN9021], material_default_profile_key: washer_steel }
+  - { code: fastener.washer.spring, noun: WASHER, modifiers: [SPRING LOCK], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [DIN127, DIN7980], material_default_profile_key: washer_steel }
+  - { code: fastener.washer.tooth, noun: WASHER, modifiers: [TOOTHED LOCK], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [DIN6797, DIN6798], material_default_profile_key: washer_steel }
+  - { code: fastener.washer.wave, noun: WASHER, modifiers: [WAVE SPRING], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [DIN137], material_default_profile_key: washer_steel }
+  - { code: fastener.washer.wedge_lock, noun: WASHER, modifiers: [WEDGE LOCK], description_template: "{noun}, {modifiers}, {size}, {grade}", material_default_profile_key: washer_steel }
+  - { code: fastener.washer.sealing, noun: WASHER, modifiers: [SEALING], description_template: "{noun}, {modifiers}, {size}, {material}", standard_families: [DIN7603] }
+  - { code: fastener.ring.circlip_external, noun: RETAINING RING, modifiers: [EXTERNAL], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [DIN471], material_default_profile_key: retaining_ring, unspsc: "31162800" }
+  - { code: fastener.ring.circlip_internal, noun: RETAINING RING, modifiers: [INTERNAL], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [DIN472], material_default_profile_key: retaining_ring, unspsc: "31162800" }
+  - { code: fastener.ring.e_clip, noun: RETAINING RING, modifiers: [E-CLIP], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [DIN6799], material_default_profile_key: retaining_ring }
+  - { code: fastener.pin, noun: PIN, modifiers: [], description_template: "{noun}, {size}, {standard}, {grade}", material_default_profile_key: dowel_steel, note: "Generic pin" }
+  - { code: fastener.pin.dowel, noun: DOWEL PIN, modifiers: [PARALLEL], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO2338, ISO8734, DIN6325], material_default_profile_key: dowel_steel, unspsc: "31161900" }
+  - { code: fastener.pin.spring, noun: SPRING PIN, modifiers: [SLOTTED], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO8752, DIN1481], material_default_profile_key: retaining_ring }
+  - { code: fastener.pin.cotter, noun: COTTER PIN, modifiers: [], description_template: "{noun}, {size}, {standard}, {grade}", standard_families: [ISO1234], material_default_profile_key: fastener_steel }
+  - { code: fastener.pin.clevis, noun: CLEVIS PIN, modifiers: [], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO2341], material_default_profile_key: fastener_steel }
+  - { code: fastener.pin.taper, noun: TAPER PIN, modifiers: [], description_template: "{noun}, {size}, {standard}, {grade}", standard_families: [ISO2339, DIN1], material_default_profile_key: dowel_steel }
+  - { code: fastener.rivet.blind, noun: RIVET, modifiers: [BLIND, POP], description_template: "{noun}, {modifiers}, {size}, {standard}, {material}", standard_families: [ISO15977, ISO15983] }
+  - { code: fastener.rivet.solid, noun: RIVET, modifiers: [SOLID], description_template: "{noun}, {modifiers}, {size}, {standard}, {material}", standard_families: [ISO1051] }
+  - { code: fastener.clip, noun: CLIP, modifiers: [SPRING], description_template: "{noun}, {modifiers}, {dims}, {material}", usually_modelled: false }
+  - { code: fastener.standoff, noun: STANDOFF, modifiers: [THREADED], description_template: "{noun}, {modifiers}, {size}, {material}", standard_families: [DIN7985] }
+  - { code: fastener.spacer, noun: SPACER, modifiers: [], description_template: "{noun}, {dims}, {material}" }
+  - { code: fastener.grommet, noun: GROMMET, modifiers: [], description_template: "{noun}, {dims}, {material}", usually_modelled: false }
+  - { code: fastener.cable_tie, noun: CABLE TIE, modifiers: [], description_template: "{noun}, {dims}, {material}", usually_modelled: false, unspsc: "26121600" }
+  - { code: fastener.misc, noun: HARDWARE, modifiers: [MISC], description_template: "{noun}, {modifiers}, {dims}, {material}", note: "Catch-all for small hardware" }
+
+  # ===== BEARINGS =====================================================================================
+  - { code: bearing.ball.deep_groove, noun: BEARING, modifiers: [BALL, DEEP GROOVE], description_template: "{noun}, {modifiers}, {designation}", standard_families: [ISO15], material_default_profile_key: bearing_steel, unspsc: "31171504" }
+  - { code: bearing.ball.angular, noun: BEARING, modifiers: [BALL, ANGULAR CONTACT], description_template: "{noun}, {modifiers}, {designation}", standard_families: [ISO15], material_default_profile_key: bearing_steel }
+  - { code: bearing.ball.thrust, noun: BEARING, modifiers: [BALL, THRUST], description_template: "{noun}, {modifiers}, {designation}", standard_families: [ISO104], material_default_profile_key: bearing_steel }
+  - { code: bearing.roller.cylindrical, noun: BEARING, modifiers: [ROLLER, CYLINDRICAL], description_template: "{noun}, {modifiers}, {designation}", material_default_profile_key: bearing_steel }
+  - { code: bearing.roller.tapered, noun: BEARING, modifiers: [ROLLER, TAPERED], description_template: "{noun}, {modifiers}, {designation}", standard_families: [ISO355], material_default_profile_key: bearing_steel }
+  - { code: bearing.roller.needle, noun: BEARING, modifiers: [NEEDLE ROLLER], description_template: "{noun}, {modifiers}, {designation}", material_default_profile_key: bearing_steel }
+  - { code: bearing.spherical, noun: BEARING, modifiers: [SPHERICAL], description_template: "{noun}, {modifiers}, {designation}", material_default_profile_key: bearing_steel }
+  - { code: bearing.plain.bush, noun: BUSH, modifiers: [PLAIN, SLEEVE], description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: bearing.plain.flanged_bush, noun: BUSH, modifiers: [FLANGED], description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: bearing.linear, noun: LINEAR BEARING, modifiers: [], description_template: "{noun}, {modifiers}, {size}, {designation}" }
+  - { code: bearing.rod_end, noun: ROD END, modifiers: [], description_template: "{noun}, {modifiers}, {size}, {standard}", standard_families: [ISO12240, DIN648] }
+  - { code: bearing.housing, noun: BEARING HOUSING, modifiers: [], description_template: "{noun}, {modifiers}, {designation}, {material}" }
+
+  # ===== POWER TRANSMISSION ===========================================================================
+  - { code: transmission.gear.spur, noun: GEAR, modifiers: [SPUR], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: transmission.gear.helical, noun: GEAR, modifiers: [HELICAL], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: transmission.gear.bevel, noun: GEAR, modifiers: [BEVEL], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: transmission.gear.worm, noun: GEAR, modifiers: [WORM], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: transmission.gear.rack, noun: GEAR RACK, modifiers: [], uom: EA, description_template: "{noun}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: transmission.gearbox, noun: GEARBOX, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: transmission.pulley, noun: PULLEY, modifiers: [TIMING], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: transmission.belt, noun: BELT, modifiers: [], description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: transmission.chain, noun: CHAIN, modifiers: [ROLLER], uom: M, description_template: "{noun}, {modifiers}, {size}", standard_families: [ISO606] }
+  - { code: transmission.sprocket, noun: SPROCKET, modifiers: [], description_template: "{noun}, {modifiers}, {size}, {material}", make_buy_default: supplier_made }
+  - { code: transmission.coupling, noun: COUPLING, modifiers: [SHAFT], description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: transmission.shaft, noun: SHAFT, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: turned }
+  - { code: transmission.key, noun: KEY, modifiers: [PARALLEL], description_template: "{noun}, {modifiers}, {size}, {standard}", standard_families: [DIN6885, ISO2491] }
+  - { code: transmission.clutch, noun: CLUTCH, modifiers: [], description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: transmission.lead_screw, noun: LEAD SCREW, modifiers: [], description_template: "{noun}, {modifiers}, {size}, {material}" }
+
+  # ===== SEALS ========================================================================================
+  - { code: seal.o_ring, noun: O-RING, modifiers: [], description_template: "{noun}, {size}, {standard}, {grade}", standard_families: [ISO3601, AS568], material_default_profile_key: seal_elastomer, unspsc: "31181701" }
+  - { code: seal.gasket.flat, noun: GASKET, modifiers: [FLAT], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: seal.gasket.formed, noun: GASKET, modifiers: [FORMED, MOULDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: seal.gasket.foam, noun: GASKET, modifiers: [FOAM], description_template: "{noun}, {modifiers}, {dims}, {material}", usually_modelled: false }
+  - { code: seal.lip, noun: SEAL, modifiers: [RADIAL SHAFT, LIP], description_template: "{noun}, {modifiers}, {size}, {standard}, {grade}", standard_families: [ISO6194, DIN3760], material_default_profile_key: seal_elastomer }
+  - { code: seal.v_ring, noun: SEAL, modifiers: [V-RING], description_template: "{noun}, {modifiers}, {size}, {grade}", material_default_profile_key: seal_elastomer }
+  - { code: seal.quad_ring, noun: SEAL, modifiers: [QUAD RING], description_template: "{noun}, {modifiers}, {size}, {grade}", material_default_profile_key: seal_elastomer }
+  - { code: seal.cord, noun: SEAL, modifiers: [CORD], uom: M, description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: seal.strip, noun: SEAL, modifiers: [STRIP, EDGE TRIM], uom: M, description_template: "{noun}, {modifiers}, {dims}, {material}", usually_modelled: false }
+  - { code: seal.grommet, noun: GROMMET, modifiers: [SEALING], description_template: "{noun}, {modifiers}, {dims}, {material}", usually_modelled: false }
+  - { code: seal.plug, noun: PLUG, modifiers: [BLANKING], description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: seal.cap, noun: CAP, modifiers: [END, PROTECTIVE], description_template: "{noun}, {modifiers}, {dims}, {material}", usually_modelled: false }
+  - { code: seal.sealant_tape, noun: TAPE, modifiers: [SEALING, PTFE], uom: M, description_template: "{noun}, {modifiers}, {dims}", usually_modelled: false }
+
+  # ===== SPRINGS ======================================================================================
+  - { code: spring.compression, noun: SPRING, modifiers: [COMPRESSION], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: spring_steel, standard_families: [DIN2095, ISO2162] }
+  - { code: spring.extension, noun: SPRING, modifiers: [EXTENSION], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: spring_steel, standard_families: [DIN2097] }
+  - { code: spring.torsion, noun: SPRING, modifiers: [TORSION], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: spring_steel, standard_families: [DIN2088] }
+  - { code: spring.leaf, noun: SPRING, modifiers: [LEAF], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: spring_steel }
+  - { code: spring.disc, noun: SPRING, modifiers: [DISC, BELLEVILLE], description_template: "{noun}, {modifiers}, {size}, {standard}, {material}", standard_families: [DIN2093], material_default_profile_key: spring_steel }
+  - { code: spring.wave, noun: SPRING, modifiers: [WAVE], description_template: "{noun}, {modifiers}, {dims}, {material}", material_default_profile_key: spring_steel }
+  - { code: spring.gas, noun: GAS SPRING, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {rating}" }
+  - { code: spring.constant_force, noun: SPRING, modifiers: [CONSTANT FORCE], description_template: "{noun}, {modifiers}, {dims}, {material}", material_default_profile_key: spring_steel }
+  - { code: spring.clip, noun: SPRING CLIP, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: spring_steel }
+
+  # ===== SHEET METAL ==================================================================================
+  - { code: sheetmetal.bracket, noun: BRACKET, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.bracket.l, noun: BRACKET, modifiers: [L-SHAPED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.bracket.u, noun: BRACKET, modifiers: [U-SHAPED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.panel, noun: PANEL, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.panel.front, noun: PANEL, modifiers: [FRONT], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.panel.back, noun: PANEL, modifiers: [BACK, REAR], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.cover, noun: COVER, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.enclosure, noun: ENCLOSURE, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.chassis, noun: CHASSIS, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.plate, noun: PLATE, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.plate.mounting, noun: PLATE, modifiers: [MOUNTING], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.shield, noun: SHIELD, modifiers: [EMI, HEAT], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.stamping, noun: STAMPING, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.clip, noun: CLIP, modifiers: [SHEET METAL], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.hinge, noun: HINGE, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.handle, noun: HANDLE, modifiers: [SHEET METAL], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.heatsink, noun: HEAT SINK, modifiers: [FOLDED FIN], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.duct, noun: DUCT, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.tray, noun: TRAY, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.weldment, noun: WELDMENT, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal, note: "Welded assembly bought as one part" }
+  - { code: sheetmetal.spacer, noun: SPACER, modifiers: [STAMPED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: sheet_metal }
+  - { code: sheetmetal.contact, noun: CONTACT, modifiers: [STAMPED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+
+  # ===== MACHINED =====================================================================================
+  - { code: machined.block, noun: BLOCK, modifiers: [MACHINED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: machined }
+  - { code: machined.plate, noun: PLATE, modifiers: [MACHINED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: machined }
+  - { code: machined.housing, noun: HOUSING, modifiers: [MACHINED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: machined }
+  - { code: machined.bracket, noun: BRACKET, modifiers: [MACHINED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: machined }
+  - { code: machined.flange, noun: FLANGE, modifiers: [MACHINED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: turned }
+  - { code: machined.turned, noun: PART, modifiers: [TURNED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: turned, note: "Generic turned part (rotational symmetry)" }
+  - { code: machined.turned.shaft, noun: SHAFT, modifiers: [TURNED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: turned }
+  - { code: machined.turned.pin, noun: PIN, modifiers: [TURNED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: turned }
+  - { code: machined.turned.bush, noun: BUSH, modifiers: [TURNED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: turned }
+  - { code: machined.turned.spacer, noun: SPACER, modifiers: [TURNED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: turned }
+  - { code: machined.turned.knob, noun: KNOB, modifiers: [TURNED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: turned }
+  - { code: machined.turned.hub, noun: HUB, modifiers: [TURNED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: turned }
+  - { code: machined.turned.nut, noun: NUT, modifiers: [TURNED, SPECIAL], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: turned }
+  - { code: machined.milled, noun: PART, modifiers: [MILLED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: machined, note: "Generic milled part" }
+  - { code: machined.heatsink, noun: HEAT SINK, modifiers: [MACHINED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: machined }
+  - { code: machined.fixture, noun: FIXTURE, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: machined }
+  - { code: machined.spacer, noun: SPACER, modifiers: [MACHINED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: machined }
+  - { code: machined.stock.bar, noun: BAR, modifiers: [STOCK], uom: M, description_template: "{noun}, {modifiers}, {dims}, {material}", usually_modelled: false }
+  - { code: machined.stock.tube, noun: TUBE, modifiers: [STOCK], uom: M, description_template: "{noun}, {modifiers}, {dims}, {material}", usually_modelled: false }
+  - { code: machined.stock.sheet, noun: SHEET, modifiers: [STOCK], uom: M2, description_template: "{noun}, {modifiers}, {dims}, {material}", usually_modelled: false }
+
+  # ===== MOULDED ======================================================================================
+  - { code: moulded.housing, noun: HOUSING, modifiers: [MOULDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.housing.top, noun: HOUSING, modifiers: [MOULDED, TOP], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.housing.bottom, noun: HOUSING, modifiers: [MOULDED, BOTTOM], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.cover, noun: COVER, modifiers: [MOULDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.cap, noun: CAP, modifiers: [MOULDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.button, noun: BUTTON, modifiers: [MOULDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.knob, noun: KNOB, modifiers: [MOULDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.bezel, noun: BEZEL, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.lens, noun: LENS, modifiers: [MOULDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.light_guide, noun: LIGHT GUIDE, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: moulded.bracket, noun: BRACKET, modifiers: [MOULDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.clip, noun: CLIP, modifiers: [MOULDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.gear, noun: GEAR, modifiers: [MOULDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: moulded.blade, noun: BLADE, modifiers: [MOULDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: moulded.handle, noun: HANDLE, modifiers: [MOULDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.frame, noun: FRAME, modifiers: [MOULDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.foot, noun: FOOT, modifiers: [MOULDED, RUBBER], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: moulded.insert, noun: INSERT, modifiers: [MOULDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.tray, noun: TRAY, modifiers: [MOULDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.battery_door, noun: DOOR, modifiers: [BATTERY], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: moulded }
+  - { code: moulded.rubber_part, noun: PART, modifiers: [MOULDED RUBBER], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: moulded.thermoformed, noun: TRAY, modifiers: [THERMOFORMED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+
+  # ===== CAST =========================================================================================
+  - { code: cast.housing, noun: HOUSING, modifiers: [CAST], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: cast }
+  - { code: cast.cover, noun: COVER, modifiers: [CAST], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: cast }
+  - { code: cast.bracket, noun: BRACKET, modifiers: [CAST], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: cast }
+  - { code: cast.flange, noun: FLANGE, modifiers: [CAST], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: cast }
+  - { code: cast.base, noun: BASE, modifiers: [CAST], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: cast }
+  - { code: cast.handle, noun: HANDLE, modifiers: [CAST], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: cast }
+  - { code: cast.heatsink, noun: HEAT SINK, modifiers: [DIE CAST], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: cast }
+  - { code: cast.wheel, noun: WHEEL, modifiers: [CAST], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: cast }
+  - { code: cast.part, noun: PART, modifiers: [CAST], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: cast, note: "Generic casting (thick variable wall, fillets)" }
+  - { code: cast.forging, noun: FORGING, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+
+  # ===== EXTRUSIONS ===================================================================================
+  - { code: extrusion.profile, noun: PROFILE, modifiers: [EXTRUDED], uom: M, description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: extrusion, note: "Constant cross-section along one axis; quantity in metres if cut to length is not specified" }
+  - { code: extrusion.profile.t_slot, noun: PROFILE, modifiers: [T-SLOT, ALUMINIUM], description_template: "{noun}, {modifiers}, {size}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: extrusion }
+  - { code: extrusion.tube.round, noun: TUBE, modifiers: [ROUND], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: extrusion }
+  - { code: extrusion.tube.square, noun: TUBE, modifiers: [SQUARE, RECTANGULAR], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: extrusion }
+  - { code: extrusion.angle, noun: ANGLE, modifiers: [EXTRUDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: extrusion }
+  - { code: extrusion.channel, noun: CHANNEL, modifiers: [EXTRUDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: extrusion }
+  - { code: extrusion.heatsink, noun: HEAT SINK, modifiers: [EXTRUDED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: extrusion }
+  - { code: extrusion.rail, noun: RAIL, modifiers: [DIN], description_template: "{noun}, {modifiers}, {dims}, {material}", standard_families: [EN60715] }
+  - { code: extrusion.plastic_profile, noun: PROFILE, modifiers: [PLASTIC, EXTRUDED], uom: M, description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: extrusion.edge_trim, noun: EDGE TRIM, modifiers: [], uom: M, description_template: "{noun}, {modifiers}, {dims}, {material}", usually_modelled: false }
+
+  # ===== WOOD AND PANELS ==============================================================================
+  - { code: wood.panel, noun: PANEL, modifiers: [WOOD], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: wood }
+  - { code: wood.plywood, noun: PLYWOOD, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: wood }
+  - { code: wood.mdf, noun: MDF PANEL, modifiers: [], description_template: "{noun}, {modifiers}, {dims}", make_buy_default: supplier_made }
+  - { code: wood.solid, noun: TIMBER, modifiers: [SOLID WOOD], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: wood.veneer, noun: VENEER, modifiers: [], uom: M2, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+  - { code: wood.dowel, noun: DOWEL, modifiers: [WOOD], description_template: "{noun}, {modifiers}, {size}", standard_families: [DIN68150] }
+  - { code: wood.handle, noun: HANDLE, modifiers: [WOOD], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: wood.worktop, noun: WORKTOP, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: wood.edge_band, noun: EDGE BAND, modifiers: [], uom: M, description_template: "{noun}, {modifiers}, {dims}, {material}", usually_modelled: false }
+
+  # ===== GLASS ========================================================================================
+  - { code: glass.panel, noun: GLASS PANEL, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: glass }
+  - { code: glass.panel.tempered, noun: GLASS PANEL, modifiers: [TEMPERED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: glass }
+  - { code: glass.panel.laminated, noun: GLASS PANEL, modifiers: [LAMINATED], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: glass }
+  - { code: glass.shade, noun: GLASS SHADE, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: glass }
+  - { code: glass.cover, noun: GLASS COVER, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made, material_default_profile_key: glass }
+  - { code: glass.lens, noun: LENS, modifiers: [GLASS], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: glass.window, noun: WINDOW, modifiers: [DISPLAY], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: glass.tube, noun: GLASS TUBE, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}" }
+  - { code: glass.mirror, noun: MIRROR, modifiers: [], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+
+  # ===== ELECTRICAL: CABLES AND WIRING ================================================================
+  - { code: electrical.cable, noun: CABLE, modifiers: [], uom: M, usually_modelled: false, description_template: "{noun}, {modifiers}, {size}, {rating}", unspsc: "26121600" }
+  - { code: electrical.cable.power, noun: CABLE, modifiers: [POWER], uom: M, usually_modelled: false, description_template: "{noun}, {modifiers}, {size}, {rating}" }
+  - { code: electrical.cable.signal, noun: CABLE, modifiers: [SIGNAL], uom: M, usually_modelled: false, description_template: "{noun}, {modifiers}, {size}, {rating}" }
+  - { code: electrical.cable.ribbon, noun: CABLE, modifiers: [RIBBON, FLAT], uom: M, usually_modelled: false, description_template: "{noun}, {modifiers}, {size}" }
+  - { code: electrical.cable.assembly, noun: CABLE ASSEMBLY, modifiers: [], usually_modelled: false, buy_as_assembly: true, make_buy_default: supplier_made, description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: electrical.cable.harness, noun: WIRING HARNESS, modifiers: [], usually_modelled: false, buy_as_assembly: true, make_buy_default: supplier_made, description_template: "{noun}, {modifiers}" }
+  - { code: electrical.cable.power_cord, noun: POWER CORD, modifiers: [MAINS], usually_modelled: false, description_template: "{noun}, {modifiers}, {rating}, {dims}" }
+  - { code: electrical.cable.usb, noun: CABLE, modifiers: [USB], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: electrical.wire, noun: WIRE, modifiers: [HOOK-UP], uom: M, usually_modelled: false, description_template: "{noun}, {modifiers}, {size}, {rating}" }
+  - { code: electrical.sleeve, noun: SLEEVE, modifiers: [CABLE, HEAT SHRINK], uom: M, usually_modelled: false, description_template: "{noun}, {modifiers}, {size}" }
+  - { code: electrical.cable_gland, noun: CABLE GLAND, modifiers: [], description_template: "{noun}, {modifiers}, {size}, {material}", standard_families: [EN62444] }
+  - { code: electrical.strain_relief, noun: STRAIN RELIEF, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {size}" }
+  - { code: electrical.terminal, noun: TERMINAL, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {size}, {rating}" }
+  - { code: electrical.lug, noun: LUG, modifiers: [RING, CRIMP], usually_modelled: false, description_template: "{noun}, {modifiers}, {size}" }
+
+  # ===== ELECTRICAL: CONNECTORS, SWITCHES =============================================================
+  - { code: electrical.connector, noun: CONNECTOR, modifiers: [], usually_modelled: true, description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.connector.usb_c, noun: CONNECTOR, modifiers: [USB-C, RECEPTACLE], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.connector.usb_a, noun: CONNECTOR, modifiers: [USB-A, RECEPTACLE], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.connector.header, noun: CONNECTOR, modifiers: [PIN HEADER], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.connector.terminal_block, noun: TERMINAL BLOCK, modifiers: [], description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.connector.barrel_jack, noun: CONNECTOR, modifiers: [DC JACK], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.connector.rj45, noun: CONNECTOR, modifiers: [RJ45], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.connector.mains_inlet, noun: INLET, modifiers: [MAINS, IEC C14], description_template: "{noun}, {modifiers}, {designation}, {rating}", standard_families: [IEC60320] }
+  - { code: electrical.connector.plug, noun: PLUG, modifiers: [MAINS], usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.connector.fpc, noun: CONNECTOR, modifiers: [FPC, FFC], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.connector.card_edge, noun: CONNECTOR, modifiers: [CARD EDGE], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.connector.battery_holder, noun: BATTERY HOLDER, modifiers: [], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.switch, noun: SWITCH, modifiers: [], description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.switch.tactile, noun: SWITCH, modifiers: [TACTILE], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.switch.toggle, noun: SWITCH, modifiers: [TOGGLE], description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.switch.rocker, noun: SWITCH, modifiers: [ROCKER], description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.switch.slide, noun: SWITCH, modifiers: [SLIDE], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.switch.pull_chain, noun: SWITCH, modifiers: [PULL CHAIN], description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.switch.limit, noun: SWITCH, modifiers: [LIMIT], description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.relay, noun: RELAY, modifiers: [], description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.fuse, noun: FUSE, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {rating}", standard_families: [IEC60127] }
+  - { code: electrical.fuse_holder, noun: FUSE HOLDER, modifiers: [], description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.circuit_breaker, noun: CIRCUIT BREAKER, modifiers: [], description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.sensor, noun: SENSOR, modifiers: [], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.thermostat, noun: THERMOSTAT, modifiers: [], description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+
+  # ===== ELECTRICAL: BOARDS ===========================================================================
+  - { code: electrical.pcb, noun: PCB, modifiers: [BARE], make_buy_default: supplier_made, material_default_profile_key: pcb, description_template: "{noun}, {modifiers}, {dims}, {material}", unspsc: "32101600" }
+  - { code: electrical.pcba, noun: PCB ASSEMBLY, modifiers: [], buy_as_assembly: true, make_buy_default: supplier_made, description_template: "{noun}, {modifiers}, {designation}", unspsc: "32101600" }
+  - { code: electrical.pcba.driver, noun: PCB ASSEMBLY, modifiers: [DRIVER], buy_as_assembly: true, make_buy_default: supplier_made, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.pcba.display, noun: PCB ASSEMBLY, modifiers: [DISPLAY], buy_as_assembly: true, make_buy_default: supplier_made, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.pcba.bms, noun: PCB ASSEMBLY, modifiers: [BMS, BATTERY MANAGEMENT], buy_as_assembly: true, make_buy_default: supplier_made, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.pcba.receiver, noun: PCB ASSEMBLY, modifiers: [RECEIVER], buy_as_assembly: true, make_buy_default: supplier_made, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.flex_pcb, noun: FLEX CIRCUIT, modifiers: [FPC], make_buy_default: supplier_made, description_template: "{noun}, {modifiers}, {dims}" }
+
+  # ===== ELECTRICAL: COMPONENTS =======================================================================
+  - { code: electrical.component.resistor, noun: RESISTOR, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.component.capacitor, noun: CAPACITOR, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.component.capacitor_electrolytic, noun: CAPACITOR, modifiers: [ELECTROLYTIC], usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.component.inductor, noun: INDUCTOR, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.component.diode, noun: DIODE, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.component.led, noun: LED, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}, {colour}" }
+  - { code: electrical.component.transistor, noun: TRANSISTOR, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.component.ic, noun: IC, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.component.crystal, noun: CRYSTAL, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.component.varistor, noun: VARISTOR, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.component.ntc, noun: THERMISTOR, modifiers: [NTC], usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.component.transformer, noun: TRANSFORMER, modifiers: [], description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.component.buzzer, noun: BUZZER, modifiers: [], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.component.speaker, noun: SPEAKER, modifiers: [], description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.component.microphone, noun: MICROPHONE, modifiers: [], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.component.display, noun: DISPLAY, modifiers: [], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.component.potentiometer, noun: POTENTIOMETER, modifiers: [], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.component.antenna, noun: ANTENNA, modifiers: [], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.component.module, noun: MODULE, modifiers: [PCB MOUNT], description_template: "{noun}, {modifiers}, {designation}" }
+
+  # ===== ELECTRICAL: MOTORS, POWER, BATTERIES, LIGHTING ===============================================
+  - { code: electrical.motor, noun: MOTOR, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}", unspsc: "26101100" }
+  - { code: electrical.motor.dc, noun: MOTOR, modifiers: [DC], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.motor.bldc, noun: MOTOR, modifiers: [BLDC], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.motor.ac_induction, noun: MOTOR, modifiers: [AC, INDUCTION], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.motor.stepper, noun: MOTOR, modifiers: [STEPPER], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {size}, {rating}" }
+  - { code: electrical.motor.servo, noun: MOTOR, modifiers: [SERVO], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.motor.vibration, noun: MOTOR, modifiers: [VIBRATION], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.motor_part.rotor, noun: ROTOR, modifiers: [MOTOR], make_buy_default: supplier_made, description_template: "{noun}, {modifiers}, {dims}", note: "Parts inside a motor; usually folded into the purchased motor" }
+  - { code: electrical.motor_part.stator, noun: STATOR, modifiers: [MOTOR], make_buy_default: supplier_made, description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: electrical.motor_part.magnet, noun: MAGNET, modifiers: [MOTOR], description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: electrical.motor_part.winding, noun: WINDING, modifiers: [MOTOR], make_buy_default: supplier_made, description_template: "{noun}, {modifiers}" }
+  - { code: electrical.psu, noun: POWER SUPPLY, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}", unspsc: "39121000" }
+  - { code: electrical.psu.ac_dc, noun: POWER SUPPLY, modifiers: [AC-DC], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.psu.dc_dc, noun: CONVERTER, modifiers: [DC-DC], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.psu.adapter, noun: POWER ADAPTER, modifiers: [EXTERNAL], usually_modelled: false, buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.psu.charger, noun: CHARGER, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.battery.li_ion, noun: BATTERY, modifiers: [LI-ION, CELL], description_template: "{noun}, {modifiers}, {designation}, {rating}", unspsc: "26111700" }
+  - { code: electrical.battery.pack, noun: BATTERY PACK, modifiers: [LI-ION], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.battery.coin, noun: BATTERY, modifiers: [COIN CELL], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.battery.alkaline, noun: BATTERY, modifiers: [ALKALINE], description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: electrical.lighting.led_module, noun: LED MODULE, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}, {colour}" }
+  - { code: electrical.lighting.led_strip, noun: LED STRIP, modifiers: [], uom: M, usually_modelled: false, description_template: "{noun}, {modifiers}, {rating}, {colour}" }
+  - { code: electrical.lighting.lamp, noun: LAMP, modifiers: [], description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: electrical.lighting.driver, noun: LED DRIVER, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.heater, noun: HEATER, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.fan, noun: FAN, modifiers: [AXIAL, COOLING], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {size}, {rating}" }
+  - { code: electrical.capacitor_motor, noun: CAPACITOR, modifiers: [MOTOR RUN], description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: electrical.remote, noun: REMOTE CONTROL, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}" }
+  - { code: electrical.earth_terminal, noun: EARTH TERMINAL, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {size}" }
+
+  # ===== FLUID ========================================================================================
+  - { code: fluid.hose, noun: HOSE, modifiers: [], uom: M, usually_modelled: false, description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: fluid.tube, noun: TUBE, modifiers: [FLUID], uom: M, usually_modelled: false, description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: fluid.pipe, noun: PIPE, modifiers: [], uom: M, description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: fluid.fitting, noun: FITTING, modifiers: [], description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: fluid.fitting.push_in, noun: FITTING, modifiers: [PUSH-IN], description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: fluid.fitting.barbed, noun: FITTING, modifiers: [HOSE BARB], description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: fluid.fitting.elbow, noun: FITTING, modifiers: [ELBOW], description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: fluid.fitting.tee, noun: FITTING, modifiers: [TEE], description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: fluid.fitting.union, noun: FITTING, modifiers: [UNION, COUPLER], description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: fluid.fitting.nipple, noun: FITTING, modifiers: [NIPPLE, THREADED], description_template: "{noun}, {modifiers}, {size}, {standard}, {material}", standard_families: [ISO228, ISO7] }
+  - { code: fluid.clamp, noun: HOSE CLAMP, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {size}, {material}", standard_families: [DIN3017] }
+  - { code: fluid.valve.ball, noun: VALVE, modifiers: [BALL], description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: fluid.valve.check, noun: VALVE, modifiers: [CHECK], description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: fluid.valve.solenoid, noun: VALVE, modifiers: [SOLENOID], description_template: "{noun}, {modifiers}, {size}, {rating}" }
+  - { code: fluid.valve.relief, noun: VALVE, modifiers: [RELIEF], description_template: "{noun}, {modifiers}, {size}, {rating}" }
+  - { code: fluid.pump, noun: PUMP, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: fluid.filter, noun: FILTER, modifiers: [], description_template: "{noun}, {modifiers}, {size}, {rating}" }
+  - { code: fluid.nozzle, noun: NOZZLE, modifiers: [], description_template: "{noun}, {modifiers}, {size}, {material}" }
+  - { code: fluid.tank, noun: TANK, modifiers: [RESERVOIR], description_template: "{noun}, {modifiers}, {dims}, {material}", make_buy_default: supplier_made }
+  - { code: fluid.gauge, noun: GAUGE, modifiers: [PRESSURE], description_template: "{noun}, {modifiers}, {size}, {rating}" }
+
+  # ===== PACKAGING ====================================================================================
+  - { code: packaging.carton, noun: CARTON, modifiers: [SHIPPER], usually_modelled: false, make_buy_default: supplier_made, material_default_profile_key: packaging_board, description_template: "{noun}, {modifiers}, {dims}, {material}", unspsc: "24112000" }
+  - { code: packaging.box, noun: BOX, modifiers: [UNIT, RETAIL], usually_modelled: false, make_buy_default: supplier_made, material_default_profile_key: packaging_board, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+  - { code: packaging.insert, noun: INSERT, modifiers: [PROTECTIVE, PACKAGING], usually_modelled: false, make_buy_default: supplier_made, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+  - { code: packaging.foam, noun: FOAM, modifiers: [PACKAGING], usually_modelled: false, make_buy_default: supplier_made, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+  - { code: packaging.bag, noun: BAG, modifiers: [POLYBAG], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+  - { code: packaging.bag.antistatic, noun: BAG, modifiers: [ANTISTATIC], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: packaging.tape, noun: TAPE, modifiers: [PACKAGING], uom: M, usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: packaging.strap, noun: STRAP, modifiers: [PACKAGING], uom: M, usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: packaging.pallet, noun: PALLET, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+  - { code: packaging.desiccant, noun: DESICCANT, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: packaging.wrap, noun: WRAP, modifiers: [STRETCH FILM], uom: M, usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: packaging.corner, noun: CORNER PROTECTOR, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+
+  # ===== LABELS =======================================================================================
+  - { code: label.generic, noun: LABEL, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}, {material}", note: "Generic label when the kind is not known" }
+  - { code: label.rating, noun: LABEL, modifiers: [RATING], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+  - { code: label.serial, noun: LABEL, modifiers: [SERIAL NUMBER], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+  - { code: label.compliance, noun: LABEL, modifiers: [COMPLIANCE, CE, UKCA], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+  - { code: label.warning, noun: LABEL, modifiers: [WARNING], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+  - { code: label.earth, noun: LABEL, modifiers: [EARTH SYMBOL], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: label.transport, noun: LABEL, modifiers: [TRANSPORT, BATTERY], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: label.nameplate, noun: NAMEPLATE, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+  - { code: label.decal, noun: DECAL, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: label.barcode, noun: LABEL, modifiers: [BARCODE], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: label.overlay, noun: OVERLAY, modifiers: [GRAPHIC], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+  - { code: label.film, noun: FILM, modifiers: [PROTECTIVE], uom: M2, usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+
+  # ===== DOCUMENTATION ================================================================================
+  - { code: documentation.manual, noun: MANUAL, modifiers: [USER], usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: documentation.quick_start, noun: GUIDE, modifiers: [QUICK START], usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: documentation.warranty, noun: CARD, modifiers: [WARRANTY], usually_modelled: false, description_template: "{noun}, {modifiers}" }
+  - { code: documentation.safety, noun: LEAFLET, modifiers: [SAFETY], usually_modelled: false, description_template: "{noun}, {modifiers}" }
+  - { code: documentation.template, noun: TEMPLATE, modifiers: [INSTALLATION], usually_modelled: false, description_template: "{noun}, {modifiers}" }
+  - { code: documentation.certificate, noun: CERTIFICATE, modifiers: [TEST], usually_modelled: false, description_template: "{noun}, {modifiers}" }
+
+  # ===== CONSUMABLES ==================================================================================
+  - { code: consumable.adhesive, noun: ADHESIVE, modifiers: [], uom: ML, usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: consumable.adhesive.tape, noun: TAPE, modifiers: [DOUBLE SIDED, ADHESIVE], uom: M, usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: consumable.threadlocker, noun: THREADLOCKER, modifiers: [], uom: ML, usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: consumable.solder, noun: SOLDER, modifiers: [], uom: G, usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: consumable.flux, noun: FLUX, modifiers: [SOLDER], uom: ML, usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: consumable.solder_paste, noun: SOLDER PASTE, modifiers: [], uom: G, usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: consumable.grease, noun: GREASE, modifiers: [], uom: G, usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: consumable.oil, noun: OIL, modifiers: [LUBRICANT], uom: ML, usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: consumable.paint, noun: PAINT, modifiers: [], uom: ML, usually_modelled: false, description_template: "{noun}, {modifiers}, {colour}" }
+  - { code: consumable.powder_coat, noun: POWDER COAT, modifiers: [], uom: G, usually_modelled: false, description_template: "{noun}, {modifiers}, {colour}" }
+  - { code: consumable.potting, noun: POTTING COMPOUND, modifiers: [], uom: ML, usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: consumable.sealant, noun: SEALANT, modifiers: [], uom: ML, usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: consumable.thermal_paste, noun: THERMAL COMPOUND, modifiers: [], uom: G, usually_modelled: false, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: consumable.thermal_pad, noun: THERMAL PAD, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+  - { code: consumable.cable_tie, noun: CABLE TIE, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: consumable.tape_kapton, noun: TAPE, modifiers: [POLYIMIDE], uom: M, usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}" }
+  - { code: consumable.insulation, noun: INSULATION, modifiers: [ELECTRICAL], usually_modelled: false, description_template: "{noun}, {modifiers}, {dims}, {material}" }
+  - { code: consumable.desiccant, noun: DESICCANT, modifiers: [], usually_modelled: false, description_template: "{noun}, {modifiers}" }
+  - { code: consumable.wipe, noun: WIPE, modifiers: [CLEANING], usually_modelled: false, description_template: "{noun}, {modifiers}" }
+
+  # ===== PURCHASED MODULES (bought complete; one line, children are notes) ============================
+  - { code: purchased.module, noun: MODULE, modifiers: [PURCHASED], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: purchased.module.fan, noun: FAN MODULE, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {designation}, {rating}" }
+  - { code: purchased.module.display, noun: DISPLAY MODULE, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: purchased.module.camera, noun: CAMERA MODULE, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: purchased.module.wireless, noun: WIRELESS MODULE, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: purchased.module.sensor, noun: SENSOR MODULE, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: purchased.module.touch, noun: TOUCH MODULE, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: purchased.module.speaker, noun: SPEAKER MODULE, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: purchased.module.compressor, noun: COMPRESSOR, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {rating}" }
+  - { code: purchased.module.lock, noun: LOCK, modifiers: [], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {designation}" }
+  - { code: purchased.module.wheel, noun: WHEEL, modifiers: [CASTER], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {size}" }
+  - { code: purchased.module.actuator, noun: ACTUATOR, modifiers: [LINEAR], buy_as_assembly: true, description_template: "{noun}, {modifiers}, {size}, {rating}" }
+
+  # ===== ASSEMBLY (structure nodes) ===================================================================
+  - { code: assembly.product, noun: ASSEMBLY, modifiers: [TOP LEVEL], make_buy_default: make, usually_modelled: true, description_template: "{noun}, {designation}", note: "The product itself" }
+  - { code: assembly.subassembly, noun: SUB-ASSEMBLY, modifiers: [], make_buy_default: make, description_template: "{noun}, {designation}" }
+  - { code: assembly.module, noun: MODULE, modifiers: [BUILT SEPARATELY], make_buy_default: make, description_template: "{noun}, {designation}", note: "Built as its own MBOM sub-assembly (docs/04 §10)" }
+  - { code: assembly.phantom, noun: ASSEMBLY, modifiers: [PHANTOM], make_buy_default: make, description_template: "{noun}, {modifiers}", note: "Modelling-only grouping; collapsed in the MBOM" }
+  - { code: assembly.kit, noun: KIT, modifiers: [], uom: SET, make_buy_default: make, usually_modelled: false, description_template: "{noun}, {designation}" }
+  - { code: assembly.accessory_kit, noun: KIT, modifiers: [ACCESSORY], uom: SET, make_buy_default: make, usually_modelled: false, description_template: "{noun}, {designation}" }
+  - { code: assembly.fastener_group, noun: HARDWARE KIT, modifiers: [FASTENER], uom: SET, make_buy_default: make, description_template: "{noun}, {modifiers}" }
+
+  # ===== UNCLASSIFIED =================================================================================
+  - { code: unclassified, noun: PART, modifiers: [UNCLASSIFIED], description_template: "{noun}, {modifiers}, {dims}", note: "Kept with an open question when no class reaches the threshold (docs/04 §5)" }
+  - { code: unclassified.reference, noun: REFERENCE, modifiers: [GEOMETRY], make_buy_default: make, usually_modelled: false, description_template: "{noun}, {modifiers}", note: "Excluded from the BoM; shown in the excluded list (docs/04 §3)" }

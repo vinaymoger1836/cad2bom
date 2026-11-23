@@ -1,0 +1,60 @@
+{
+  "case": "B5",
+  "title": "B2 CAD plus an incomplete user BoM",
+  "library_version": "2026.11.0",
+  "inputs": [
+    "input/bracket_assembly.step",
+    "input/user_bom.xlsx"
+  ],
+  "assertions": [
+    "Exactly 3 'CAD shows X, add it?' suggestions (suggestions.json) and exactly 1 quantity question (questions.json).",
+    "User values are kept: the screw line stays at qty 6 until the question is answered.",
+    "Approval is blocked until the question is answered and all suggestions are accepted or rejected.",
+    "User rows are unchanged in `raw`."
+  ],
+  "user_rows_raw": [
+    {
+      "row": 2,
+      "Item": 1,
+      "Part No": "BRK-1001",
+      "Description": "Bracket, sheet metal, 2mm",
+      "Qty": 1,
+      "Unit": "pcs",
+      "Material": "CRCA"
+    },
+    {
+      "row": 3,
+      "Item": 2,
+      "Part No": "CVR-1002",
+      "Description": "Cover, moulded",
+      "Qty": 1,
+      "Unit": "pcs",
+      "Material": "ABS"
+    },
+    {
+      "row": 4,
+      "Item": 3,
+      "Part No": "BLK-1003",
+      "Description": "Aluminium block 40x30x25",
+      "Qty": 1,
+      "Unit": "pcs",
+      "Material": "AL6061"
+    },
+    {
+      "row": 5,
+      "Item": 4,
+      "Part No": "SCR-1004",
+      "Description": "Screw M4x12 ISO 4762",
+      "Qty": 6,
+      "Unit": "pcs",
+      "Material": null
+    }
+  ],
+  "matched_user_rows": {
+    "BRK-1001": "Bracket",
+    "CVR-1002": "Cover",
+    "BLK-1003": "Block",
+    "SCR-1004": "Part1 (ISO 4762 M4x12)"
+  },
+  "approval_blocked_initially": true
+}

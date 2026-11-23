@@ -1,0 +1,17 @@
+id: B3
+title: Ceiling fan (stand-in model)
+library_version: 2026.11.0
+generated_by: c2b-fixtures build
+inputs:
+- input/fan.step
+- input/details.txt
+- input/photo.png
+expected:
+- expected/bom.json
+- expected/questions.json
+- expected/suggestions.json
+rules_asserted: false
+rules_note: Rule ids are not asserted until the rules engine exists (P3); values below
+  are.
+stand_in: true
+vision_cassette: to be recorded in P5; photo.png is a grey placeholder

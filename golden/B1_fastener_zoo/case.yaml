@@ -1,0 +1,13 @@
+id: B1
+title: Fastener zoo
+library_version: 2026.11.0
+generated_by: c2b-fixtures build
+inputs:
+- input/fastener_zoo.step
+expected:
+- expected/bom.json
+rules_asserted: false
+rules_note: Rule ids are not asserted until the rules engine exists (P3); values below
+  are.
+stand_in: false
+llm_calls: 0

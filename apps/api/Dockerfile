@@ -11,6 +11,7 @@ WORKDIR /src
 # Every workspace member must be present for `uv sync --frozen`; the .dockerignore keeps it small.
 COPY pyproject.toml uv.lock ./
 COPY packages ./packages
+COPY tools ./tools
 COPY apps/api ./apps/api
 COPY apps/worker ./apps/worker
 COPY apps/cad-worker ./apps/cad-worker

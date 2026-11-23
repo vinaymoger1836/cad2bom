@@ -1,0 +1,63 @@
+# Confidence weights and thresholds (docs/04 §5, §8; docs/03 §1). All numbers are tuning values
+# for the rules engine; the engine reads them, it does not hard-code them (CLAUDE.md rule 6).
+
+# Base confidence per provenance source (docs/05 §1 Source). User edits are always 1.0.
+source_base:
+  user: 1.0
+  bom_file: 1.0        # for what the user's file states
+  cad_meta: 0.9        # authored names / properties (docs/03 §1)
+  cad_geom: 0.95       # geometry measurements
+  std_table: 0.95
+  library: 0.5         # class and profile defaults (e.g. assumed grade, assumed material)
+  datasheet: 0.85
+  vision: 0.4          # photos: <= 0.4 (docs/03 §1)
+  llm: 0.5
+  engine: 0.9          # arithmetic done by the engine (roll-ups)
+
+# Acceptance thresholds per stage (docs/04 §8).
+thresholds:
+  class: 0.75
+  material: 0.7
+  designation: 0.8
+  merge_description_similarity: 0.85   # docs/04 §7.2 step 3
+  merge_description_similarity_with_size: 0.7   # step 4
+  class_tie_margin: 0.1                # two classes within this -> LLM fallback L1
+
+# Line confidence bands (docs/04 §8): High >= high, Medium >= medium, else Low.
+bands:
+  high: 0.85
+  medium: 0.6
+
+# Classification ladder: typical evidence weight per step (docs/04 §5).
+classification_ladder:
+  C1_user_bom: 1.0
+  C2_cad_meta: 0.9
+  C3_std_recogniser_min: 0.85
+  C3_std_recogniser_max: 0.95
+  C4_name_dictionary_min: 0.5
+  C4_name_dictionary_max: 0.8
+  C5_geometry_min: 0.4
+  C5_geometry_max: 0.7
+  C6_context_boost_min: 0.1
+  C6_context_boost_max: 0.3
+  L1_llm: 0.5
+
+# Caps on LLM-sourced values (docs/04 §9, docs/10 §4 B6).
+llm:
+  class_cap: 0.7
+  gap_suggestion_confidence: 0.3
+
+# Comparison tolerances.
+tolerances:
+  merge_value_agreement: 0.05      # docs/04 §7.2: 5% on qty / size
+  merge_size_hint: 0.05
+  mass_rollup_vs_stated: 0.05      # docs/04 §6 step 4
+  length_snap_mm: 0.3              # docs/04 §4: snap shank length to standard lengths
+  duplicate_instance_position_mm: 0.01
+
+# How candidate scores combine (docs/04 §8). Implemented in the engine; named here for the record.
+scoring:
+  combine: noisy_or
+  contribution: "weight * source_base"
+  cap: strongest_source_base
+  line_confidence: min_over_required_fields

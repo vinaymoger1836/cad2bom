@@ -1,0 +1,125 @@
+{
+  "case": "B3b",
+  "title": "Fan model supplied by the owner (provisional)",
+  "provisional": true,
+  "library_version": "2026.11.0",
+  "input": "input/fan_real.step",
+  "source_note": "Copied from the owner's Downloads folder (fan.STEP). It is not confirmed to be the S2 demo fan: it has 15 solid instances (9 unique shapes), not 13.",
+  "sha256": "07a03e663b783864f6e04654e7f5d17e96c40749b2c2856a144abf9e6613d6b0",
+  "bytes": 591121,
+  "solid_instances": 15,
+  "unique_shapes": 9,
+  "tree": {
+    "name": "fan",
+    "kind": "assembly",
+    "instances": 1,
+    "children": [
+      {
+        "name": "Part1",
+        "kind": "solid",
+        "instances": 1,
+        "volume_mm3": 1513695.33
+      },
+      {
+        "name": "Part3",
+        "kind": "solid",
+        "instances": 1,
+        "volume_mm3": 27913.48
+      },
+      {
+        "name": "Part7",
+        "kind": "solid",
+        "instances": 1,
+        "volume_mm3": 77304.79
+      },
+      {
+        "name": "Part4",
+        "kind": "solid",
+        "instances": 1,
+        "volume_mm3": 1752.67
+      },
+      {
+        "name": "Part5",
+        "kind": "solid",
+        "instances": 2,
+        "volume_mm3": 79397.45
+      },
+      {
+        "name": "Part2",
+        "kind": "solid",
+        "instances": 3,
+        "volume_mm3": 902762.55
+      },
+      {
+        "name": "Part6",
+        "kind": "solid",
+        "instances": 3,
+        "volume_mm3": 12627.88
+      },
+      {
+        "name": "part 9",
+        "kind": "solid",
+        "instances": 1,
+        "volume_mm3": 887410.83
+      },
+      {
+        "name": "part 8",
+        "kind": "solid",
+        "instances": 2,
+        "volume_mm3": 2171.87
+      }
+    ]
+  },
+  "unique_shapes_by_volume": [
+    {
+      "name": "Part1",
+      "instances": 1,
+      "volume_mm3": 1513695.33
+    },
+    {
+      "name": "Part2",
+      "instances": 3,
+      "volume_mm3": 902762.55
+    },
+    {
+      "name": "part 9",
+      "instances": 1,
+      "volume_mm3": 887410.83
+    },
+    {
+      "name": "Part5",
+      "instances": 2,
+      "volume_mm3": 79397.45
+    },
+    {
+      "name": "Part7",
+      "instances": 1,
+      "volume_mm3": 77304.79
+    },
+    {
+      "name": "Part3",
+      "instances": 1,
+      "volume_mm3": 27913.48
+    },
+    {
+      "name": "Part6",
+      "instances": 3,
+      "volume_mm3": 12627.88
+    },
+    {
+      "name": "part 8",
+      "instances": 2,
+      "volume_mm3": 2171.87
+    },
+    {
+      "name": "Part4",
+      "instances": 1,
+      "volume_mm3": 1752.67
+    }
+  ],
+  "observations": [
+    "Three identical large solids (Part2, x3) are probably the blades; the details text for B3 says 4 blades, so the 3 vs 4 question would apply here too.",
+    "Classes, descriptions and quantities are NOT asserted: the owner has not classified Part1..Part9."
+  ],
+  "assertions_when_classified": "Add expected classes here once the owner has labelled each part; until then B3b only checks that the file reads and the counts/volumes above hold (within 0.5%)."
+}

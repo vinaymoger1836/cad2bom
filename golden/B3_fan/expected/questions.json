@@ -1,0 +1,20 @@
+[
+  {
+    "id": "Q-001",
+    "kind": "choice",
+    "blocking": true,
+    "line_ids": [
+      "L-0007"
+    ],
+    "text": "Blade count: the CAD model shows 3 blades but your description says 4. Which is correct?",
+    "options": [
+      "3",
+      "4"
+    ],
+    "evidence": [
+      "cad: BladeAssy x3 -> Blade x1 each (qty_total 3)",
+      "text: '4 blades' (details.txt)"
+    ],
+    "answer": null
+  }
+]

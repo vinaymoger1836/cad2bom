@@ -1,0 +1,71 @@
+# Default organisation profile (docs/06 §6). EVERY value here is a default for the owner to
+# confirm in P6 (numbering scheme, description case, preferred standards, default grades).
+name: default
+
+numbering:
+  scheme: "{prefix}-{seq:05d}"          # + "-{rev}" when exported as a full number (docs/04 §10)
+  revision_start: A
+  prefixes:
+    fastener: FAS
+    bearing: BRG
+    transmission: TRN
+    seal: SEL
+    spring: SPR
+    sheetmetal: SHM
+    machined: MCH
+    moulded: MLD
+    cast: CST
+    extrusion: EXT
+    wood: WDP
+    glass: GLS
+    electrical: ELE
+    fluid: FLD
+    packaging: PKG
+    label: LBL
+    documentation: DOC
+    consumable: CON
+    purchased: PUR
+    assembly: ASM
+    unclassified: UNC
+    default: GEN
+
+descriptions:
+  case: upper
+  style: noun_first
+  separator: ", "
+
+find_numbers:
+  start: 10
+  step: 10
+  standard_parts_last: true
+
+# Default material / finish / label per class "profile key" (taxonomy: material_default_profile_key).
+# `label` is the grade text shown in descriptions when the real grade is unknown (docs/04 §4).
+defaults:
+  fastener_steel: { material: steel_8_8,        finish: zinc_plated, label: "STEEL 8.8 ZINC PLATED" }
+  fastener_ss:    { material: ss_a2_70,         label: "A2-70" }
+  washer_steel:   { material: steel_200hv,      finish: zinc_plated, label: "STEEL ZINC PLATED" }
+  retaining_ring: { material: spring_steel_c75, finish: phosphated, label: "SPRING STEEL" }
+  dowel_steel:    { material: steel_c45,        label: "STEEL" }
+  bearing_steel:  { material: steel_100cr6 }
+  seal_elastomer: { material: nbr_70,           label: "NBR 70" }
+  spring_steel:   { material: spring_steel_c75 }
+  sheet_metal:    { material: steel_crca,       finish: zinc_plated }
+  turned:         { material: steel_c45 }
+  machined:       { material: al_6061_t6,       finish: anodised_clear }
+  moulded:        { material: pc_abs }
+  cast:           { material: al_adc12 }
+  extrusion:      { material: al_6063_t5,       finish: anodised_clear }
+  pcb:            { material: fr4 }
+  glass:          { material: glass_soda_lime }
+  wood:           { material: plywood_birch }
+  packaging_board: { material: cardboard_corrugated }
+  cable_pvc:      { material: pvc_flexible }
+
+# Export column order (docs/05 §3). EBOM matches the parts-list fields in docs/01 §4.
+export:
+  ebom_columns: [find_no, part_number, revision, description, qty, uom, material, finish, mass_g, make_buy, class, standard, mpn, refdes, source, confidence, notes]
+  mbom_columns: [find_no, part_number, description, qty, uom, make_buy, ebom_refs, notes]
+  csv_columns: [level, parent, find_no, part_number, revision, description, qty, uom, material, finish, mass_g, make_buy, notes]
+
+standards_preference: [ISO, DIN, IS, ASME]

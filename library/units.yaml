@@ -1,0 +1,14 @@
+# Unit aliases -> canonical codes (docs/03 §4 step 4, docs/06 §1).
+# to_base converts to the base unit of the dimension: count EA, length m, mass kg, volume l, area m2.
+# Aliases are compared case-folded and with surrounding dots removed ("Pcs." == "pcs").
+units:
+  - { code: EA,   dimension: count,  to_base: 1,      aliases: [pcs, pc, piece, pieces, nos, "no", "no.", ea, each, unit, units, stk, "stk.", st, stück, stueck, qty, u, "off"] }
+  - { code: SET,  dimension: count,  to_base: 1,      aliases: [set, sets, kit, kits, satz] }
+  - { code: M,    dimension: length, to_base: 1,      aliases: [m, mtr, mtrs, meter, meters, metre, metres] }
+  - { code: MM,   dimension: length, to_base: 0.001,  aliases: [mm, millimeter, millimetre] }
+  - { code: CM,   dimension: length, to_base: 0.01,   aliases: [cm, centimeter, centimetre] }
+  - { code: KG,   dimension: mass,   to_base: 1,      aliases: [kg, kgs, kilogram, kilograms] }
+  - { code: G,    dimension: mass,   to_base: 0.001,  aliases: [g, gm, gms, gram, grams, gramm] }
+  - { code: L,    dimension: volume, to_base: 1,      aliases: [l, ltr, litre, liter, litres, liters] }
+  - { code: ML,   dimension: volume, to_base: 0.001,  aliases: [ml, millilitre, milliliter] }
+  - { code: M2,   dimension: area,   to_base: 1,      aliases: [m2, "m²", sqm, "sq.m"] }

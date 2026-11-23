@@ -1,0 +1,43 @@
+[
+  {
+    "id": "S-001",
+    "class": "label.rating",
+    "rule": "R-GAP-001",
+    "origin": "gap_rule",
+    "level": "ebom",
+    "qty": 1,
+    "text": "Add a rating label?",
+    "review": "suggested"
+  },
+  {
+    "id": "S-002",
+    "class": "documentation.manual",
+    "rule": "R-GAP-002",
+    "origin": "gap_rule",
+    "level": "ebom",
+    "qty": 1,
+    "text": "Add a user manual?",
+    "review": "suggested"
+  },
+  {
+    "id": "S-003",
+    "class": "packaging.carton",
+    "rule": "R-GAP-003",
+    "origin": "gap_rule",
+    "level": "mbom",
+    "qty": 1,
+    "text": "Add a shipper carton?",
+    "review": "suggested"
+  },
+  {
+    "id": "S-004",
+    "class": "consumable.solder",
+    "rule": "R-GAP-021",
+    "origin": "gap_rule",
+    "level": "mbom",
+    "qty": null,
+    "qty_note": "per_joint_estimate; the engine proposes the number, it is not asserted here",
+    "text": "Add solder? The receiver board is hand soldered (details text).",
+    "review": "suggested"
+  }
+]

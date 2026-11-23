@@ -1,0 +1,17 @@
+# Product-type skeleton: power bank. Starter list; verify with a domain expert.
+id: power_bank
+display: Power bank
+match_keywords: [power bank, powerbank, portable charger, battery pack usb, externer akku]
+expected:
+  - { class: electrical.battery.li_ion, min_count: 1, note: "Li-ion cells" }
+  - { class: electrical.pcba.bms, min_count: 1, note: "Protection / battery management board" }
+  - { class: electrical.connector.usb_c, min_count: 1, note: "Charge / output port" }
+  - { class: moulded.housing, min_count: 1, note: "Housing" }
+  - { class: electrical.component.led, min_count: 1, note: "Charge-level indicator LED" }
+  - { class: consumable.solder, min_count: 1, note: "Solder for hand or wave soldered joints" }
+  - { class: label.rating, min_count: 1, note: "Rating label" }
+  - { class: label.transport, min_count: 1, note: "Lithium transport label" }
+  - { class: documentation.manual, min_count: 1, note: "User manual" }
+  - { class: packaging.carton, min_count: 1, note: "Shipper carton" }
+source: "Author's general knowledge of power banks, not a catalogue or standard."
+verify: true

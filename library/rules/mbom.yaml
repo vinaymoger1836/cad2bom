@@ -1,0 +1,18 @@
+# MBOM rules (docs/04 §10). STARTER SET for P1; implemented in P6.
+stage: mbom
+id_prefix: R-MBM
+rules:
+  - id: R-MBM-001
+    stage: mbom
+    when:
+      class_is: assembly.phantom
+    then: { flag: collapse_in_mbom }
+    weight: 1.0
+    note: "Phantom assemblies are kept in the EBOM and collapsed in the MBOM"
+  - id: R-MBM-002
+    stage: mbom
+    when:
+      class_is: assembly.module
+    then: { group_as: mbom_subassembly }
+    weight: 0.8
+    note: "A module built separately becomes an MBOM sub-assembly"

@@ -1,0 +1,15 @@
+id: B6
+title: Unknown product type
+library_version: 2026.11.0
+generated_by: c2b-fixtures build
+inputs:
+- input/unknown_product.step
+- input/details.txt
+expected:
+- expected/bom.json
+- expected/llm_expectations.json
+rules_asserted: false
+rules_note: Rule ids are not asserted until the rules engine exists (P3); values below
+  are.
+stand_in: false
+cassette: to be recorded in P5

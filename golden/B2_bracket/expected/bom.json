@@ -1,0 +1,435 @@
+{
+  "case": "B2",
+  "title": "Bracket assembly",
+  "library_version": "2026.11.0",
+  "profile": "default",
+  "inputs": [
+    "input/bracket_assembly.step"
+  ],
+  "root": {
+    "name": "BRACKET_ASSY",
+    "class": "assembly.product"
+  },
+  "ebom": [
+    {
+      "id": "L-0001",
+      "parent": null,
+      "level": 1,
+      "find_no": 10,
+      "cad_name": "Bracket",
+      "class": "sheetmetal.bracket",
+      "noun": "BRACKET",
+      "modifiers": [],
+      "designation": null,
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "BRACKET, 60X40X30 T2, MILD STEEL, COLD ROLLED (CRCA)",
+      "description_exact": false,
+      "make_buy": "supplier_made",
+      "origin": "cad",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 9010.36,
+      "material": {
+        "value": "steel_crca",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 70.7313,
+      "open_items": [
+        "material assumed: Mild steel, cold rolled (CRCA)"
+      ],
+      "note": "2 mm sheet metal, two bends"
+    },
+    {
+      "id": "L-0002",
+      "parent": null,
+      "level": 1,
+      "find_no": 20,
+      "cad_name": "Shaft",
+      "class": "machined.turned.shaft",
+      "noun": "SHAFT",
+      "modifiers": [
+        "TURNED"
+      ],
+      "designation": null,
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "SHAFT, TURNED, Ø12X80, MEDIUM CARBON STEEL C45",
+      "description_exact": false,
+      "make_buy": "supplier_made",
+      "origin": "cad",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 8943.07,
+      "material": {
+        "value": "steel_c45",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "mass_g": 70.2031,
+      "open_items": [
+        "material assumed: Medium carbon steel C45"
+      ]
+    },
+    {
+      "id": "L-0003",
+      "parent": null,
+      "level": 1,
+      "find_no": 30,
+      "cad_name": "Cover",
+      "class": "moulded.cover",
+      "noun": "COVER",
+      "modifiers": [
+        "MOULDED"
+      ],
+      "designation": null,
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "COVER, MOULDED, 60X40X18, PC/ABS BLEND",
+      "description_exact": false,
+      "make_buy": "supplier_made",
+      "origin": "cad",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 11344.21,
+      "material": {
+        "value": "pc_abs",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "mass_g": 13.0458,
+      "open_items": [
+        "material assumed: PC/ABS blend"
+      ],
+      "note": "2 mm wall, drafted"
+    },
+    {
+      "id": "L-0004",
+      "parent": null,
+      "level": 1,
+      "find_no": 40,
+      "cad_name": "Block",
+      "class": "machined.block",
+      "noun": "BLOCK",
+      "modifiers": [
+        "MACHINED"
+      ],
+      "designation": null,
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "BLOCK, MACHINED, 40X30X25, ALUMINIUM 6061-T6",
+      "description_exact": false,
+      "make_buy": "supplier_made",
+      "origin": "cad",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 27523.33,
+      "material": {
+        "value": "al_6061_t6",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "anodised_clear",
+        "source": "library"
+      },
+      "mass_g": 74.313,
+      "open_items": [
+        "material assumed: Aluminium 6061-T6"
+      ]
+    },
+    {
+      "id": "L-0005",
+      "parent": null,
+      "level": 1,
+      "find_no": 50,
+      "cad_name": "FASTENERS_GRP",
+      "class": "assembly.phantom",
+      "noun": "ASSEMBLY",
+      "modifiers": [
+        "PHANTOM"
+      ],
+      "designation": null,
+      "qty_per_parent": 2,
+      "uom": "EA",
+      "qty_total": 2,
+      "description": "ASSEMBLY, PHANTOM",
+      "description_exact": true,
+      "make_buy": "make",
+      "origin": "cad",
+      "review": "derived",
+      "phantom": true,
+      "buy_as_assembly": false,
+      "open_items": [],
+      "note": "Modelling-only group (name rule _grp); collapsed in the MBOM"
+    },
+    {
+      "id": "L-0006",
+      "parent": "L-0005",
+      "level": 2,
+      "find_no": 10,
+      "cad_name": "Part1",
+      "class": "fastener.screw.socket_head",
+      "noun": "SCREW",
+      "modifiers": [
+        "CAP",
+        "SOCKET HEAD"
+      ],
+      "designation": {
+        "standard": "ISO 4762",
+        "key": "ISO4762",
+        "family": "socket_head_cap_screw",
+        "size": "M4",
+        "length_mm": 12
+      },
+      "qty_per_parent": 2,
+      "uom": "EA",
+      "qty_total": 4,
+      "description": "SCREW, CAP, SOCKET HEAD, M4X12, ISO 4762, STEEL 8.8 ZINC PLATED",
+      "description_exact": true,
+      "make_buy": "buy",
+      "origin": "std_recogniser",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 289.15,
+      "material": {
+        "value": "steel_8_8",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 2.2698,
+      "open_items": [
+        "grade assumed: STEEL 8.8 ZINC PLATED"
+      ]
+    },
+    {
+      "id": "L-0007",
+      "parent": "L-0005",
+      "level": 2,
+      "find_no": 20,
+      "cad_name": "Part2",
+      "class": "fastener.washer.plain",
+      "noun": "WASHER",
+      "modifiers": [
+        "PLAIN"
+      ],
+      "designation": {
+        "standard": "ISO 7089",
+        "key": "ISO7089",
+        "family": "plain_washer_normal",
+        "size": "M4",
+        "length_mm": null
+      },
+      "qty_per_parent": 2,
+      "uom": "EA",
+      "qty_total": 4,
+      "description": "WASHER, PLAIN, M4, ISO 7089, STEEL ZINC PLATED",
+      "description_exact": true,
+      "make_buy": "buy",
+      "origin": "std_recogniser",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 39.28,
+      "material": {
+        "value": "steel_200hv",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 0.3083,
+      "open_items": [
+        "grade assumed: STEEL ZINC PLATED"
+      ]
+    },
+    {
+      "id": "L-0008",
+      "parent": "L-0005",
+      "level": 2,
+      "find_no": 30,
+      "cad_name": "Part3",
+      "class": "fastener.nut.hex",
+      "noun": "NUT",
+      "modifiers": [
+        "HEX"
+      ],
+      "designation": {
+        "standard": "ISO 4032",
+        "key": "ISO4032",
+        "family": "hex_nut_style1",
+        "size": "M4",
+        "length_mm": null
+      },
+      "qty_per_parent": 2,
+      "uom": "EA",
+      "qty_total": 4,
+      "description": "NUT, HEX, M4, ISO 4032, STEEL 8.8 ZINC PLATED",
+      "description_exact": true,
+      "make_buy": "buy",
+      "origin": "std_recogniser",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 95.58,
+      "material": {
+        "value": "steel_8_8",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 0.7503,
+      "open_items": [
+        "grade assumed: STEEL 8.8 ZINC PLATED"
+      ]
+    }
+  ],
+  "stats": {
+    "ebom_lines": 8,
+    "leaf_lines": 7,
+    "solid_instances": 16,
+    "mass_total_g": 241.6068
+  },
+  "shapes_volume_mm3": {
+    "Bracket": 9010.36,
+    "Shaft": 8943.07,
+    "Cover": 11344.21,
+    "Block": 27523.33,
+    "Part1": 289.15,
+    "Part2": 39.28,
+    "Part3": 95.58
+  },
+  "mbom": [
+    {
+      "id": "M-0001",
+      "parent": null,
+      "ebom_refs": [
+        "L-0001"
+      ],
+      "class": "sheetmetal.bracket",
+      "description": "BRACKET, 60X40X30 T2, MILD STEEL, COLD ROLLED (CRCA)",
+      "qty_per_parent": 1,
+      "qty_total": 1,
+      "uom": "EA",
+      "make_buy": "supplier_made",
+      "find_no": 10
+    },
+    {
+      "id": "M-0002",
+      "parent": null,
+      "ebom_refs": [
+        "L-0002"
+      ],
+      "class": "machined.turned.shaft",
+      "description": "SHAFT, TURNED, Ø12X80, MEDIUM CARBON STEEL C45",
+      "qty_per_parent": 1,
+      "qty_total": 1,
+      "uom": "EA",
+      "make_buy": "supplier_made",
+      "find_no": 20
+    },
+    {
+      "id": "M-0003",
+      "parent": null,
+      "ebom_refs": [
+        "L-0003"
+      ],
+      "class": "moulded.cover",
+      "description": "COVER, MOULDED, 60X40X18, PC/ABS BLEND",
+      "qty_per_parent": 1,
+      "qty_total": 1,
+      "uom": "EA",
+      "make_buy": "supplier_made",
+      "find_no": 30
+    },
+    {
+      "id": "M-0004",
+      "parent": null,
+      "ebom_refs": [
+        "L-0004"
+      ],
+      "class": "machined.block",
+      "description": "BLOCK, MACHINED, 40X30X25, ALUMINIUM 6061-T6",
+      "qty_per_parent": 1,
+      "qty_total": 1,
+      "uom": "EA",
+      "make_buy": "supplier_made",
+      "find_no": 40
+    },
+    {
+      "id": "M-0005",
+      "parent": null,
+      "ebom_refs": [
+        "L-0006"
+      ],
+      "class": "fastener.screw.socket_head",
+      "description": "SCREW, CAP, SOCKET HEAD, M4X12, ISO 4762, STEEL 8.8 ZINC PLATED",
+      "qty_per_parent": 4,
+      "qty_total": 4,
+      "uom": "EA",
+      "make_buy": "buy",
+      "find_no": 50
+    },
+    {
+      "id": "M-0006",
+      "parent": null,
+      "ebom_refs": [
+        "L-0007"
+      ],
+      "class": "fastener.washer.plain",
+      "description": "WASHER, PLAIN, M4, ISO 7089, STEEL ZINC PLATED",
+      "qty_per_parent": 4,
+      "qty_total": 4,
+      "uom": "EA",
+      "make_buy": "buy",
+      "find_no": 60
+    },
+    {
+      "id": "M-0007",
+      "parent": null,
+      "ebom_refs": [
+        "L-0008"
+      ],
+      "class": "fastener.nut.hex",
+      "description": "NUT, HEX, M4, ISO 4032, STEEL 8.8 ZINC PLATED",
+      "qty_per_parent": 4,
+      "qty_total": 4,
+      "uom": "EA",
+      "make_buy": "buy",
+      "find_no": 70
+    }
+  ],
+  "llm_calls": 0,
+  "mass_rollup_tolerance": 0.01,
+  "assertions": [
+    "Classes: sheet metal bracket, turned shaft, moulded cover, machined block.",
+    "Levels and quantity roll-up are exact (FASTENERS_GRP is instanced 2x with 2 screws, 2 washers, 2 nuts each: 4 of each in total).",
+    "FASTENERS_GRP is flagged phantom in the EBOM and collapsed in the MBOM (children move up to the root).",
+    "Mass roll-up equals the sum of volume x density within 1% (stats.mass_total_g).",
+    "No LLM call is made (llm_calls == 0).",
+    "Custom-part descriptions are provisional (description_exact is false): dimensions are exact, wording may change in P6."
+  ]
+}

@@ -1,0 +1,15 @@
+id: B5
+title: CAD plus incomplete BoM
+library_version: 2026.11.0
+generated_by: c2b-fixtures build
+inputs:
+- input/bracket_assembly.step
+- input/user_bom.xlsx
+expected:
+- expected/expected.json
+- expected/questions.json
+- expected/suggestions.json
+rules_asserted: false
+rules_note: Rule ids are not asserted until the rules engine exists (P3); values below
+  are.
+stand_in: false

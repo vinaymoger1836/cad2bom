@@ -1,0 +1,403 @@
+# English name dictionary (docs/06 §5): tokens and phrases -> class, with a weight 0-1 that feeds the
+# classification ladder step C4 (typical 0.5-0.8, docs/04 §5). Matching is case-folded.
+# `context` (optional) restricts an entry, e.g. {parent_class_is: [electrical.motor]}; an entry
+# with no context that shares a token with another class's entry is reported as a COLLISION.
+lang: en
+domain: general
+entries:
+  # --- fasteners ----------------------------------------------------------------------------------
+  - { tokens: [shcs, "socket head cap screw", "socket cap screw", "cap screw", "allen screw", "allen key screw", "socket head screw"], class: fastener.screw.socket_head, weight: 0.8, kind: abbreviation }
+  - { tokens: ["hex head screw", "hex screw", hhcs, "hex head cap screw", "hexagon screw"], class: fastener.screw.hex_head, weight: 0.75 }
+  - { tokens: [bhcs, "button head", "button head screw", "button screw", buttonhead], class: fastener.screw.button_head, weight: 0.8, kind: abbreviation }
+  - { tokens: [fhcs, "countersunk screw", "csk screw", csk, "flat head cap screw", "flat head screw"], class: fastener.screw.countersunk, weight: 0.75, kind: abbreviation }
+  - { tokens: ["pan head screw", "pan head", "pan screw"], class: fastener.screw.pan_head, weight: 0.7 }
+  - { tokens: ["cheese head screw", "cheese head"], class: fastener.screw.cheese_head, weight: 0.7 }
+  - { tokens: ["set screw", "grub screw", grub, "socket set screw"], class: fastener.screw.set, weight: 0.8 }
+  - { tokens: ["self tapping screw", "self-tapping screw", "self tapping", "tapping screw", "sheet metal screw"], class: fastener.screw.self_tapping, weight: 0.75 }
+  - { tokens: ["thread forming screw", "thread rolling screw"], class: fastener.screw.thread_forming, weight: 0.75 }
+  - { tokens: ["shoulder screw", "shoulder bolt", "stripper bolt"], class: fastener.screw.shoulder, weight: 0.75 }
+  - { tokens: ["thumb screw", thumbscrew], class: fastener.screw.thumb, weight: 0.75 }
+  - { tokens: ["wood screw", "chipboard screw"], class: fastener.screw.wood, weight: 0.75 }
+  - { tokens: ["captive screw", "panel screw"], class: fastener.screw.captive, weight: 0.7 }
+  - { tokens: [screw, screws, "machine screw"], class: fastener.screw, weight: 0.6 }
+  - { tokens: [bolt, bolts], class: fastener.bolt, weight: 0.6 }
+  - { tokens: ["hex bolt", "hex head bolt", "hexagon bolt"], class: fastener.bolt.hex, weight: 0.75 }
+  - { tokens: ["carriage bolt", "coach bolt"], class: fastener.bolt.carriage, weight: 0.75 }
+  - { tokens: ["flange bolt", "flanged bolt"], class: fastener.bolt.flange, weight: 0.75 }
+  - { tokens: ["eye bolt", eyebolt], class: fastener.bolt.eye, weight: 0.75 }
+  - { tokens: ["anchor bolt", "expansion bolt"], class: fastener.bolt.anchor, weight: 0.7 }
+  - { tokens: [stud, "threaded stud", "stud bolt"], class: fastener.stud, weight: 0.6 }
+  - { tokens: ["threaded rod", "all thread", allthread, studding], class: fastener.threaded_rod, weight: 0.75 }
+  - { tokens: [nut, nuts], class: fastener.nut, weight: 0.6 }
+  - { tokens: ["hex nut", "hexagon nut"], class: fastener.nut.hex, weight: 0.75 }
+  - { tokens: [nyloc, "lock nut", locknut, "nylon insert nut", "nylon lock nut", "prevailing torque nut"], class: fastener.nut.nyloc, weight: 0.75 }
+  - { tokens: ["flange nut", "flanged nut"], class: fastener.nut.flange, weight: 0.75 }
+  - { tokens: ["cap nut", "dome nut", "acorn nut"], class: fastener.nut.cap, weight: 0.7 }
+  - { tokens: ["wing nut", wingnut], class: fastener.nut.wing, weight: 0.75 }
+  - { tokens: ["square nut"], class: fastener.nut.square, weight: 0.7 }
+  - { tokens: ["t-nut", "t nut", "tslot nut", "t-slot nut", "slot nut", "drop-in nut"], class: fastener.nut.t_slot, weight: 0.7 }
+  - { tokens: ["cage nut", "caged nut", "clip nut"], class: fastener.nut.cage, weight: 0.7 }
+  - { tokens: ["weld nut", "projection nut"], class: fastener.nut.weld, weight: 0.7 }
+  - { tokens: ["rivet nut", rivnut, "blind rivet nut", "nutsert"], class: fastener.nut.rivet, weight: 0.75 }
+  - { tokens: ["threaded insert", "heat set insert", heatset, "heat-set insert", "brass insert"], class: fastener.insert.threaded, weight: 0.7 }
+  - { tokens: [helicoil, "thread insert", "helical insert"], class: fastener.insert.helical, weight: 0.75 }
+  - { tokens: [washer, washers], class: fastener.washer, weight: 0.6 }
+  - { tokens: ["flat washer", "plain washer"], class: fastener.washer.plain, weight: 0.75 }
+  - { tokens: ["spring washer", "lock washer", "split washer", "split lock washer", "helical washer"], class: fastener.washer.spring, weight: 0.75 }
+  - { tokens: ["tooth washer", "star washer", "serrated washer", "toothed lock washer"], class: fastener.washer.tooth, weight: 0.75 }
+  - { tokens: ["fender washer", "penny washer", "large washer"], class: fastener.washer.fender, weight: 0.75 }
+  - { tokens: ["wave washer", "crinkle washer"], class: fastener.washer.wave, weight: 0.7 }
+  - { tokens: ["wedge lock washer", "nord-lock", nordlock], class: fastener.washer.wedge_lock, weight: 0.7 }
+  - { tokens: ["sealing washer", "bonded seal", "dowty washer"], class: fastener.washer.sealing, weight: 0.7 }
+  - { tokens: ["external circlip", "shaft circlip", "external retaining ring", "shaft retaining ring"], class: fastener.ring.circlip_external, weight: 0.8 }
+  - { tokens: ["internal circlip", "bore circlip", "internal retaining ring", "bore retaining ring"], class: fastener.ring.circlip_internal, weight: 0.8 }
+  - { tokens: [circlip, "retaining ring", "snap ring"], class: fastener.ring.circlip_external, weight: 0.4 }
+  - { tokens: [circlip, "retaining ring", "snap ring"], class: fastener.ring.circlip_internal, weight: 0.4 }
+  - { tokens: ["e-clip", "e clip", "e-ring", "eclip"], class: fastener.ring.e_clip, weight: 0.75 }
+  - { tokens: ["dowel pin", "dowel pins", "parallel pin", "locating pin"], class: fastener.pin.dowel, weight: 0.8 }
+  - { tokens: [dowel], class: fastener.pin.dowel, weight: 0.5 }
+  - { tokens: [pin], class: fastener.pin, weight: 0.5 }
+  - { tokens: ["spring pin", "roll pin", "slotted pin", "tension pin"], class: fastener.pin.spring, weight: 0.8 }
+  - { tokens: ["cotter pin", split-pin, "split pin"], class: fastener.pin.cotter, weight: 0.8 }
+  - { tokens: ["clevis pin"], class: fastener.pin.clevis, weight: 0.8 }
+  - { tokens: ["taper pin"], class: fastener.pin.taper, weight: 0.8 }
+  - { tokens: ["pop rivet", "blind rivet"], class: fastener.rivet.blind, weight: 0.8 }
+  - { tokens: ["solid rivet"], class: fastener.rivet.solid, weight: 0.8 }
+  - { tokens: [rivet, rivets], class: fastener.rivet.blind, weight: 0.45 }
+  - { tokens: [rivet, rivets], class: fastener.rivet.solid, weight: 0.4 }
+  - { tokens: [standoff, "stand-off", "pcb standoff", "hex standoff", "pcb spacer"], class: fastener.standoff, weight: 0.75 }
+  - { tokens: [spacer, spacers], class: fastener.spacer, weight: 0.55 }
+  - { tokens: [grommet], class: fastener.grommet, weight: 0.5 }
+  - { tokens: [grommet], class: seal.grommet, weight: 0.5 }
+  - { tokens: ["cable tie", "zip tie", "cable ties", "tie wrap"], class: fastener.cable_tie, weight: 0.8 }
+  - { tokens: [clip], class: fastener.clip, weight: 0.45 }
+  - { tokens: [hardware, misc, "misc hardware"], class: fastener.misc, weight: 0.3 }
+
+  # --- bearings and transmission ------------------------------------------------------------------
+  - { tokens: ["ball bearing", "deep groove", "deep groove ball bearing", "dgbb"], class: bearing.ball.deep_groove, weight: 0.8 }
+  - { tokens: ["angular contact bearing", "angular contact"], class: bearing.ball.angular, weight: 0.8 }
+  - { tokens: ["thrust bearing", "thrust ball bearing"], class: bearing.ball.thrust, weight: 0.8 }
+  - { tokens: ["cylindrical roller bearing", "roller bearing"], class: bearing.roller.cylindrical, weight: 0.7 }
+  - { tokens: ["tapered roller bearing", "taper roller bearing"], class: bearing.roller.tapered, weight: 0.8 }
+  - { tokens: ["needle bearing", "needle roller bearing"], class: bearing.roller.needle, weight: 0.8 }
+  - { tokens: ["spherical bearing", "self aligning bearing"], class: bearing.spherical, weight: 0.75 }
+  - { tokens: [bush, bushing, "sleeve bearing", "plain bearing", "plain bush"], class: bearing.plain.bush, weight: 0.65 }
+  - { tokens: ["flanged bush", "flanged bushing", "flange bush"], class: bearing.plain.flanged_bush, weight: 0.75 }
+  - { tokens: ["linear bearing", "linear bushing", "lm bearing"], class: bearing.linear, weight: 0.75 }
+  - { tokens: ["rod end", "heim joint", "spherical rod end"], class: bearing.rod_end, weight: 0.8 }
+  - { tokens: ["pillow block", "bearing housing", "plummer block"], class: bearing.housing, weight: 0.75 }
+  - { tokens: [gear, gears, "spur gear"], class: transmission.gear.spur, weight: 0.55 }
+  - { tokens: ["helical gear"], class: transmission.gear.helical, weight: 0.8 }
+  - { tokens: ["bevel gear", "miter gear"], class: transmission.gear.bevel, weight: 0.8 }
+  - { tokens: ["worm gear", worm, "worm wheel"], class: transmission.gear.worm, weight: 0.75 }
+  - { tokens: [rack, "gear rack"], class: transmission.gear.rack, weight: 0.5 }
+  - { tokens: [gearbox, "gear box", "gear reducer", reducer], class: transmission.gearbox, weight: 0.8 }
+  - { tokens: [pulley, "timing pulley", "gt2 pulley", "belt pulley"], class: transmission.pulley, weight: 0.7 }
+  - { tokens: [belt, "timing belt", "gt2 belt", "v-belt"], class: transmission.belt, weight: 0.7 }
+  - { tokens: [chain, "roller chain"], class: transmission.chain, weight: 0.7 }
+  - { tokens: [sprocket], class: transmission.sprocket, weight: 0.8 }
+  - { tokens: [coupling, "shaft coupling", "flexible coupling"], class: transmission.coupling, weight: 0.7 }
+  - { tokens: ["drive shaft", "output shaft", "input shaft", spindle], class: transmission.shaft, weight: 0.6 }
+  - { tokens: ["feather key", "parallel key", "key way key"], class: transmission.key, weight: 0.7 }
+  - { tokens: [clutch], class: transmission.clutch, weight: 0.8 }
+  - { tokens: ["lead screw", leadscrew, "acme screw"], class: transmission.lead_screw, weight: 0.8 }
+
+  # --- seals and springs --------------------------------------------------------------------------
+  - { tokens: ["o-ring", "o ring", oring, "o-rings"], class: seal.o_ring, weight: 0.85 }
+  - { tokens: [gasket, gaskets], class: seal.gasket.flat, weight: 0.55 }
+  - { tokens: ["foam gasket", "foam seal", "emi gasket"], class: seal.gasket.foam, weight: 0.7 }
+  - { tokens: ["formed gasket", "moulded gasket", "molded gasket"], class: seal.gasket.formed, weight: 0.7 }
+  - { tokens: ["oil seal", "shaft seal", "lip seal", "radial shaft seal"], class: seal.lip, weight: 0.8 }
+  - { tokens: ["v-ring", "v ring"], class: seal.v_ring, weight: 0.75 }
+  - { tokens: ["quad ring", "x-ring"], class: seal.quad_ring, weight: 0.75 }
+  - { tokens: ["sealing cord", "rubber cord"], class: seal.cord, weight: 0.65 }
+  - { tokens: ["seal strip", "door seal", "edge seal", "weather strip"], class: seal.strip, weight: 0.65 }
+  - { tokens: ["blanking plug", "hole plug", "plug cap"], class: seal.plug, weight: 0.65 }
+  - { tokens: ["end cap", "protective cap", "dust cap"], class: seal.cap, weight: 0.6 }
+  - { tokens: ["compression spring", "coil spring", "helical spring"], class: spring.compression, weight: 0.75 }
+  - { tokens: ["extension spring", "tension spring"], class: spring.extension, weight: 0.8 }
+  - { tokens: ["torsion spring"], class: spring.torsion, weight: 0.8 }
+  - { tokens: ["leaf spring"], class: spring.leaf, weight: 0.8 }
+  - { tokens: ["disc spring", "belleville washer", "belleville spring", "conical spring washer"], class: spring.disc, weight: 0.8 }
+  - { tokens: ["wave spring"], class: spring.wave, weight: 0.8 }
+  - { tokens: ["gas spring", "gas strut", "gas lift"], class: spring.gas, weight: 0.8 }
+  - { tokens: ["constant force spring", "clock spring"], class: spring.constant_force, weight: 0.75 }
+  - { tokens: [spring], class: spring.compression, weight: 0.5 }
+
+  # --- sheet metal, machined, moulded, cast, extrusions ---------------------------------------------
+  - { tokens: [bracket, brkt, "mounting bracket", "support bracket"], class: sheetmetal.bracket, weight: 0.65 }
+  - { tokens: ["l bracket", "angle bracket", "l-bracket"], class: sheetmetal.bracket.l, weight: 0.7 }
+  - { tokens: ["u bracket", "u-bracket", "channel bracket"], class: sheetmetal.bracket.u, weight: 0.7 }
+  - { tokens: [panel, "side panel", "sheet metal panel"], class: sheetmetal.panel, weight: 0.55 }
+  - { tokens: ["front panel", "fascia"], class: sheetmetal.panel.front, weight: 0.65 }
+  - { tokens: ["back panel", "rear panel", "back plate"], class: sheetmetal.panel.back, weight: 0.65 }
+  - { tokens: [enclosure, "sheet metal enclosure", "metal enclosure"], class: sheetmetal.enclosure, weight: 0.55 }
+  - { tokens: [chassis, "base chassis"], class: sheetmetal.chassis, weight: 0.7 }
+  - { tokens: ["mounting plate", "mount plate", "base plate", baseplate], class: sheetmetal.plate.mounting, weight: 0.65 }
+  - { tokens: [plate], class: sheetmetal.plate, weight: 0.45 }
+  - { tokens: [plate], class: machined.plate, weight: 0.4 }
+  - { tokens: [canopy, "ceiling canopy", "fan canopy"], class: sheetmetal.cover, weight: 0.55 }
+  - { tokens: [downrod, "down rod", "drop rod"], class: extrusion.tube.round, weight: 0.6 }
+  - { tokens: ["blade arm", "blade iron", "blade bracket"], class: sheetmetal.bracket, weight: 0.7 }
+  - { tokens: [shield, "emi shield", "rf shield", "heat shield"], class: sheetmetal.shield, weight: 0.65 }
+  - { tokens: [stamping, stamped, "stamped part"], class: sheetmetal.stamping, weight: 0.65 }
+  - { tokens: [hinge], class: sheetmetal.hinge, weight: 0.7 }
+  - { tokens: [tray], class: sheetmetal.tray, weight: 0.5 }
+  - { tokens: [duct, ducting], class: sheetmetal.duct, weight: 0.65 }
+  - { tokens: [weldment, "welded frame", "weld assembly"], class: sheetmetal.weldment, weight: 0.7 }
+  - { tokens: ["sheet metal cover", "metal cover"], class: sheetmetal.cover, weight: 0.65 }
+  - { tokens: [cover, lid, "top cover", "cover plate"], class: moulded.cover, weight: 0.45 }
+  - { tokens: [cover, lid], class: sheetmetal.cover, weight: 0.4 }
+  - { tokens: ["glass cover", "cover glass"], class: glass.cover, weight: 0.7 }
+  - { tokens: ["machined block", "aluminium block", "aluminum block", block, "billet block"], class: machined.block, weight: 0.55 }
+  - { tokens: [flange], class: machined.flange, weight: 0.5 }
+  - { tokens: [shaft, "turned shaft"], class: machined.turned.shaft, weight: 0.6 }
+  - { tokens: ["turned part", "turned pin", "lathe part"], class: machined.turned, weight: 0.6 }
+  - { tokens: [hub, "fan hub"], class: machined.turned.hub, weight: 0.5 }
+  - { tokens: [knob], class: moulded.knob, weight: 0.5 }
+  - { tokens: [knob], class: machined.turned.knob, weight: 0.45 }
+  - { tokens: ["milled part", "cnc part"], class: machined.milled, weight: 0.55 }
+  - { tokens: [housing, hsg, case, shell], class: moulded.housing, weight: 0.6 }
+  - { tokens: [housing, hsg], class: machined.housing, weight: 0.4 }
+  - { tokens: [housing, hsg], class: cast.housing, weight: 0.4 }
+  - { tokens: ["top housing", "upper housing", "top shell", "upper case"], class: moulded.housing.top, weight: 0.7 }
+  - { tokens: ["bottom housing", "lower housing", "bottom shell", "lower case", "base housing"], class: moulded.housing.bottom, weight: 0.7 }
+  - { tokens: [cap], class: moulded.cap, weight: 0.4 }
+  - { tokens: [button, "push button", pushbutton, "button cap"], class: moulded.button, weight: 0.55 }
+  - { tokens: [bezel, "trim ring"], class: moulded.bezel, weight: 0.65 }
+  - { tokens: [lens, "led lens", diffuser], class: moulded.lens, weight: 0.6 }
+  - { tokens: ["light guide", "lightpipe", "light pipe"], class: moulded.light_guide, weight: 0.8 }
+  - { tokens: [blade, "fan blade", impeller], class: moulded.blade, weight: 0.6 }
+  - { tokens: [handle], class: moulded.handle, weight: 0.45 }
+  - { tokens: [handle], class: cast.handle, weight: 0.35 }
+  - { tokens: [foot, feet, "rubber foot", "rubber feet"], class: moulded.foot, weight: 0.65 }
+  - { tokens: ["battery door", "battery cover", "battery lid"], class: moulded.battery_door, weight: 0.75 }
+  - { tokens: ["casting", "die cast", "die casting", "cast part"], class: cast.part, weight: 0.65 }
+  - { tokens: [forging, forged], class: cast.forging, weight: 0.65 }
+  - { tokens: [extrusion, "aluminium extrusion", "aluminum extrusion", profile, "aluminium profile", "aluminum profile"], class: extrusion.profile, weight: 0.6 }
+  - { tokens: ["t-slot profile", "t slot profile", "v-slot", "tslot extrusion"], class: extrusion.profile.t_slot, weight: 0.75 }
+  - { tokens: ["round tube", "tube round"], class: extrusion.tube.round, weight: 0.6 }
+  - { tokens: ["square tube", "rectangular tube", "box section", rhs, shs], class: extrusion.tube.square, weight: 0.65 }
+  - { tokens: [angle, "l angle", "angle profile"], class: extrusion.angle, weight: 0.5 }
+  - { tokens: [channel, "c channel", "u channel"], class: extrusion.channel, weight: 0.55 }
+  - { tokens: ["din rail", "top hat rail"], class: extrusion.rail, weight: 0.8 }
+  - { tokens: ["heat sink", heatsink], class: extrusion.heatsink, weight: 0.4 }
+  - { tokens: ["heat sink", heatsink], class: machined.heatsink, weight: 0.4 }
+  - { tokens: ["heat sink", heatsink], class: cast.heatsink, weight: 0.4 }
+  - { tokens: ["heat sink", heatsink], class: sheetmetal.heatsink, weight: 0.4 }
+  - { tokens: ["edge trim", "u trim", edging], class: extrusion.edge_trim, weight: 0.6 }
+
+  # --- wood and glass ---------------------------------------------------------------------------
+  - { tokens: [plywood, ply], class: wood.plywood, weight: 0.8 }
+  - { tokens: [mdf, "mdf panel"], class: wood.mdf, weight: 0.8 }
+  - { tokens: [timber, "solid wood", lumber], class: wood.solid, weight: 0.7 }
+  - { tokens: [veneer], class: wood.veneer, weight: 0.8 }
+  - { tokens: ["wood panel", "wooden panel"], class: wood.panel, weight: 0.7 }
+  - { tokens: ["wood dowel", "wooden dowel"], class: wood.dowel, weight: 0.8 }
+  - { tokens: [dowel], class: wood.dowel, weight: 0.4 }
+  - { tokens: [worktop, countertop], class: wood.worktop, weight: 0.7 }
+  - { tokens: ["edge band", "edge banding"], class: wood.edge_band, weight: 0.8 }
+  - { tokens: ["glass panel", "glass plate", glass], class: glass.panel, weight: 0.6 }
+  - { tokens: ["tempered glass", "toughened glass"], class: glass.panel.tempered, weight: 0.75 }
+  - { tokens: ["laminated glass"], class: glass.panel.laminated, weight: 0.75 }
+  - { tokens: ["glass shade", shade, "lamp shade"], class: glass.shade, weight: 0.6 }
+  - { tokens: ["glass lens"], class: glass.lens, weight: 0.7 }
+  - { tokens: ["display window", "window glass"], class: glass.window, weight: 0.6 }
+  - { tokens: ["glass tube"], class: glass.tube, weight: 0.8 }
+  - { tokens: [mirror], class: glass.mirror, weight: 0.8 }
+
+  # --- electrical -------------------------------------------------------------------------------
+  - { tokens: [pcb, pwb, "printed circuit board", "bare board"], class: electrical.pcb, weight: 0.75, kind: abbreviation }
+  - { tokens: [board], class: electrical.pcb, weight: 0.4 }
+  - { tokens: [pcba, "board assy", "pcb assy", "pcb assembly", "pcb assy.", "circuit board assembly"], class: electrical.pcba, weight: 0.8, kind: abbreviation }
+  - { tokens: [bms, "battery management", "protection board"], class: electrical.pcba.bms, weight: 0.75 }
+  - { tokens: ["driver board", "led driver board"], class: electrical.pcba.driver, weight: 0.7 }
+  - { tokens: ["display board"], class: electrical.pcba.display, weight: 0.7 }
+  - { tokens: ["receiver board", "rf receiver"], class: electrical.pcba.receiver, weight: 0.65 }
+  - { tokens: ["flex pcb", "flex circuit", fpc], class: electrical.flex_pcb, weight: 0.7 }
+  - { tokens: [cable, cables], class: electrical.cable, weight: 0.6 }
+  - { tokens: ["power cable", "mains cable"], class: electrical.cable.power, weight: 0.7 }
+  - { tokens: ["signal cable", "data cable"], class: electrical.cable.signal, weight: 0.7 }
+  - { tokens: ["ribbon cable", "flat cable"], class: electrical.cable.ribbon, weight: 0.8 }
+  - { tokens: ["cable assy", "cable assembly"], class: electrical.cable.assembly, weight: 0.8 }
+  - { tokens: [harness, "wiring harness", "wire harness", loom], class: electrical.cable.harness, weight: 0.8 }
+  - { tokens: ["power cord", "mains cord", "ac cord", "mains lead"], class: electrical.cable.power_cord, weight: 0.8 }
+  - { tokens: ["usb cable"], class: electrical.cable.usb, weight: 0.8 }
+  - { tokens: [wire, wires, "hook-up wire"], class: electrical.wire, weight: 0.6 }
+  - { tokens: ["heat shrink", "heatshrink", "shrink sleeve", "cable sleeve"], class: electrical.sleeve, weight: 0.75 }
+  - { tokens: ["cable gland", "cord grip"], class: electrical.cable_gland, weight: 0.8 }
+  - { tokens: ["strain relief", "cable strain relief"], class: electrical.strain_relief, weight: 0.8 }
+  - { tokens: [terminal, "crimp terminal", "spade terminal"], class: electrical.terminal, weight: 0.55 }
+  - { tokens: [lug, "ring lug", "ring terminal"], class: electrical.lug, weight: 0.65 }
+  - { tokens: [connector, conn], class: electrical.connector, weight: 0.65 }
+  - { tokens: ["usb-c", "usb c", "type-c", "type c"], class: electrical.connector.usb_c, weight: 0.75 }
+  - { tokens: ["usb-a", "usb a", "type-a"], class: electrical.connector.usb_a, weight: 0.75 }
+  - { tokens: ["pin header", header, "socket header"], class: electrical.connector.header, weight: 0.65 }
+  - { tokens: ["terminal block", "screw terminal", "terminal strip"], class: electrical.connector.terminal_block, weight: 0.8 }
+  - { tokens: ["dc jack", "barrel jack", "power jack"], class: electrical.connector.barrel_jack, weight: 0.8 }
+  - { tokens: [rj45, "ethernet jack"], class: electrical.connector.rj45, weight: 0.8 }
+  - { tokens: ["iec inlet", "c14 inlet", "mains inlet", "power inlet"], class: electrical.connector.mains_inlet, weight: 0.8 }
+  - { tokens: ["mains plug", plug], class: electrical.connector.plug, weight: 0.5 }
+  - { tokens: ["fpc connector", "ffc connector", "zif connector"], class: electrical.connector.fpc, weight: 0.8 }
+  - { tokens: ["card edge"], class: electrical.connector.card_edge, weight: 0.8 }
+  - { tokens: ["battery holder", "battery clip", "battery contact"], class: electrical.connector.battery_holder, weight: 0.7 }
+  - { tokens: [switch, sw], class: electrical.switch, weight: 0.6 }
+  - { tokens: ["tact switch", "tactile switch", "tactile button", "push switch"], class: electrical.switch.tactile, weight: 0.8 }
+  - { tokens: ["toggle switch"], class: electrical.switch.toggle, weight: 0.8 }
+  - { tokens: ["rocker switch"], class: electrical.switch.rocker, weight: 0.8 }
+  - { tokens: ["slide switch"], class: electrical.switch.slide, weight: 0.8 }
+  - { tokens: ["pull chain", "pull-chain switch", "pull chain switch"], class: electrical.switch.pull_chain, weight: 0.8 }
+  - { tokens: ["limit switch", "micro switch", microswitch], class: electrical.switch.limit, weight: 0.8 }
+  - { tokens: [relay], class: electrical.relay, weight: 0.85 }
+  - { tokens: [fuse], class: electrical.fuse, weight: 0.8 }
+  - { tokens: ["fuse holder", "fuse clip", "fuse block"], class: electrical.fuse_holder, weight: 0.8 }
+  - { tokens: ["circuit breaker", breaker, mcb], class: electrical.circuit_breaker, weight: 0.8 }
+  - { tokens: [sensor, probe], class: electrical.sensor, weight: 0.6 }
+  - { tokens: [thermostat, "thermal cutoff", "thermal switch"], class: electrical.thermostat, weight: 0.75 }
+  - { tokens: [resistor, res], class: electrical.component.resistor, weight: 0.7 }
+  - { tokens: [capacitor, "ceramic capacitor", "mlcc"], class: electrical.component.capacitor, weight: 0.7 }
+  - { tokens: [cap], class: electrical.component.capacitor, weight: 0.3 }
+  - { tokens: ["electrolytic capacitor", "electrolytic cap", "elco"], class: electrical.component.capacitor_electrolytic, weight: 0.8 }
+  - { tokens: [inductor, choke, coil], class: electrical.component.inductor, weight: 0.6 }
+  - { tokens: [diode, rectifier, "schottky diode", "zener diode"], class: electrical.component.diode, weight: 0.75 }
+  - { tokens: [led, leds], class: electrical.component.led, weight: 0.7 }
+  - { tokens: [transistor, mosfet, bjt, igbt], class: electrical.component.transistor, weight: 0.75 }
+  - { tokens: [ic, mcu, microcontroller, "integrated circuit", soc], class: electrical.component.ic, weight: 0.65 }
+  - { tokens: [crystal, oscillator, xtal], class: electrical.component.crystal, weight: 0.7 }
+  - { tokens: [varistor, mov], class: electrical.component.varistor, weight: 0.8 }
+  - { tokens: [thermistor, ntc, ptc], class: electrical.component.ntc, weight: 0.75 }
+  - { tokens: [transformer], class: electrical.component.transformer, weight: 0.8 }
+  - { tokens: [buzzer, beeper, "piezo buzzer"], class: electrical.component.buzzer, weight: 0.8 }
+  - { tokens: [speaker, "loudspeaker"], class: electrical.component.speaker, weight: 0.8 }
+  - { tokens: [microphone, mic], class: electrical.component.microphone, weight: 0.75 }
+  - { tokens: [display, lcd, oled, "tft display"], class: electrical.component.display, weight: 0.65 }
+  - { tokens: [potentiometer, pot, trimmer, trimpot], class: electrical.component.potentiometer, weight: 0.7 }
+  - { tokens: [antenna, "wifi antenna", "gps antenna"], class: electrical.component.antenna, weight: 0.8 }
+  - { tokens: [motor, "electric motor"], class: electrical.motor, weight: 0.7 }
+  - { tokens: ["dc motor", "brushed motor", "brushed dc motor"], class: electrical.motor.dc, weight: 0.8 }
+  - { tokens: [bldc, "bldc motor", "brushless motor"], class: electrical.motor.bldc, weight: 0.8, kind: abbreviation }
+  - { tokens: ["induction motor", "ac motor", "capacitor motor", "ceiling fan motor"], class: electrical.motor.ac_induction, weight: 0.75 }
+  - { tokens: ["stepper motor", stepper, "stepping motor"], class: electrical.motor.stepper, weight: 0.8 }
+  - { tokens: ["servo motor", servo], class: electrical.motor.servo, weight: 0.75 }
+  - { tokens: ["vibration motor", "vibrator motor", "haptic motor"], class: electrical.motor.vibration, weight: 0.8 }
+  - { tokens: [rotor], class: electrical.motor_part.rotor, weight: 0.7 }
+  - { tokens: [stator, laminations, "lamination stack"], class: electrical.motor_part.stator, weight: 0.7 }
+  - { tokens: ["motor magnet", "rotor magnet", magnet], class: electrical.motor_part.magnet, weight: 0.6 }
+  - { tokens: [winding, windings, "motor winding"], class: electrical.motor_part.winding, weight: 0.7 }
+  - { tokens: [psu, "power supply", smps, "power supply unit"], class: electrical.psu, weight: 0.8 }
+  - { tokens: ["ac-dc", "ac dc", "ac/dc"], class: electrical.psu.ac_dc, weight: 0.6 }
+  - { tokens: ["dc-dc", "dc dc", "dc/dc", "buck converter", "boost converter"], class: electrical.psu.dc_dc, weight: 0.65 }
+  - { tokens: ["power adapter", "power adaptor", "wall adapter", "ac adapter"], class: electrical.psu.adapter, weight: 0.8 }
+  - { tokens: [charger, "battery charger", "charger board"], class: electrical.psu.charger, weight: 0.7 }
+  - { tokens: [battery, "li-ion cell", "lithium cell", "li ion", "li-ion", "18650", "21700", "cell", "li-po", lipo], class: electrical.battery.li_ion, weight: 0.65 }
+  - { tokens: ["battery pack", "li-ion pack", "lithium pack"], class: electrical.battery.pack, weight: 0.8 }
+  - { tokens: ["coin cell", cr2032, cr2025, "button cell"], class: electrical.battery.coin, weight: 0.8 }
+  - { tokens: ["alkaline battery", "aa battery", "aaa battery", "9v battery"], class: electrical.battery.alkaline, weight: 0.8 }
+  - { tokens: ["led module", "led board", "led array", "led light kit", "light kit"], class: electrical.lighting.led_module, weight: 0.7 }
+  - { tokens: ["led strip", "led tape", "light strip"], class: electrical.lighting.led_strip, weight: 0.8 }
+  - { tokens: [lamp, bulb, "light bulb"], class: electrical.lighting.lamp, weight: 0.7 }
+  - { tokens: ["led driver", "lighting driver", ballast], class: electrical.lighting.driver, weight: 0.8 }
+  - { tokens: [heater, "heating element", "heater element"], class: electrical.heater, weight: 0.7 }
+  - { tokens: ["cooling fan", "axial fan", "blower fan", fan, blower], class: electrical.fan, weight: 0.55 }
+  - { tokens: ["run capacitor", "motor capacitor", "fan capacitor"], class: electrical.capacitor_motor, weight: 0.8 }
+  - { tokens: ["remote control", remote, "remote receiver"], class: electrical.remote, weight: 0.65 }
+  - { tokens: ["earth terminal", "ground terminal", "earth stud"], class: electrical.earth_terminal, weight: 0.75 }
+
+  # --- fluid -------------------------------------------------------------------------------------
+  - { tokens: [hose, "rubber hose", "silicone hose"], class: fluid.hose, weight: 0.75 }
+  - { tokens: [tube, tubing], class: fluid.tube, weight: 0.4 }
+  - { tokens: [tube, tubing], class: extrusion.tube.round, weight: 0.4 }
+  - { tokens: [pipe], class: fluid.pipe, weight: 0.65 }
+  - { tokens: [fitting, fittings], class: fluid.fitting, weight: 0.6 }
+  - { tokens: ["push-in fitting", "push fit", "push-fit", "quick connect"], class: fluid.fitting.push_in, weight: 0.75 }
+  - { tokens: ["hose barb", "barbed fitting", "barb fitting"], class: fluid.fitting.barbed, weight: 0.75 }
+  - { tokens: [elbow, "elbow fitting"], class: fluid.fitting.elbow, weight: 0.65 }
+  - { tokens: [tee, "tee fitting"], class: fluid.fitting.tee, weight: 0.65 }
+  - { tokens: [union, coupler], class: fluid.fitting.union, weight: 0.55 }
+  - { tokens: [nipple, "hex nipple"], class: fluid.fitting.nipple, weight: 0.65 }
+  - { tokens: ["hose clamp", "jubilee clip", "hose clip", "worm drive clamp"], class: fluid.clamp, weight: 0.8 }
+  - { tokens: ["ball valve"], class: fluid.valve.ball, weight: 0.85 }
+  - { tokens: ["check valve", "non-return valve", "nrv"], class: fluid.valve.check, weight: 0.85 }
+  - { tokens: ["solenoid valve", "magnetic valve"], class: fluid.valve.solenoid, weight: 0.85 }
+  - { tokens: ["relief valve", "safety valve", "pressure relief"], class: fluid.valve.relief, weight: 0.8 }
+  - { tokens: [pump, "water pump", "air pump", "diaphragm pump"], class: fluid.pump, weight: 0.75 }
+  - { tokens: [filter, strainer], class: fluid.filter, weight: 0.6 }
+  - { tokens: [nozzle, "spray nozzle", jet], class: fluid.nozzle, weight: 0.7 }
+  - { tokens: [tank, reservoir, "water tank"], class: fluid.tank, weight: 0.65 }
+  - { tokens: ["pressure gauge", gauge, manometer], class: fluid.gauge, weight: 0.75 }
+
+  # --- packaging, labels, documents, consumables ---------------------------------------------------
+  - { tokens: [carton, "shipper carton", "outer carton", "master carton", "shipping box"], class: packaging.carton, weight: 0.75 }
+  - { tokens: ["unit box", "retail box", "gift box", "product box", "inner box"], class: packaging.box, weight: 0.75 }
+  - { tokens: [box], class: packaging.box, weight: 0.4 }
+  - { tokens: ["packaging insert", "foam insert", "protective insert", "carton insert", "end cap insert"], class: packaging.insert, weight: 0.7 }
+  - { tokens: ["packaging foam", "pe foam", "eps foam", "foam packaging"], class: packaging.foam, weight: 0.7 }
+  - { tokens: [polybag, "poly bag", bag, "plastic bag"], class: packaging.bag, weight: 0.65 }
+  - { tokens: ["antistatic bag", "esd bag", "static shielding bag"], class: packaging.bag.antistatic, weight: 0.8 }
+  - { tokens: ["packing tape", "carton tape", "box tape"], class: packaging.tape, weight: 0.8 }
+  - { tokens: [tape], class: packaging.tape, weight: 0.3 }
+  - { tokens: [tape], class: consumable.adhesive.tape, weight: 0.3 }
+  - { tokens: [tape], class: consumable.tape_kapton, weight: 0.3 }
+  - { tokens: ["pallet strap", "strapping", "pet strap"], class: packaging.strap, weight: 0.7 }
+  - { tokens: [pallet, "euro pallet"], class: packaging.pallet, weight: 0.8 }
+  - { tokens: ["stretch film", "stretch wrap", "shrink wrap"], class: packaging.wrap, weight: 0.8 }
+  - { tokens: ["corner protector", "edge protector", "corner board"], class: packaging.corner, weight: 0.75 }
+  - { tokens: [label, labels, sticker], class: label.generic, weight: 0.6 }
+  - { tokens: ["rating label", "rating plate", "spec label", "specification label"], class: label.rating, weight: 0.8 }
+  - { tokens: ["serial label", "serial number label", "sn label"], class: label.serial, weight: 0.8 }
+  - { tokens: ["ce label", "compliance label", "regulatory label", "certification label"], class: label.compliance, weight: 0.8 }
+  - { tokens: ["warning label", "caution label", "hazard label"], class: label.warning, weight: 0.8 }
+  - { tokens: ["earth label", "ground label", "earth symbol"], class: label.earth, weight: 0.8 }
+  - { tokens: ["transport label", "battery label", "un3481 label", "dangerous goods label"], class: label.transport, weight: 0.75 }
+  - { tokens: [nameplate, "name plate", "data plate"], class: label.nameplate, weight: 0.8 }
+  - { tokens: [decal], class: label.decal, weight: 0.75 }
+  - { tokens: ["barcode label", "barcode sticker"], class: label.barcode, weight: 0.8 }
+  - { tokens: [overlay, "membrane overlay", "graphic overlay"], class: label.overlay, weight: 0.65 }
+  - { tokens: ["protective film", "peel film", "screen protector film"], class: label.film, weight: 0.65 }
+  - { tokens: [manual, "user manual", "instruction manual", "owner's manual", "operating manual", "user guide"], class: documentation.manual, weight: 0.8 }
+  - { tokens: ["quick start guide", "quick start", qsg, "quick guide"], class: documentation.quick_start, weight: 0.8 }
+  - { tokens: ["warranty card", warranty], class: documentation.warranty, weight: 0.75 }
+  - { tokens: ["safety leaflet", "safety sheet", "safety instructions"], class: documentation.safety, weight: 0.75 }
+  - { tokens: ["installation template", "drilling template", "mounting template"], class: documentation.template, weight: 0.75 }
+  - { tokens: ["test certificate", "test report", "inspection certificate"], class: documentation.certificate, weight: 0.65 }
+  - { tokens: [adhesive, glue, "epoxy glue", "bonding agent"], class: consumable.adhesive, weight: 0.7 }
+  - { tokens: ["double sided tape", "double-sided tape", dst, "vhb tape", "foam tape"], class: consumable.adhesive.tape, weight: 0.75 }
+  - { tokens: [threadlocker, loctite, "thread locker", "thread lock", "screw lock"], class: consumable.threadlocker, weight: 0.8 }
+  - { tokens: [solder, "solder wire", "solder bar"], class: consumable.solder, weight: 0.75 }
+  - { tokens: [flux, "soldering flux"], class: consumable.flux, weight: 0.8 }
+  - { tokens: ["solder paste"], class: consumable.solder_paste, weight: 0.85 }
+  - { tokens: [grease, "lithium grease", "bearing grease"], class: consumable.grease, weight: 0.8 }
+  - { tokens: [oil, lubricant, "machine oil"], class: consumable.oil, weight: 0.6 }
+  - { tokens: [paint, lacquer, "spray paint"], class: consumable.paint, weight: 0.7 }
+  - { tokens: ["powder coat", "powder coating", "epoxy powder"], class: consumable.powder_coat, weight: 0.75 }
+  - { tokens: [potting, "potting compound", encapsulant, "pottng"], class: consumable.potting, weight: 0.8 }
+  - { tokens: [sealant, "silicone sealant", "rtv", caulk], class: consumable.sealant, weight: 0.75 }
+  - { tokens: ["thermal paste", "thermal grease", "thermal compound"], class: consumable.thermal_paste, weight: 0.85 }
+  - { tokens: ["thermal pad", "gap pad", "gap filler"], class: consumable.thermal_pad, weight: 0.85 }
+  - { tokens: ["kapton tape", "polyimide tape", "kapton"], class: consumable.tape_kapton, weight: 0.85 }
+  - { tokens: ["insulation sheet", "insulation paper", "mylar sheet", "fish paper"], class: consumable.insulation, weight: 0.75 }
+  - { tokens: [desiccant, "silica gel", "desiccant bag"], class: consumable.desiccant, weight: 0.8 }
+  - { tokens: [wipe, "cleaning wipe", "alcohol wipe", "isopropyl wipe"], class: consumable.wipe, weight: 0.7 }
+
+  # --- purchased modules and assemblies -----------------------------------------------------------
+  - { tokens: ["fan module", "fan assembly", "blower module"], class: purchased.module.fan, weight: 0.75 }
+  - { tokens: ["display module", "lcd module", "oled module", "tft module"], class: purchased.module.display, weight: 0.8 }
+  - { tokens: ["camera module", "camera"], class: purchased.module.camera, weight: 0.75 }
+  - { tokens: ["wifi module", "bluetooth module", "wireless module", "rf module", "lora module"], class: purchased.module.wireless, weight: 0.8 }
+  - { tokens: ["sensor module"], class: purchased.module.sensor, weight: 0.8 }
+  - { tokens: ["touch module", "touch panel", touchscreen, "touch screen"], class: purchased.module.touch, weight: 0.75 }
+  - { tokens: ["speaker module"], class: purchased.module.speaker, weight: 0.8 }
+  - { tokens: [compressor], class: purchased.module.compressor, weight: 0.8 }
+  - { tokens: [lock, "door lock", latch], class: purchased.module.lock, weight: 0.6 }
+  - { tokens: [caster, castor, "caster wheel"], class: purchased.module.wheel, weight: 0.75 }
+  - { tokens: [actuator, "linear actuator"], class: purchased.module.actuator, weight: 0.75 }
+  - { tokens: ["purchased module", "bought-in module", "off-the-shelf module", cots], class: purchased.module, weight: 0.65 }
+
+  # --- assemblies --------------------------------------------------------------------------------
+  - { tokens: [assy, assembly, asm, "sub assy", subassembly, "sub-assembly", "sub assembly"], class: assembly.subassembly, weight: 0.5 }
+  - { tokens: [module], class: assembly.module, weight: 0.4 }
+  - { tokens: [kit], class: assembly.kit, weight: 0.5 }
+  - { tokens: ["accessory kit", "accessories", "accessory pack"], class: assembly.accessory_kit, weight: 0.7 }
+  - { tokens: ["hardware kit", "fastener kit", "screw kit", "screw pack", "hardware pack"], class: assembly.fastener_group, weight: 0.75 }
+  - { tokens: [phantom, _grp, "_group", "grp"], class: assembly.phantom, weight: 0.55 }
+  - { tokens: [skeleton, envelope, datum, "keep out", keepout, clearance, "ref geometry"], class: unclassified.reference, weight: 0.8 }

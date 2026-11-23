@@ -1,0 +1,60 @@
+# Single-row deep groove ball bearings, series 60 (light), 62 (medium), 63 (heavy), bore codes
+# 00-12 (10-60 mm). d bore, D outer diameter, B width (ISO 15 boundary dimensions).
+# Suffixes (2RS, ZZ, C3) do not change these dimensions; the engine keeps them in the designation.
+standard: ISO 15
+key: ISO15
+aliases: [DIN 625, DIN625, DIN 625-1, ISO 15:2017]
+family: deep_groove_ball_bearing
+class: bearing.ball.deep_groove
+edition: "2017"
+tolerance_mm: { d: 0.1, D: 0.15, B: 0.15 }
+dims: [d, D, B]
+monotonic: [D, B]
+group_by: series
+expected_sizes: ["6000", "6001", "6004", "6012", "6200", "6201", "6204", "6205", "6212", "6300", "6305", "6312"]
+sizes:
+  # Series 60
+  - { size: "6000", series: 60, d: 10, D: 26,  B: 8 }
+  - { size: "6001", series: 60, d: 12, D: 28,  B: 8 }
+  - { size: "6002", series: 60, d: 15, D: 32,  B: 9 }
+  - { size: "6003", series: 60, d: 17, D: 35,  B: 10 }
+  - { size: "6004", series: 60, d: 20, D: 42,  B: 12 }
+  - { size: "6005", series: 60, d: 25, D: 47,  B: 12 }
+  - { size: "6006", series: 60, d: 30, D: 55,  B: 13 }
+  - { size: "6007", series: 60, d: 35, D: 62,  B: 14 }
+  - { size: "6008", series: 60, d: 40, D: 68,  B: 15 }
+  - { size: "6009", series: 60, d: 45, D: 75,  B: 16 }
+  - { size: "6010", series: 60, d: 50, D: 80,  B: 16 }
+  - { size: "6011", series: 60, d: 55, D: 90,  B: 18 }
+  - { size: "6012", series: 60, d: 60, D: 95,  B: 18 }
+  # Series 62
+  - { size: "6200", series: 62, d: 10, D: 30,  B: 9 }
+  - { size: "6201", series: 62, d: 12, D: 32,  B: 10 }
+  - { size: "6202", series: 62, d: 15, D: 35,  B: 11 }
+  - { size: "6203", series: 62, d: 17, D: 40,  B: 12 }
+  - { size: "6204", series: 62, d: 20, D: 47,  B: 14 }
+  - { size: "6205", series: 62, d: 25, D: 52,  B: 15 }
+  - { size: "6206", series: 62, d: 30, D: 62,  B: 16 }
+  - { size: "6207", series: 62, d: 35, D: 72,  B: 17 }
+  - { size: "6208", series: 62, d: 40, D: 80,  B: 18 }
+  - { size: "6209", series: 62, d: 45, D: 85,  B: 19 }
+  - { size: "6210", series: 62, d: 50, D: 90,  B: 20 }
+  - { size: "6211", series: 62, d: 55, D: 100, B: 21 }
+  - { size: "6212", series: 62, d: 60, D: 110, B: 22 }
+  # Series 63
+  - { size: "6300", series: 63, d: 10, D: 35,  B: 11 }
+  - { size: "6301", series: 63, d: 12, D: 37,  B: 12 }
+  - { size: "6302", series: 63, d: 15, D: 42,  B: 13 }
+  - { size: "6303", series: 63, d: 17, D: 47,  B: 14 }
+  - { size: "6304", series: 63, d: 20, D: 52,  B: 15 }
+  - { size: "6305", series: 63, d: 25, D: 62,  B: 17 }
+  - { size: "6306", series: 63, d: 30, D: 72,  B: 19 }
+  - { size: "6307", series: 63, d: 35, D: 80,  B: 21 }
+  - { size: "6308", series: 63, d: 40, D: 90,  B: 23 }
+  - { size: "6309", series: 63, d: 45, D: 100, B: 25 }
+  - { size: "6310", series: 63, d: 50, D: 110, B: 27 }
+  - { size: "6311", series: 63, d: 55, D: 120, B: 29 }
+  - { size: "6312", series: 63, d: 60, D: 130, B: 31 }
+source: "ISO 15 boundary dimensions for series 60, 62 and 63 entered from the author's recollection; these are the widely published values in bearing catalogues (SKF, FAG, NSK, NTN)."
+verify: true
+note: "Spot-check 6201 (12x32x10), 6204 (20x47x14) and 6305 (25x62x17). Miniature (60x/MR) and series 16/68/69 are not covered."

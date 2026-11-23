@@ -1,0 +1,502 @@
+{
+  "case": "B3",
+  "title": "Ceiling fan (STAND-IN model)",
+  "library_version": "2026.11.0",
+  "profile": "default",
+  "inputs": [
+    "input/fan.step",
+    "input/details.txt",
+    "input/photo.png"
+  ],
+  "root": {
+    "name": "FAN",
+    "class": "assembly.product"
+  },
+  "ebom": [
+    {
+      "id": "L-0001",
+      "parent": null,
+      "level": 1,
+      "find_no": 10,
+      "cad_name": "Canopy",
+      "class": "sheetmetal.cover",
+      "noun": "COVER",
+      "modifiers": [],
+      "designation": null,
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "COVER, 120X120X30, MILD STEEL, COLD ROLLED (CRCA)",
+      "description_exact": false,
+      "make_buy": "supplier_made",
+      "origin": "cad",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 32879.52,
+      "material": {
+        "value": "steel_crca",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 258.1042,
+      "open_items": [
+        "material assumed: Mild steel, cold rolled (CRCA)"
+      ]
+    },
+    {
+      "id": "L-0002",
+      "parent": null,
+      "level": 1,
+      "find_no": 20,
+      "cad_name": "Downrod",
+      "class": "extrusion.tube.round",
+      "noun": "TUBE",
+      "modifiers": [
+        "ROUND"
+      ],
+      "designation": null,
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "TUBE, ROUND, Ø25X300, ALUMINIUM 6063-T5 (EXTRUSIONS)",
+      "description_exact": false,
+      "make_buy": "supplier_made",
+      "origin": "cad",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 33222.34,
+      "material": {
+        "value": "al_6063_t5",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "anodised_clear",
+        "source": "library"
+      },
+      "mass_g": 89.7003,
+      "open_items": [
+        "material assumed: Aluminium 6063-T5 (extrusions)"
+      ]
+    },
+    {
+      "id": "L-0003",
+      "parent": null,
+      "level": 1,
+      "find_no": 30,
+      "cad_name": "Motor",
+      "class": "electrical.motor.ac_induction",
+      "noun": "MOTOR",
+      "modifiers": [
+        "AC",
+        "INDUCTION"
+      ],
+      "designation": null,
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "MOTOR, AC, INDUCTION",
+      "description_exact": false,
+      "make_buy": "buy",
+      "origin": "cad",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": true,
+      "cad_volume_mm3": 188109.14,
+      "material": null,
+      "mass_g": null,
+      "open_items": [
+        "material unknown"
+      ]
+    },
+    {
+      "id": "L-0004",
+      "parent": null,
+      "level": 1,
+      "find_no": 40,
+      "cad_name": "Hub",
+      "class": "machined.turned.hub",
+      "noun": "HUB",
+      "modifiers": [
+        "TURNED"
+      ],
+      "designation": null,
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "HUB, TURNED, Ø100X25, MEDIUM CARBON STEEL C45",
+      "description_exact": false,
+      "make_buy": "supplier_made",
+      "origin": "cad",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 188495.56,
+      "material": {
+        "value": "steel_c45",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "mass_g": 1479.6901,
+      "open_items": [
+        "material assumed: Medium carbon steel C45"
+      ]
+    },
+    {
+      "id": "L-0005",
+      "parent": null,
+      "level": 1,
+      "find_no": 50,
+      "cad_name": "Mount_Plate",
+      "class": "sheetmetal.plate.mounting",
+      "noun": "PLATE",
+      "modifiers": [
+        "MOUNTING"
+      ],
+      "designation": null,
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "PLATE, MOUNTING, 150X40X3, MILD STEEL, COLD ROLLED (CRCA)",
+      "description_exact": false,
+      "make_buy": "supplier_made",
+      "origin": "cad",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 17830.35,
+      "material": {
+        "value": "steel_crca",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 139.9682,
+      "open_items": [
+        "material assumed: Mild steel, cold rolled (CRCA)"
+      ]
+    },
+    {
+      "id": "L-0006",
+      "parent": null,
+      "level": 1,
+      "find_no": 60,
+      "cad_name": "BladeAssy",
+      "class": "assembly.subassembly",
+      "noun": "SUB-ASSEMBLY",
+      "modifiers": [],
+      "designation": null,
+      "qty_per_parent": 3,
+      "uom": "EA",
+      "qty_total": 3,
+      "description": "SUB-ASSEMBLY",
+      "description_exact": true,
+      "make_buy": "make",
+      "origin": "cad",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "open_items": []
+    },
+    {
+      "id": "L-0007",
+      "parent": "L-0006",
+      "level": 2,
+      "find_no": 10,
+      "cad_name": "Blade",
+      "class": "moulded.blade",
+      "noun": "BLADE",
+      "modifiers": [
+        "MOULDED"
+      ],
+      "designation": null,
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 3,
+      "description": "BLADE, MOULDED, 450X120X4",
+      "description_exact": false,
+      "make_buy": "supplier_made",
+      "origin": "cad",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 203638.93,
+      "material": null,
+      "mass_g": null,
+      "open_items": [
+        "material unknown"
+      ]
+    },
+    {
+      "id": "L-0008",
+      "parent": "L-0006",
+      "level": 2,
+      "find_no": 20,
+      "cad_name": "Blade_Arm",
+      "class": "sheetmetal.bracket",
+      "noun": "BRACKET",
+      "modifiers": [],
+      "designation": null,
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 3,
+      "description": "BRACKET, 140X25X3, MILD STEEL, COLD ROLLED (CRCA)",
+      "description_exact": false,
+      "make_buy": "supplier_made",
+      "origin": "cad",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 10330.35,
+      "material": {
+        "value": "steel_crca",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "finish": {
+        "value": "zinc_plated",
+        "source": "library"
+      },
+      "mass_g": 81.0932,
+      "open_items": [
+        "material assumed: Mild steel, cold rolled (CRCA)"
+      ]
+    },
+    {
+      "id": "L-0009",
+      "parent": null,
+      "level": 1,
+      "find_no": 70,
+      "cad_name": "LightKit",
+      "class": "electrical.lighting.led_module",
+      "noun": "LED MODULE",
+      "modifiers": [],
+      "designation": null,
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "LED MODULE",
+      "description_exact": false,
+      "make_buy": "buy",
+      "origin": "cad",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": true,
+      "cad_volume_mm3": 134987.95,
+      "material": null,
+      "mass_g": null,
+      "open_items": [
+        "material unknown"
+      ]
+    },
+    {
+      "id": "L-0010",
+      "parent": null,
+      "level": 1,
+      "find_no": 80,
+      "cad_name": "Shade",
+      "class": "glass.shade",
+      "noun": "GLASS SHADE",
+      "modifiers": [],
+      "designation": null,
+      "qty_per_parent": 1,
+      "uom": "EA",
+      "qty_total": 1,
+      "description": "GLASS SHADE, 180X180X90, SODA-LIME GLASS (FLOAT / TEMPERED)",
+      "description_exact": false,
+      "make_buy": "supplier_made",
+      "origin": "cad",
+      "review": "derived",
+      "phantom": false,
+      "buy_as_assembly": false,
+      "cad_volume_mm3": 147648.57,
+      "material": {
+        "value": "glass_soda_lime",
+        "source": "library",
+        "confidence": 0.5
+      },
+      "mass_g": 369.1214,
+      "open_items": [
+        "material assumed: Soda-lime glass (float / tempered)"
+      ]
+    }
+  ],
+  "stats": {
+    "ebom_lines": 10,
+    "leaf_lines": 9,
+    "solid_instances": 13,
+    "mass_total_g": 2579.8638
+  },
+  "shapes_volume_mm3": {
+    "Canopy": 32879.52,
+    "Downrod": 33222.34,
+    "Motor": 188109.14,
+    "Hub": 188495.56,
+    "Mount_Plate": 17830.35,
+    "Blade": 203638.93,
+    "Blade_Arm": 10330.35,
+    "LightKit": 134987.95,
+    "Shade": 147648.57
+  },
+  "mbom": [
+    {
+      "id": "M-0001",
+      "parent": null,
+      "ebom_refs": [
+        "L-0001"
+      ],
+      "class": "sheetmetal.cover",
+      "description": "COVER, 120X120X30, MILD STEEL, COLD ROLLED (CRCA)",
+      "qty_per_parent": 1,
+      "qty_total": 1,
+      "uom": "EA",
+      "make_buy": "supplier_made",
+      "find_no": 10
+    },
+    {
+      "id": "M-0002",
+      "parent": null,
+      "ebom_refs": [
+        "L-0002"
+      ],
+      "class": "extrusion.tube.round",
+      "description": "TUBE, ROUND, Ø25X300, ALUMINIUM 6063-T5 (EXTRUSIONS)",
+      "qty_per_parent": 1,
+      "qty_total": 1,
+      "uom": "EA",
+      "make_buy": "supplier_made",
+      "find_no": 20
+    },
+    {
+      "id": "M-0003",
+      "parent": null,
+      "ebom_refs": [
+        "L-0003"
+      ],
+      "class": "electrical.motor.ac_induction",
+      "description": "MOTOR, AC, INDUCTION",
+      "qty_per_parent": 1,
+      "qty_total": 1,
+      "uom": "EA",
+      "make_buy": "buy",
+      "find_no": 30
+    },
+    {
+      "id": "M-0004",
+      "parent": null,
+      "ebom_refs": [
+        "L-0004"
+      ],
+      "class": "machined.turned.hub",
+      "description": "HUB, TURNED, Ø100X25, MEDIUM CARBON STEEL C45",
+      "qty_per_parent": 1,
+      "qty_total": 1,
+      "uom": "EA",
+      "make_buy": "supplier_made",
+      "find_no": 40
+    },
+    {
+      "id": "M-0005",
+      "parent": null,
+      "ebom_refs": [
+        "L-0005"
+      ],
+      "class": "sheetmetal.plate.mounting",
+      "description": "PLATE, MOUNTING, 150X40X3, MILD STEEL, COLD ROLLED (CRCA)",
+      "qty_per_parent": 1,
+      "qty_total": 1,
+      "uom": "EA",
+      "make_buy": "supplier_made",
+      "find_no": 50
+    },
+    {
+      "id": "M-0006",
+      "parent": null,
+      "ebom_refs": [
+        "L-0006"
+      ],
+      "class": "assembly.subassembly",
+      "description": "SUB-ASSEMBLY",
+      "qty_per_parent": 3,
+      "qty_total": 3,
+      "uom": "EA",
+      "make_buy": "make",
+      "find_no": 60
+    },
+    {
+      "id": "M-0007",
+      "parent": "M-0006",
+      "ebom_refs": [
+        "L-0007"
+      ],
+      "class": "moulded.blade",
+      "description": "BLADE, MOULDED, 450X120X4",
+      "qty_per_parent": 1,
+      "qty_total": 3,
+      "uom": "EA",
+      "make_buy": "supplier_made",
+      "find_no": 10
+    },
+    {
+      "id": "M-0008",
+      "parent": "M-0006",
+      "ebom_refs": [
+        "L-0008"
+      ],
+      "class": "sheetmetal.bracket",
+      "description": "BRACKET, 140X25X3, MILD STEEL, COLD ROLLED (CRCA)",
+      "qty_per_parent": 1,
+      "qty_total": 3,
+      "uom": "EA",
+      "make_buy": "supplier_made",
+      "find_no": 20
+    },
+    {
+      "id": "M-0009",
+      "parent": null,
+      "ebom_refs": [
+        "L-0009"
+      ],
+      "class": "electrical.lighting.led_module",
+      "description": "LED MODULE",
+      "qty_per_parent": 1,
+      "qty_total": 1,
+      "uom": "EA",
+      "make_buy": "buy",
+      "find_no": 70
+    },
+    {
+      "id": "M-0010",
+      "parent": null,
+      "ebom_refs": [
+        "L-0010"
+      ],
+      "class": "glass.shade",
+      "description": "GLASS SHADE, 180X180X90, SODA-LIME GLASS (FLOAT / TEMPERED)",
+      "qty_per_parent": 1,
+      "qty_total": 1,
+      "uom": "EA",
+      "make_buy": "supplier_made",
+      "find_no": 80
+    }
+  ],
+  "llm_calls": 0,
+  "stand_in": true,
+  "stand_in_note": "The real '13-solid fan STEP from the S2 demo' is not in the repository. input/fan.step is a synthetic 13-solid fan generated by tools/fixtures with 3 blades (the details text says 4). Replace it and re-record this file when the real model is available.",
+  "assertions": [
+    "Expected EBOM equals ebom (classes, quantities, levels; custom descriptions provisional).",
+    "The blade-count conflict (CAD 3 vs text 4) is raised as ONE blocking question (questions.json).",
+    "Exactly four gap suggestions: rating label, manual, carton, solder (suggestions.json).",
+    "Nothing is added to the BoM before a suggestion is accepted.",
+    "The photo is placeholder grey; vision findings come from the cassette recorded in P5."
+  ]
+}

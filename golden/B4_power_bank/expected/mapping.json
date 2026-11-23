@@ -1,0 +1,59 @@
+{
+  "header_row": 6,
+  "title_block_rows": [
+    1,
+    2,
+    3
+  ],
+  "footer_rows": [
+    22,
+    23
+  ],
+  "columns": {
+    "Pos": {
+      "field": "find_no",
+      "by": "rules"
+    },
+    "Teilenummer": {
+      "field": "part_number",
+      "by": "rules"
+    },
+    "Item": {
+      "field": "description",
+      "by": "extractor_L3",
+      "confirmed_by_user": true,
+      "why": "header 'Item' scores for find_no (also claimed by 'Pos'); values are long text"
+    },
+    "Menge": {
+      "field": "quantity",
+      "by": "rules"
+    },
+    "Unit": {
+      "field": "uom",
+      "by": "rules"
+    },
+    "Designator": {
+      "field": "refdes",
+      "by": "rules"
+    },
+    "Hersteller": {
+      "field": "manufacturer",
+      "by": "rules"
+    },
+    "MPN": {
+      "field": "mpn",
+      "by": "rules"
+    },
+    "Bemerkung": {
+      "field": "notes",
+      "by": "rules"
+    }
+  },
+  "ambiguous_columns": [
+    "Item"
+  ],
+  "assertions": [
+    "All columns except 'Item' are mapped by rules (library/headers.yaml).",
+    "'Item' is resolved through the extractor cassette (L3) and confirmed by the user."
+  ]
+}

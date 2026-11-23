@@ -1,0 +1,124 @@
+{
+  "case": "B6",
+  "title": "Unknown product type",
+  "library_version": "2026.11.0",
+  "inputs": [
+    "input/unknown_product.step",
+    "input/details.txt"
+  ],
+  "root": {
+    "name": "HANDHELD_CONTROLLER",
+    "class": "assembly.product"
+  },
+  "archetype": null,
+  "parts": [
+    {
+      "id": "L-0001",
+      "cad_name": "Body1",
+      "qty_total": 1,
+      "geometry_note": "thin-wall open shell, 1.8 mm",
+      "acceptable_classes": [
+        "moulded.housing.top",
+        "moulded.housing",
+        "moulded.cover"
+      ],
+      "cad_volume_mm3": 10096.13
+    },
+    {
+      "id": "L-0002",
+      "cad_name": "Body2",
+      "qty_total": 1,
+      "geometry_note": "thin-wall open shell, 1.8 mm",
+      "acceptable_classes": [
+        "moulded.housing.bottom",
+        "moulded.housing"
+      ],
+      "cad_volume_mm3": 8947.01
+    },
+    {
+      "id": "L-0003",
+      "cad_name": "Body3",
+      "qty_total": 1,
+      "geometry_note": "1.6 mm plate with 4 holes",
+      "acceptable_classes": [
+        "electrical.pcb",
+        "electrical.pcba"
+      ],
+      "cad_volume_mm3": 2834.76
+    },
+    {
+      "id": "L-0004",
+      "cad_name": "Body4",
+      "qty_total": 1,
+      "geometry_note": "rotational part with bore",
+      "acceptable_classes": [
+        "moulded.knob",
+        "machined.turned.knob"
+      ],
+      "cad_volume_mm3": 3486.12
+    },
+    {
+      "id": "L-0005",
+      "cad_name": "Body5",
+      "qty_total": 1,
+      "geometry_note": "small cylinder",
+      "acceptable_classes": [
+        "moulded.button",
+        "moulded.cap"
+      ],
+      "cad_volume_mm3": 201.06
+    },
+    {
+      "id": "L-0006",
+      "cad_name": "Body6",
+      "qty_total": 1,
+      "geometry_note": "helix, 6 turns",
+      "acceptable_classes": [
+        "spring.compression"
+      ],
+      "cad_volume_mm3": 56.85
+    },
+    {
+      "id": "L-0007",
+      "cad_name": "Body7",
+      "qty_total": 1,
+      "geometry_note": "0.5 mm sheet strip, one bend",
+      "acceptable_classes": [
+        "sheetmetal.clip",
+        "fastener.clip",
+        "spring.clip"
+      ],
+      "cad_volume_mm3": 118.0
+    },
+    {
+      "id": "L-0008",
+      "cad_name": "Body8",
+      "qty_total": 1,
+      "geometry_note": "1 mm flat frame",
+      "acceptable_classes": [
+        "seal.gasket.flat",
+        "seal.gasket.formed",
+        "seal.gasket.foam"
+      ],
+      "cad_volume_mm3": 576.0
+    },
+    {
+      "id": "L-0009",
+      "cad_name": "Body9",
+      "qty_total": 1,
+      "geometry_note": "18 x 65 cylinder (18650-size)",
+      "acceptable_classes": [
+        "electrical.battery.li_ion",
+        "electrical.battery.pack"
+      ],
+      "cad_volume_mm3": 16540.49
+    }
+  ],
+  "stats": {
+    "solid_instances": 9
+  },
+  "assertions": [
+    "Every part ends with a class from its acceptable_classes (or stays unclassified with a question).",
+    "No archetype matches the product (archetype is null)."
+  ]
+}

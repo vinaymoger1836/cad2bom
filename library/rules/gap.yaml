@@ -1,0 +1,55 @@
+# Gap rules (docs/04 §7.3): SUGGESTIONS for items CAD rarely shows; never added silently.
+# STARTER SET for P1 (universal + a few class-triggered rules); expected B3/B4 gap suggestions
+# in golden/ refer to these ids. Confidence of a suggestion comes from confidence.yaml.
+stage: gap
+id_prefix: R-GAP
+rules:
+  - id: R-GAP-001
+    stage: gap
+    when:
+      not_has_class: label.rating
+    then: { suggest: { class: label.rating, qty_rule: one_per_product, level: ebom } }
+    weight: 0.6
+    note: "Every product needs a rating / identification label (docs/04 §7.3 universal rules)"
+  - id: R-GAP-002
+    stage: gap
+    when:
+      not_has_class: documentation.manual
+    then: { suggest: { class: documentation.manual, qty_rule: one_per_product, level: ebom } }
+    weight: 0.6
+    note: "Every product ships with user documentation"
+  - id: R-GAP-003
+    stage: gap
+    when:
+      not_has_class: packaging.carton
+    then: { suggest: { class: packaging.carton, qty_rule: one_per_product, level: mbom } }
+    weight: 0.6
+    note: "Every product needs a shipper carton (packaging level in the MBOM)"
+  - id: R-GAP-004
+    stage: gap
+    when:
+      all:
+        - product_has_class: electrical.battery.li_ion
+        - not_has_class: label.transport
+    then: { suggest: { class: label.transport, qty_rule: one_per_product, level: ebom } }
+    weight: 0.6
+    note: "Lithium cells need a transport label"
+  - id: R-GAP-021
+    stage: gap
+    when:
+      all:
+        - product_has_class: electrical.pcba
+        - not_has_class: consumable.solder
+        - process_hint_in: [hand_solder, wave_solder]
+    then: { suggest: { class: consumable.solder, qty_rule: per_joint_estimate, level: mbom } }
+    weight: 0.5
+    note: "Soldered PCBA connections need solder"
+  - id: R-GAP-030
+    stage: gap
+    when:
+      all:
+        - product_has_class: fluid.hose
+        - not_has_class: fluid.clamp
+    then: { suggest: { class: fluid.clamp, qty_rule: two_per_hose, level: ebom } }
+    weight: 0.5
+    note: "Hoses need clamps at both ends"

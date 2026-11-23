@@ -1,0 +1,129 @@
+# Classification rules (docs/04 §2, §5). STARTER SET for P1: enough to exercise the library checks
+# and the golden cases. The full rule set and the interpreter arrive in P3. Rule ids are unique and
+# each rule has a note (docs/06 §8). Weights are evidence weights before source_base scaling.
+stage: classify
+id_prefix: R-CLS
+rules:
+  - id: R-CLS-104
+    stage: classify
+    when:
+      any:
+        - name_matches: "(?i)\\b(screw|bolt|shcs|bhcs)\\b"
+        - std_designation_family: [ISO4762, ISO7380, ISO4017, DIN912]
+    then: { class: fastener.screw }
+    weight: 0.6
+    note: "Screw by name or recognised standard"
+  - id: R-CLS-105
+    stage: classify
+    when:
+      std_designation_family: [ISO4762, DIN912]
+    then: { class: fastener.screw.socket_head }
+    weight: 0.9
+    note: "ISO 4762 / DIN 912 recogniser match is a socket head cap screw"
+  - id: R-CLS-106
+    stage: classify
+    when:
+      std_designation_family: [ISO7380]
+    then: { class: fastener.screw.button_head }
+    weight: 0.9
+    note: "ISO 7380 recogniser match is a button head screw"
+  - id: R-CLS-107
+    stage: classify
+    when:
+      std_designation_family: [ISO10642]
+    then: { class: fastener.screw.countersunk }
+    weight: 0.9
+    note: "ISO 10642 recogniser match is a countersunk socket screw"
+  - id: R-CLS-108
+    stage: classify
+    when:
+      std_designation_family: [ISO4017]
+    then: { class: fastener.screw.hex_head }
+    weight: 0.9
+    note: "ISO 4017 recogniser match is a hex head screw (full thread)"
+  - id: R-CLS-109
+    stage: classify
+    when:
+      std_designation_family: [ISO4014]
+    then: { class: fastener.bolt.hex }
+    weight: 0.9
+    note: "ISO 4014 recogniser match is a hex head bolt (partial thread)"
+  - id: R-CLS-110
+    stage: classify
+    when:
+      std_designation_family: [ISO4032]
+    then: { class: fastener.nut.hex }
+    weight: 0.9
+    note: "ISO 4032 recogniser match is a hex nut"
+  - id: R-CLS-111
+    stage: classify
+    when:
+      std_designation_family: [ISO7089, ISO7090, ISO7092]
+    then: { class: fastener.washer.plain }
+    weight: 0.9
+    note: "ISO 7089/7090/7092 recogniser match is a plain washer"
+  - id: R-CLS-112
+    stage: classify
+    when:
+      std_designation_family: [ISO7093]
+    then: { class: fastener.washer.fender }
+    weight: 0.9
+    note: "ISO 7093 recogniser match is a large-series (fender) washer"
+  - id: R-CLS-113
+    stage: classify
+    when:
+      std_designation_family: [DIN127]
+    then: { class: fastener.washer.spring }
+    weight: 0.9
+    note: "DIN 127 recogniser match is a spring lock washer"
+  - id: R-CLS-114
+    stage: classify
+    when:
+      std_designation_family: [DIN471]
+    then: { class: fastener.ring.circlip_external }
+    weight: 0.9
+    note: "DIN 471 recogniser match is an external circlip"
+  - id: R-CLS-115
+    stage: classify
+    when:
+      std_designation_family: [DIN472]
+    then: { class: fastener.ring.circlip_internal }
+    weight: 0.9
+    note: "DIN 472 recogniser match is an internal circlip"
+  - id: R-CLS-116
+    stage: classify
+    when:
+      std_designation_family: [ISO2338]
+    then: { class: fastener.pin.dowel }
+    weight: 0.9
+    note: "ISO 2338 recogniser match is a dowel pin"
+  - id: R-CLS-117
+    stage: classify
+    when:
+      std_designation_family: [ISO15]
+    then: { class: bearing.ball.deep_groove }
+    weight: 0.9
+    note: "Bearing table match (60xx/62xx/63xx) is a deep groove ball bearing"
+  - id: R-CLS-118
+    stage: classify
+    when:
+      std_designation_family: [ISO3601]
+    then: { class: seal.o_ring }
+    weight: 0.9
+    note: "Torus matching the metric O-ring table is an O-ring"
+  - id: R-CLS-201
+    stage: classify
+    when:
+      all:
+        - feature_between: { thin_plate_mm: [0.8, 3.2] }
+        - name_matches: "(?i)\\b(pcb|pwb|board)\\b"
+    then: { class: electrical.pcb }
+    weight: 0.7
+    note: "Thin plate (0.8-3.2 mm) named like a circuit board"
+  - id: R-CLS-301
+    stage: classify
+    when:
+      name_matches: "(?i)(skeleton|envelope|keep[ _-]?out|datum|clearance|ref(erence)?[ _-]?geom)"
+    then: { class: unclassified.reference }
+    weight: 0.8
+    note: "Reference geometry by name (docs/04 §3); excluded with a reason"

@@ -1,0 +1,34 @@
+# Structure rules (docs/04 §7.1). STARTER SET for P1; the interpreter and full set arrive in P3.
+stage: structure
+id_prefix: R-STR
+rules:
+  - id: R-STR-001
+    stage: structure
+    when:
+      name_matches: "(?i)(_grp\\b|_group\\b|subasm_for_layout)"
+    then: { flag: phantom }
+    weight: 0.8
+    note: "Assembly named like a modelling-only group is a phantom (user can confirm)"
+  - id: R-STR-002
+    stage: structure
+    when:
+      all:
+        - class_is: assembly.subassembly
+        - count_between: { children: [1, 1] }
+    then: { flag: phantom }
+    weight: 0.6
+    note: "Assembly with a single child only groups for modelling: phantom"
+  - id: R-STR-003
+    stage: structure
+    when:
+      class_is: electrical.motor
+    then: { group_as: purchased_assembly }
+    weight: 0.8
+    note: "A motor is bought complete: one buy line, children kept as notes (buy_as_assembly)"
+  - id: R-STR-004
+    stage: structure
+    when:
+      class_is: electrical.pcba
+    then: { group_as: purchased_assembly }
+    weight: 0.8
+    note: "A PCB assembly bought complete is one buy line"

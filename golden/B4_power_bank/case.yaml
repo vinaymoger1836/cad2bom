@@ -1,0 +1,15 @@
+id: B4
+title: Power bank BoM file
+library_version: 2026.11.0
+generated_by: c2b-fixtures build
+inputs:
+- input/supplier_bom.xlsx
+expected:
+- expected/mapping.json
+- expected/bom.json
+- expected/suggestions.json
+rules_asserted: false
+rules_note: Rule ids are not asserted until the rules engine exists (P3); values below
+  are.
+stand_in: false
+extractor_cassette: to be recorded in P5 (header mapping for 'Item')

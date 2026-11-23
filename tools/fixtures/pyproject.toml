@@ -1,0 +1,26 @@
+[project]
+name = "c2b-fixtures"
+version = "0.0.0"
+description = "Synthetic CAD and BoM fixtures generated from the library tables (golden cases B1-B6)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "c2b-library",
+  "cadquery>=2.5",
+  "cadquery-ocp>=7.7",
+  "openpyxl>=3.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/c2b_fixtures"]
+
+[project.scripts]
+c2b-fixtures = "c2b_fixtures.cli:main"
+
+[tool.mypy]
+python_version = "3.12"
+mypy_path = "src"
+ignore_missing_imports = true

@@ -1,0 +1,29 @@
+[
+  {
+    "id": "S-001",
+    "origin": "cad",
+    "review": "suggested",
+    "cad_name": "Shaft",
+    "class": "machined.turned.shaft",
+    "qty_total": 1,
+    "text": "CAD shows SHAFT, TURNED, Ø12X80, MEDIUM CARBON STEEL C45 (1x). Add it to the BoM?"
+  },
+  {
+    "id": "S-002",
+    "origin": "cad",
+    "review": "suggested",
+    "cad_name": "Part2",
+    "class": "fastener.washer.plain",
+    "qty_total": 4,
+    "text": "CAD shows WASHER, PLAIN, M4, ISO 7089, STEEL ZINC PLATED (4x). Add it to the BoM?"
+  },
+  {
+    "id": "S-003",
+    "origin": "cad",
+    "review": "suggested",
+    "cad_name": "Part3",
+    "class": "fastener.nut.hex",
+    "qty_total": 4,
+    "text": "CAD shows NUT, HEX, M4, ISO 4032, STEEL 8.8 ZINC PLATED (4x). Add it to the BoM?"
+  }
+]

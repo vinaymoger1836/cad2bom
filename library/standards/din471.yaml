@@ -1,0 +1,40 @@
+# Retaining rings (circlips) for shafts, external. d = shaft diameter (nominal), d2 = groove
+# diameter, s = ring thickness. The free ring outer diameter is not modelled.
+standard: DIN 471
+key: DIN471
+aliases: [DIN471, ISO 464]
+family: circlip_external
+class: fastener.ring.circlip_external
+edition: "1981"
+tolerance_mm: { d: 0.1, d2: 0.15, s: 0.1 }
+dims: [d, d2, s]
+monotonic: [d2, s]
+expected_sizes: ["6", "8", "10", "12", "15", "16", "20", "25", "30", "40", "50"]
+sizes:
+  - { size: "3",  d: 3,  d2: 2.8,  s: 0.4 }
+  - { size: "4",  d: 4,  d2: 3.8,  s: 0.4 }
+  - { size: "5",  d: 5,  d2: 4.7,  s: 0.6 }
+  - { size: "6",  d: 6,  d2: 5.6,  s: 0.7 }
+  - { size: "7",  d: 7,  d2: 6.5,  s: 0.8 }
+  - { size: "8",  d: 8,  d2: 7.4,  s: 0.8 }
+  - { size: "9",  d: 9,  d2: 8.4,  s: 1 }
+  - { size: "10", d: 10, d2: 9.6,  s: 1 }
+  - { size: "12", d: 12, d2: 11.5, s: 1 }
+  - { size: "14", d: 14, d2: 13.4, s: 1 }
+  - { size: "15", d: 15, d2: 14.3, s: 1 }
+  - { size: "16", d: 16, d2: 15.2, s: 1 }
+  - { size: "17", d: 17, d2: 16.2, s: 1 }
+  - { size: "18", d: 18, d2: 17,   s: 1.2 }
+  - { size: "20", d: 20, d2: 19,   s: 1.2 }
+  - { size: "22", d: 22, d2: 21,   s: 1.2 }
+  - { size: "25", d: 25, d2: 23.9, s: 1.2 }
+  - { size: "28", d: 28, d2: 26.6, s: 1.5 }
+  - { size: "30", d: 30, d2: 28.6, s: 1.5 }
+  - { size: "32", d: 32, d2: 30.3, s: 1.5 }
+  - { size: "35", d: 35, d2: 33,   s: 1.5 }
+  - { size: "40", d: 40, d2: 37.5, s: 1.75 }
+  - { size: "45", d: 45, d2: 42.5, s: 1.75 }
+  - { size: "50", d: 50, d2: 47,   s: 2 }
+source: "DIN 471 groove diameter and thickness entered from the author's recollection of the standard and supplier catalogue tables; a subset of nominal diameters (3-50 mm)."
+verify: true
+note: "Spot-check 20 (groove 19, s 1.2) and 30 (groove 28.6, s 1.5)."

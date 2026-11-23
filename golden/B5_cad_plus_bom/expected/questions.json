@@ -1,0 +1,22 @@
+[
+  {
+    "id": "Q-001",
+    "kind": "choice",
+    "blocking": true,
+    "line_ids": [
+      "user:SCR-1004",
+      "L-0006"
+    ],
+    "text": "Screw M4x12 ISO 4762: your BoM says 6, the CAD model shows 4. Which is correct?",
+    "options": [
+      "6 (your BoM)",
+      "4 (CAD)"
+    ],
+    "evidence": [
+      "bom: row 5 qty 6",
+      "cad: Part1 qty_total 4"
+    ],
+    "answer": null,
+    "note": "The user's value 6 is kept until answered; the line is never rewritten."
+  }
+]

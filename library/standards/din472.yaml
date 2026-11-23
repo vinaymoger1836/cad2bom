@@ -1,0 +1,41 @@
+# Retaining rings (circlips) for bores, internal. d = bore diameter (nominal), d2 = groove
+# diameter, s = ring thickness.
+standard: DIN 472
+key: DIN472
+aliases: [DIN472, ISO 464 internal]
+family: circlip_internal
+class: fastener.ring.circlip_internal
+edition: "1981"
+tolerance_mm: { d: 0.1, d2: 0.15, s: 0.1 }
+dims: [d, d2, s]
+monotonic: [d2, s]
+expected_sizes: ["10", "12", "16", "20", "25", "30", "40", "52", "62"]
+sizes:
+  - { size: "8",  d: 8,  d2: 8.4,  s: 0.8 }
+  - { size: "10", d: 10, d2: 10.4, s: 1 }
+  - { size: "12", d: 12, d2: 12.5, s: 1 }
+  - { size: "14", d: 14, d2: 14.6, s: 1 }
+  - { size: "15", d: 15, d2: 15.7, s: 1 }
+  - { size: "16", d: 16, d2: 16.8, s: 1 }
+  - { size: "17", d: 17, d2: 18,   s: 1 }
+  - { size: "18", d: 18, d2: 19,   s: 1 }
+  - { size: "19", d: 19, d2: 20,   s: 1 }
+  - { size: "20", d: 20, d2: 21,   s: 1 }
+  - { size: "22", d: 22, d2: 23,   s: 1.2 }
+  - { size: "24", d: 24, d2: 25.2, s: 1.2 }
+  - { size: "25", d: 25, d2: 26.2, s: 1.2 }
+  - { size: "26", d: 26, d2: 27.2, s: 1.2 }
+  - { size: "28", d: 28, d2: 29.4, s: 1.2 }
+  - { size: "30", d: 30, d2: 31.4, s: 1.2 }
+  - { size: "32", d: 32, d2: 33.7, s: 1.2 }
+  - { size: "35", d: 35, d2: 37,   s: 1.5 }
+  - { size: "37", d: 37, d2: 39,   s: 1.5 }
+  - { size: "40", d: 40, d2: 42.5, s: 1.75 }
+  - { size: "42", d: 42, d2: 44.5, s: 1.75 }
+  - { size: "47", d: 47, d2: 49.5, s: 1.75 }
+  - { size: "52", d: 52, d2: 55,   s: 2 }
+  - { size: "62", d: 62, d2: 66,   s: 2 }
+  - { size: "72", d: 72, d2: 76.5, s: 2.5 }
+source: "DIN 472 groove diameter and thickness entered from the author's recollection of the standard and supplier catalogue tables; a subset of nominal bores (8-72 mm). Thickness steps are the least certain."
+verify: true
+note: "Spot-check 20 (groove 21, s 1), 35 (groove 37, s 1.5) and 52 (groove 55, s 2)."

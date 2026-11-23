@@ -10,6 +10,7 @@ ENV UV_COMPILE_BYTECODE=1 \
 WORKDIR /src
 COPY pyproject.toml uv.lock ./
 COPY packages ./packages
+COPY tools ./tools
 COPY apps/api ./apps/api
 COPY apps/worker ./apps/worker
 COPY apps/cad-worker ./apps/cad-worker

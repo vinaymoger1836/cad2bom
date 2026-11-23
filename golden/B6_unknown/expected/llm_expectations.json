@@ -1,0 +1,14 @@
+{
+  "case": "B6",
+  "assertions": [
+    "Parts whose class score stays below the class threshold (confidence.yaml thresholds.class) after C1-C6 go through ladder step L1 (role reasoner).",
+    "Every LLM-sourced class has source=llm, confidence <= confidence.yaml llm.class_cap (0.7), a fallback_reason, and appears in open items.",
+    "L4 (gap candidates for an unknown product type) returns at most 8 suggestions, all low confidence (llm.gap_suggestion_confidence).",
+    "Approval is blocked until all questions are answered and all suggestions are accepted or rejected.",
+    "Every LLM output enum value is a class code from the taxonomy."
+  ],
+  "which_parts_call_l1": "Not fixed here: it depends on the rule scores the engine produces (P3). Expectation: all parts named Body1..Body9 lack name and standard evidence, so geometry alone (weights 0.4-0.7) is below the 0.75 threshold and each goes to L1 unless a C6 context boost lifts it. P5 records the cassette and this file is updated then with the exact prompt keys.",
+  "cassette": "to be recorded in P5",
+  "llm_confidence_cap": 0.7,
+  "threshold_class": 0.75
+}

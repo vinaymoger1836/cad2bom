@@ -1,0 +1,237 @@
+# German starter dictionary (docs/06 §5; docs/10 P1). Same format as en.yaml. Tokens are
+# case-folded and umlaut-normalised (NFKC): "Gehäuse" and "gehäuse" match; "gehaeuse" is listed
+# explicitly because CAD exports often lose umlauts. Weights are a little lower than English.
+lang: de
+domain: general
+entries:
+  - { tokens: [schraube, schrauben], class: fastener.screw, weight: 0.6 }
+  - { tokens: [zylinderschraube, "zylinderschraube mit innensechskant", "innensechskantschraube", "din 912"], class: fastener.screw.socket_head, weight: 0.8 }
+  - { tokens: [sechskantschraube, "sechskantschraube mit schaft"], class: fastener.bolt.hex, weight: 0.75 }
+  - { tokens: [linsenkopfschraube, "flachkopfschraube"], class: fastener.screw.button_head, weight: 0.7 }
+  - { tokens: [senkschraube, "senkkopfschraube"], class: fastener.screw.countersunk, weight: 0.75 }
+  - { tokens: [gewindestift, madenschraube], class: fastener.screw.set, weight: 0.8 }
+  - { tokens: [blechschraube, "schneidschraube"], class: fastener.screw.self_tapping, weight: 0.75 }
+  - { tokens: [holzschraube, spanplattenschraube], class: fastener.screw.wood, weight: 0.75 }
+  - { tokens: [flügelschraube, fluegelschraube, rändelschraube, raendelschraube], class: fastener.screw.thumb, weight: 0.7 }
+  - { tokens: [gewindebolzen, stehbolzen], class: fastener.stud, weight: 0.65 }
+  - { tokens: [gewindestange], class: fastener.threaded_rod, weight: 0.7 }
+  - { tokens: [mutter, muttern], class: fastener.nut, weight: 0.6 }
+  - { tokens: [sechskantmutter], class: fastener.nut.hex, weight: 0.8 }
+  - { tokens: [sicherungsmutter, "selbstsichernde mutter", "stoppmutter"], class: fastener.nut.nyloc, weight: 0.75 }
+  - { tokens: [flügelmutter, fluegelmutter], class: fastener.nut.wing, weight: 0.75 }
+  - { tokens: [hutmutter], class: fastener.nut.cap, weight: 0.75 }
+  - { tokens: [nutenstein, hammermutter], class: fastener.nut.t_slot, weight: 0.7 }
+  - { tokens: [nietmutter, blindnietmutter], class: fastener.nut.rivet, weight: 0.75 }
+  - { tokens: [gewindeeinsatz, einpressmutter], class: fastener.insert.threaded, weight: 0.65 }
+  - { tokens: [unterlegscheibe, scheibe, beilagscheibe], class: fastener.washer.plain, weight: 0.65 }
+  - { tokens: [federring, federscheibe, "federring din 127"], class: fastener.washer.spring, weight: 0.75 }
+  - { tokens: [zahnscheibe, fächerscheibe, faecherscheibe], class: fastener.washer.tooth, weight: 0.75 }
+  - { tokens: [karosseriescheibe, "große scheibe", "grosse scheibe"], class: fastener.washer.fender, weight: 0.7 }
+  - { tokens: [dichtscheibe, dichtring], class: fastener.washer.sealing, weight: 0.65 }
+  - { tokens: [wellensicherungsring, "sicherungsring für wellen", "sicherungsring fuer wellen"], class: fastener.ring.circlip_external, weight: 0.8 }
+  - { tokens: [bohrungssicherungsring, "sicherungsring für bohrungen", "sicherungsring fuer bohrungen"], class: fastener.ring.circlip_internal, weight: 0.8 }
+  - { tokens: [sicherungsring, seegerring, "seeger-ring"], class: fastener.ring.circlip_external, weight: 0.4 }
+  - { tokens: [sicherungsring, seegerring, "seeger-ring"], class: fastener.ring.circlip_internal, weight: 0.4 }
+  - { tokens: [passstift, zylinderstift, passtift, "stift gehärtet", "stift gehaertet"], class: fastener.pin.dowel, weight: 0.8 }
+  - { tokens: [spannstift, spannhülse, spannhuelse], class: fastener.pin.spring, weight: 0.8 }
+  - { tokens: [splint], class: fastener.pin.cotter, weight: 0.8 }
+  - { tokens: [bolzen, "federstecker"], class: fastener.pin.clevis, weight: 0.5 }
+  - { tokens: [kegelstift], class: fastener.pin.taper, weight: 0.8 }
+  - { tokens: [blindniet, popniet], class: fastener.rivet.blind, weight: 0.8 }
+  - { tokens: [niet, nieten], class: fastener.rivet.solid, weight: 0.55 }
+  - { tokens: [abstandsbolzen, abstandshalter], class: fastener.standoff, weight: 0.6 }
+  - { tokens: [distanzhülse, distanzhuelse, distanzscheibe, abstandshülse, abstandshuelse], class: fastener.spacer, weight: 0.65 }
+  - { tokens: [kabelbinder], class: fastener.cable_tie, weight: 0.85 }
+  - { tokens: [lager, wälzlager, waelzlager], class: bearing.ball.deep_groove, weight: 0.45 }
+  - { tokens: [kugellager, rillenkugellager], class: bearing.ball.deep_groove, weight: 0.8 }
+  - { tokens: [schrägkugellager, schraegkugellager], class: bearing.ball.angular, weight: 0.8 }
+  - { tokens: [nadellager], class: bearing.roller.needle, weight: 0.85 }
+  - { tokens: [kegelrollenlager], class: bearing.roller.tapered, weight: 0.85 }
+  - { tokens: [gleitlager, buchse, büchse, buechse, gleitbuchse], class: bearing.plain.bush, weight: 0.7 }
+  - { tokens: [linearlager, linearführung], class: bearing.linear, weight: 0.7 }
+  - { tokens: [gelenkkopf, gelenklager], class: bearing.rod_end, weight: 0.7 }
+  - { tokens: [lagergehäuse, lagergehaeuse, stehlager], class: bearing.housing, weight: 0.75 }
+  - { tokens: [welle, antriebswelle], class: machined.turned.shaft, weight: 0.6 }
+  - { tokens: [zahnrad, stirnrad], class: transmission.gear.spur, weight: 0.65 }
+  - { tokens: [kegelrad], class: transmission.gear.bevel, weight: 0.8 }
+  - { tokens: [schnecke, schneckenrad], class: transmission.gear.worm, weight: 0.7 }
+  - { tokens: [zahnstange], class: transmission.gear.rack, weight: 0.8 }
+  - { tokens: [getriebe, untersetzungsgetriebe], class: transmission.gearbox, weight: 0.8 }
+  - { tokens: [riemenscheibe, zahnriemenscheibe], class: transmission.pulley, weight: 0.8 }
+  - { tokens: [riemen, zahnriemen, keilriemen], class: transmission.belt, weight: 0.75 }
+  - { tokens: [kette, rollenkette], class: transmission.chain, weight: 0.65 }
+  - { tokens: [kettenrad], class: transmission.sprocket, weight: 0.85 }
+  - { tokens: [kupplung, wellenkupplung], class: transmission.coupling, weight: 0.7 }
+  - { tokens: [passfeder], class: transmission.key, weight: 0.85 }
+  - { tokens: [trapezgewindespindel, gewindespindel, kugelgewindetrieb], class: transmission.lead_screw, weight: 0.65 }
+  - { tokens: [o-ring, "o ring", "runddichtring"], class: seal.o_ring, weight: 0.85 }
+  - { tokens: [dichtung, flachdichtung], class: seal.gasket.flat, weight: 0.6 }
+  - { tokens: [moosgummidichtung, schaumdichtung], class: seal.gasket.foam, weight: 0.7 }
+  - { tokens: [wellendichtring, simmerring, radialwellendichtring], class: seal.lip, weight: 0.85 }
+  - { tokens: [dichtprofil, türdichtung, tuerdichtung], class: seal.strip, weight: 0.65 }
+  - { tokens: [stopfen, blindstopfen, verschlussstopfen], class: seal.plug, weight: 0.65 }
+  - { tokens: [feder], class: spring.compression, weight: 0.5 }
+  - { tokens: [druckfeder], class: spring.compression, weight: 0.85 }
+  - { tokens: [zugfeder], class: spring.extension, weight: 0.85 }
+  - { tokens: [drehfeder, schenkelfeder], class: spring.torsion, weight: 0.85 }
+  - { tokens: [blattfeder], class: spring.leaf, weight: 0.85 }
+  - { tokens: [tellerfeder], class: spring.disc, weight: 0.85 }
+  - { tokens: [wellenfeder], class: spring.wave, weight: 0.8 }
+  - { tokens: [gasdruckfeder, gasfeder], class: spring.gas, weight: 0.85 }
+  - { tokens: [halter, halterung, winkel, haltewinkel, konsole], class: sheetmetal.bracket, weight: 0.6 }
+  - { tokens: [blech, blechteil, biegeteil, stanzteil], class: sheetmetal.stamping, weight: 0.55 }
+  - { tokens: [verkleidung, blende, seitenteil], class: sheetmetal.panel, weight: 0.55 }
+  - { tokens: [rückwand, rueckwand], class: sheetmetal.panel.back, weight: 0.7 }
+  - { tokens: [frontplatte, frontblende], class: sheetmetal.panel.front, weight: 0.7 }
+  - { tokens: [grundplatte, montageplatte, befestigungsplatte], class: sheetmetal.plate.mounting, weight: 0.7 }
+  - { tokens: [platte], class: sheetmetal.plate, weight: 0.4 }
+  - { tokens: [abschirmung, abschirmblech], class: sheetmetal.shield, weight: 0.7 }
+  - { tokens: [scharnier], class: sheetmetal.hinge, weight: 0.8 }
+  - { tokens: [wanne, schale], class: sheetmetal.tray, weight: 0.45 }
+  - { tokens: [schweißbaugruppe, schweissbaugruppe, schweißteil, schweissteil], class: sheetmetal.weldment, weight: 0.75 }
+  - { tokens: [deckel, abdeckung, haube], class: moulded.cover, weight: 0.5 }
+  - { tokens: [gehäuse, gehaeuse], class: moulded.housing, weight: 0.6 }
+  - { tokens: [oberschale, gehäuseoberteil, gehaeuseoberteil], class: moulded.housing.top, weight: 0.75 }
+  - { tokens: [unterschale, gehäuseunterteil, gehaeuseunterteil], class: moulded.housing.bottom, weight: 0.75 }
+  - { tokens: [kappe, verschlusskappe], class: moulded.cap, weight: 0.5 }
+  - { tokens: [taste, drucktaste, knopf], class: moulded.button, weight: 0.5 }
+  - { tokens: [drehknopf, drehknauf], class: moulded.knob, weight: 0.65 }
+  - { tokens: [lichtleiter], class: moulded.light_guide, weight: 0.85 }
+  - { tokens: [lüfterflügel, luefterfluegel, flügel, fluegel, rotorblatt], class: moulded.blade, weight: 0.65 }
+  - { tokens: [griff, handgriff], class: moulded.handle, weight: 0.55 }
+  - { tokens: [gerätefuß, geraetefuss, gummifuß, gummifuss], class: moulded.foot, weight: 0.65 }
+  - { tokens: [batteriefachdeckel, batteriedeckel], class: moulded.battery_door, weight: 0.8 }
+  - { tokens: [druckguss, gussteil, guss, aluguss], class: cast.part, weight: 0.65 }
+  - { tokens: [schmiedeteil, schmiedestück, schmiedestueck], class: cast.forging, weight: 0.7 }
+  - { tokens: [frästeil, fraesteil, fräsblock, fraesblock], class: machined.milled, weight: 0.6 }
+  - { tokens: [drehteil], class: machined.turned, weight: 0.65 }
+  - { tokens: [nabe], class: machined.turned.hub, weight: 0.6 }
+  - { tokens: [flansch], class: machined.flange, weight: 0.6 }
+  - { tokens: [profil, aluprofil, strangpressprofil], class: extrusion.profile, weight: 0.6 }
+  - { tokens: [nutprofil, "item profil", "systemprofil"], class: extrusion.profile.t_slot, weight: 0.7 }
+  - { tokens: [vierkantrohr, rechteckrohr], class: extrusion.tube.square, weight: 0.75 }
+  - { tokens: [rundrohr], class: extrusion.tube.round, weight: 0.75 }
+  - { tokens: [hutschiene, tragschiene], class: extrusion.rail, weight: 0.85 }
+  - { tokens: [kühlkörper, kuehlkoerper], class: extrusion.heatsink, weight: 0.5 }
+  - { tokens: [sperrholz, multiplex], class: wood.plywood, weight: 0.8 }
+  - { tokens: [holzplatte, spanplatte, tischlerplatte], class: wood.panel, weight: 0.65 }
+  - { tokens: [massivholz, kantholz, holz], class: wood.solid, weight: 0.55 }
+  - { tokens: [glasscheibe, glasplatte, glas], class: glass.panel, weight: 0.6 }
+  - { tokens: [glasschirm, lampenschirm, leuchtenschirm], class: glass.shade, weight: 0.65 }
+  - { tokens: [leiterplatte, platine, "leiterplatte unbestückt", "leiterplatte unbestueckt"], class: electrical.pcb, weight: 0.75 }
+  - { tokens: ["leiterplatte bestückt", "leiterplatte bestueckt", "bestückte platine", "bestueckte platine"], class: electrical.pcba, weight: 0.5 }
+  - { tokens: [kabel], class: electrical.cable, weight: 0.65 }
+  - { tokens: [leitung, litze, "draht"], class: electrical.wire, weight: 0.6 }
+  - { tokens: [netzkabel, netzleitung, anschlussleitung], class: electrical.cable.power_cord, weight: 0.8 }
+  - { tokens: [flachbandkabel], class: electrical.cable.ribbon, weight: 0.85 }
+  - { tokens: [kabelbaum, kabelsatz], class: electrical.cable.harness, weight: 0.85 }
+  - { tokens: [schrumpfschlauch], class: electrical.sleeve, weight: 0.85 }
+  - { tokens: [kabelverschraubung, zugentlastung], class: electrical.cable_gland, weight: 0.8 }
+  - { tokens: [klemme, anschlussklemme, klemmleiste], class: electrical.connector.terminal_block, weight: 0.65 }
+  - { tokens: [kabelschuh, ringkabelschuh], class: electrical.lug, weight: 0.8 }
+  - { tokens: [stecker, steckverbinder], class: electrical.connector, weight: 0.6 }
+  - { tokens: [netzstecker], class: electrical.connector.plug, weight: 0.8 }
+  - { tokens: [kaltgerätestecker, kaltgeraetestecker, gerätesteckdose, geraetesteckdose], class: electrical.connector.mains_inlet, weight: 0.8 }
+  - { tokens: [stiftleiste, buchsenleiste], class: electrical.connector.header, weight: 0.8 }
+  - { tokens: [schalter], class: electrical.switch, weight: 0.65 }
+  - { tokens: [taster, "tastschalter"], class: electrical.switch.tactile, weight: 0.65 }
+  - { tokens: [wippschalter], class: electrical.switch.rocker, weight: 0.85 }
+  - { tokens: [kippschalter], class: electrical.switch.toggle, weight: 0.85 }
+  - { tokens: [zugschalter], class: electrical.switch.pull_chain, weight: 0.8 }
+  - { tokens: [relais], class: electrical.relay, weight: 0.85 }
+  - { tokens: [sicherung, feinsicherung], class: electrical.fuse, weight: 0.8 }
+  - { tokens: [sicherungshalter], class: electrical.fuse_holder, weight: 0.85 }
+  - { tokens: [sensor, fühler, fuehler], class: electrical.sensor, weight: 0.6 }
+  - { tokens: [thermostat, thermosicherung], class: electrical.thermostat, weight: 0.8 }
+  - { tokens: [widerstand], class: electrical.component.resistor, weight: 0.75 }
+  - { tokens: [kondensator], class: electrical.component.capacitor, weight: 0.75 }
+  - { tokens: [elko, elektrolytkondensator], class: electrical.component.capacitor_electrolytic, weight: 0.8 }
+  - { tokens: [spule, drossel], class: electrical.component.inductor, weight: 0.6 }
+  - { tokens: [diode, leuchtdiode], class: electrical.component.diode, weight: 0.6 }
+  - { tokens: [transistor], class: electrical.component.transistor, weight: 0.8 }
+  - { tokens: [quarz, schwingquarz], class: electrical.component.crystal, weight: 0.75 }
+  - { tokens: [transformator, trafo], class: electrical.component.transformer, weight: 0.8 }
+  - { tokens: [lautsprecher], class: electrical.component.speaker, weight: 0.85 }
+  - { tokens: [summer, piezosummer], class: electrical.component.buzzer, weight: 0.75 }
+  - { tokens: [mikrofon], class: electrical.component.microphone, weight: 0.85 }
+  - { tokens: [anzeige, bildschirm], class: electrical.component.display, weight: 0.55 }
+  - { tokens: [motor, elektromotor], class: electrical.motor, weight: 0.7 }
+  - { tokens: [gleichstrommotor, dc-motor], class: electrical.motor.dc, weight: 0.8 }
+  - { tokens: [kondensatormotor, drehstrommotor, asynchronmotor, deckenventilatormotor], class: electrical.motor.ac_induction, weight: 0.75 }
+  - { tokens: [schrittmotor], class: electrical.motor.stepper, weight: 0.85 }
+  - { tokens: [rotor, läufer, laeufer], class: electrical.motor_part.rotor, weight: 0.7 }
+  - { tokens: [ständer, staender, blechpaket, statorpaket], class: electrical.motor_part.stator, weight: 0.65 }
+  - { tokens: [wicklung, motorwicklung], class: electrical.motor_part.winding, weight: 0.75 }
+  - { tokens: [netzteil, schaltnetzteil, stromversorgung], class: electrical.psu, weight: 0.8 }
+  - { tokens: [steckernetzteil], class: electrical.psu.adapter, weight: 0.85 }
+  - { tokens: [ladegerät, ladegeraet, laderegler], class: electrical.psu.charger, weight: 0.75 }
+  - { tokens: [akku, akkuzelle, batterie, lithiumzelle], class: electrical.battery.li_ion, weight: 0.6 }
+  - { tokens: [akkupack, batteriepack, akkublock], class: electrical.battery.pack, weight: 0.8 }
+  - { tokens: [knopfzelle], class: electrical.battery.coin, weight: 0.85 }
+  - { tokens: [leuchtmittel, glühlampe, gluehlampe, lampe], class: electrical.lighting.lamp, weight: 0.65 }
+  - { tokens: [led-streifen, ledstreifen, led-band], class: electrical.lighting.led_strip, weight: 0.85 }
+  - { tokens: [lüfter, luefter, ventilator, gebläse, geblaese], class: electrical.fan, weight: 0.6 }
+  - { tokens: [heizelement, heizung], class: electrical.heater, weight: 0.7 }
+  - { tokens: [betriebskondensator, anlaufkondensator], class: electrical.capacitor_motor, weight: 0.8 }
+  - { tokens: [fernbedienung], class: electrical.remote, weight: 0.85 }
+  - { tokens: [schlauch], class: fluid.hose, weight: 0.75 }
+  - { tokens: [rohr], class: fluid.pipe, weight: 0.5 }
+  - { tokens: [verschraubung, anschlussstück, anschlussstueck, fitting], class: fluid.fitting, weight: 0.6 }
+  - { tokens: [schlauchschelle], class: fluid.clamp, weight: 0.85 }
+  - { tokens: [kugelhahn], class: fluid.valve.ball, weight: 0.85 }
+  - { tokens: [rückschlagventil, rueckschlagventil], class: fluid.valve.check, weight: 0.85 }
+  - { tokens: [magnetventil], class: fluid.valve.solenoid, weight: 0.85 }
+  - { tokens: [überdruckventil, ueberdruckventil, sicherheitsventil], class: fluid.valve.relief, weight: 0.8 }
+  - { tokens: [pumpe, wasserpumpe, membranpumpe], class: fluid.pump, weight: 0.8 }
+  - { tokens: [filter, sieb], class: fluid.filter, weight: 0.6 }
+  - { tokens: [düse, duese], class: fluid.nozzle, weight: 0.75 }
+  - { tokens: [tank, behälter, behaelter, wassertank], class: fluid.tank, weight: 0.6 }
+  - { tokens: [manometer, druckmesser], class: fluid.gauge, weight: 0.8 }
+  - { tokens: [versandkarton, umkarton, außenkarton, aussenkarton, karton], class: packaging.carton, weight: 0.75 }
+  - { tokens: [faltschachtel, einzelverpackung, verkaufsverpackung, schachtel], class: packaging.box, weight: 0.7 }
+  - { tokens: [schaumstoff, polsterung, formteil], class: packaging.foam, weight: 0.6 }
+  - { tokens: [beutel, polybeutel, tüte, tuete], class: packaging.bag, weight: 0.65 }
+  - { tokens: [esd-beutel, antistatikbeutel], class: packaging.bag.antistatic, weight: 0.85 }
+  - { tokens: [verpackungsband, packband], class: packaging.tape, weight: 0.8 }
+  - { tokens: [palette, europalette], class: packaging.pallet, weight: 0.8 }
+  - { tokens: [etikett, aufkleber], class: label.generic, weight: 0.6 }
+  - { tokens: [typenschild, leistungsschild, typenschildaufkleber], class: label.rating, weight: 0.8 }
+  - { tokens: [seriennummernetikett, seriennummernaufkleber], class: label.serial, weight: 0.8 }
+  - { tokens: [warnaufkleber, warnschild, warnhinweis], class: label.warning, weight: 0.8 }
+  - { tokens: [schutzleiteraufkleber, erdungsaufkleber, erdungszeichen], class: label.earth, weight: 0.8 }
+  - { tokens: [folie, schutzfolie, abziehfolie], class: label.film, weight: 0.55 }
+  - { tokens: [handbuch, bedienungsanleitung, betriebsanleitung, gebrauchsanweisung, montageanleitung], class: documentation.manual, weight: 0.8 }
+  - { tokens: [kurzanleitung, schnellstartanleitung], class: documentation.quick_start, weight: 0.8 }
+  - { tokens: [garantiekarte, garantieschein, garantie], class: documentation.warranty, weight: 0.75 }
+  - { tokens: [sicherheitshinweise, sicherheitsblatt], class: documentation.safety, weight: 0.75 }
+  - { tokens: [bohrschablone, montageschablone], class: documentation.template, weight: 0.8 }
+  - { tokens: [prüfzeugnis, pruefzeugnis, prüfprotokoll, pruefprotokoll], class: documentation.certificate, weight: 0.7 }
+  - { tokens: [klebstoff, kleber, kleben], class: consumable.adhesive, weight: 0.7 }
+  - { tokens: [doppelklebeband, klebeband], class: consumable.adhesive.tape, weight: 0.6 }
+  - { tokens: [schraubensicherung, gewindesicherung, "loctite 243"], class: consumable.threadlocker, weight: 0.85 }
+  - { tokens: [lot, lötzinn, loetzinn, lötdraht, loetdraht], class: consumable.solder, weight: 0.7 }
+  - { tokens: [flussmittel], class: consumable.flux, weight: 0.85 }
+  - { tokens: [lotpaste, lötpaste, loetpaste], class: consumable.solder_paste, weight: 0.85 }
+  - { tokens: [fett, schmierfett], class: consumable.grease, weight: 0.8 }
+  - { tokens: [öl, oel, schmieröl, schmieroel], class: consumable.oil, weight: 0.65 }
+  - { tokens: [farbe, lack, farblack], class: consumable.paint, weight: 0.65 }
+  - { tokens: [pulverlack], class: consumable.powder_coat, weight: 0.85 }
+  - { tokens: [vergussmasse, verguss], class: consumable.potting, weight: 0.85 }
+  - { tokens: [dichtmasse, silikon, dichtstoff], class: consumable.sealant, weight: 0.7 }
+  - { tokens: [wärmeleitpaste, waermeleitpaste], class: consumable.thermal_paste, weight: 0.9 }
+  - { tokens: [wärmeleitpad, waermeleitpad, wärmeleitfolie, waermeleitfolie], class: consumable.thermal_pad, weight: 0.9 }
+  - { tokens: [kaptonband, polyimidband], class: consumable.tape_kapton, weight: 0.85 }
+  - { tokens: [isolierfolie, isolierpapier, isolierung], class: consumable.insulation, weight: 0.7 }
+  - { tokens: [trockenmittel, trockenbeutel], class: consumable.desiccant, weight: 0.85 }
+  - { tokens: [reinigungstuch, putztuch], class: consumable.wipe, weight: 0.8 }
+  - { tokens: [lüftermodul, lueftermodul], class: purchased.module.fan, weight: 0.8 }
+  - { tokens: [anzeigemodul, displaymodul], class: purchased.module.display, weight: 0.8 }
+  - { tokens: [funkmodul, wlan-modul], class: purchased.module.wireless, weight: 0.8 }
+  - { tokens: [kompressor, verdichter], class: purchased.module.compressor, weight: 0.8 }
+  - { tokens: [schloss, verschluss], class: purchased.module.lock, weight: 0.5 }
+  - { tokens: [lenkrolle, rolle, laufrolle], class: purchased.module.wheel, weight: 0.6 }
+  - { tokens: [aktuator, linearantrieb, stellantrieb], class: purchased.module.actuator, weight: 0.75 }
+  - { tokens: [baugruppe, unterbaugruppe, montagegruppe], class: assembly.subassembly, weight: 0.55 }
+  - { tokens: [satz, set, "montagesatz"], class: assembly.kit, weight: 0.5 }
+  - { tokens: [zubehör, zubehoer, zubehörset, zubehoerset], class: assembly.accessory_kit, weight: 0.7 }
+  - { tokens: [befestigungsmaterial, schraubensatz, kleinteile], class: assembly.fastener_group, weight: 0.7 }
