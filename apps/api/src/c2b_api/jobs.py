@@ -1,10 +1,12 @@
 """Job routes: create, read, upload, start, events."""
 
-from typing import Annotated, Any
+from pathlib import Path
+from typing import Annotated, Any, Literal
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Header, Query, Request, Response
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 
 from c2b_api import sse, uploads
 from c2b_api.auth import JobRow, hash_token, new_token
@@ -17,8 +19,6 @@ from c2b_domain import (
     JobOut,
     JobUpdate,
     ProductInfo,
-    Question,
-    Suggestion,
     TableMapping,
     UploadOut,
 )
@@ -198,7 +198,7 @@ async def confirm_mapping(
     bom_data = await repo.get_bom(pool, job_id)
     if not bom_data:
         raise ProblemError(404, "not_found", "BoM draft not found")
-    if "mapping" in bom_data and bom_data["mapping"]:
+    if bom_data.get("mapping"):
         for col_name, col_info in body.columns.items():
             if col_name in bom_data["mapping"].get("columns", {}):
                 if isinstance(col_info, dict):
