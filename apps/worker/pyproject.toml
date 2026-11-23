@@ -7,6 +7,7 @@ dependencies = [
   "c2b-domain",
   "c2b-jobs",
   "c2b-rules",
+  "c2b-agents",
 ]
 
 [build-system]
