@@ -3,6 +3,7 @@
 from c2b_domain.bom import (
     BomDraft,
     BomLine,
+    BomVersion,
     ChatMessage,
     ChatRequest,
     ChatResponse,
@@ -12,6 +13,7 @@ from c2b_domain.bom import (
     JobSummary,
     LlmCallRecord,
     MakeBuyType,
+    MbomLine,
     PhotoFinding,
     Question,
     QuestionKind,
@@ -20,6 +22,8 @@ from c2b_domain.bom import (
     SuggestionReview,
     TableMapping,
     UserBomRow,
+    ValidationIssue,
+    ValidationReport,
 )
 from c2b_domain.cad import (
     CadExtractResult,
@@ -47,6 +51,7 @@ from c2b_domain.prov import Prov, Source
 __all__ = [
     "BomDraft",
     "BomLine",
+    "BomVersion",
     "CadExtractResult",
     "CadNode",
     "CadNodeKind",
@@ -68,6 +73,7 @@ __all__ = [
     "JobUpdate",
     "LlmCallRecord",
     "MakeBuyType",
+    "MbomLine",
     "PhotoFinding",
     "ProblemDetail",
     "ProductInfo",
@@ -83,4 +89,6 @@ __all__ = [
     "UploadKind",
     "UploadOut",
     "UserBomRow",
+    "ValidationIssue",
+    "ValidationReport",
 ]

@@ -259,6 +259,63 @@ class JobSummary(BaseModel):
     open_items_count: int = 0
 
 
+class MbomLine(BaseModel):
+    """One line in the manufacturing Bill of Materials (build view)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str  # "M-0001", "M-0002", ...
+    parent: str | None = None
+    ebom_refs: list[str] = Field(default_factory=list)
+    cls: str = Field(validation_alias="class", serialization_alias="class")
+    description: str
+    qty_per_parent: float = 1.0
+    qty_total: float = 1.0
+    uom: str = "EA"
+    make_buy: str = "make"
+    find_no: int = 10
+    part_number: str | None = None
+    notes: str | None = None
+
+
+class ValidationIssue(BaseModel):
+    """A validation issue identified in a draft BoM."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    code: str
+    message: str
+    blocking: bool = True
+    line_id: str | None = None
+    rule_id: str | None = None
+
+
+class ValidationReport(BaseModel):
+    """Validation report with blocking issues and non-blocking warnings."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    valid: bool
+    blocking_issues: list[ValidationIssue] = Field(default_factory=list)
+    warnings: list[ValidationIssue] = Field(default_factory=list)
+
+
+class BomVersion(BaseModel):
+    """An approved, immutable frozen version of a BoM."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    job_id: str
+    version: int = 1
+    ebom: list[BomLine] = Field(default_factory=list)
+    mbom: list[MbomLine] = Field(default_factory=list)
+    open_items: list[str] = Field(default_factory=list)
+    stats: dict[str, Any] = Field(default_factory=dict)
+    library_version: str
+    llm_calls: int = 0
+    created_at: str | None = None
+
+
 class BomDraft(BaseModel):
     """Draft BoM container for a job."""
 
@@ -268,7 +325,7 @@ class BomDraft(BaseModel):
     library_version: str
     profile: str = "profiles/default.yaml"
     ebom: list[BomLine] = Field(default_factory=list)
-    mbom: list[dict[str, Any]] = Field(default_factory=list)
+    mbom: list[MbomLine] = Field(default_factory=list)
     stats: dict[str, Any] = Field(default_factory=dict)
     open_items: list[str] = Field(default_factory=list)
     questions: list[Question] = Field(default_factory=list)
@@ -277,12 +334,32 @@ class BomDraft(BaseModel):
     user_rows_raw: list[dict[str, Any]] = Field(default_factory=list)
     llm_calls: list[LlmCallRecord] = Field(default_factory=list)
     summary: JobSummary | None = None
+    validation: ValidationReport | None = None
+    rejected_suggestion_keys: set[str] = Field(default_factory=set)
 
 
 __all__ = [
     "BomDraft",
     "BomLine",
+    "BomVersion",
     "ChatMessage",
+    "ChatRequest",
+    "ChatResponse",
+    "ColumnMapping",
+    "DatasheetSpec",
+    "Designation",
+    "JobSummary",
+    "LlmCallRecord",
+    "MbomLine",
+    "PhotoFinding",
+    "Prov",
+    "Question",
+    "Suggestion",
+    "TableMapping",
+    "UserBomRow",
+    "ValidationIssue",
+    "ValidationReport",
+]
     "ChatRequest",
     "ChatResponse",
     "ColumnMapping",
