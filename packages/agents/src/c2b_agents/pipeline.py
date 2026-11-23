@@ -22,6 +22,16 @@ from c2b_rules.explainer import explain_line
 log = logging.getLogger(__name__)
 
 
+def _matches_archetype(library: Library, text: str) -> bool:
+    """True when the product text names a known archetype (docs/04 §9: L4 is for unknown types)."""
+    low = text.lower()
+    return any(
+        kw.lower() in low
+        for arch in (library.archetypes or {}).values()
+        for kw in arch.match_keywords
+    )
+
+
 async def resolve_draft_with_ladder(
     draft: BomDraft,
     library: Library,
@@ -164,7 +174,7 @@ async def resolve_draft_with_ladder(
                         mq.note = "R-MAP-AMB; L3 proposal"
 
     # 3. Ladder Step L4: Gap candidates for unknown product types
-    if run_l4_gap and product_desc and not draft.suggestions:
+    if run_l4_gap and product_desc and not _matches_archetype(library, product_desc):
         current_classes = [
             (ln.cls if isinstance(ln.cls, str) else ln.cls.value)
             for ln in draft.ebom
@@ -177,7 +187,9 @@ async def resolve_draft_with_ladder(
             current_classes=current_classes,
             job_id=draft.job_id,
         )
-        draft.suggestions.extend(gap_suggestions)
+        # Rules already suggested some classes (labels, manual, carton...): do not repeat them.
+        known = {str(x.cls) for x in draft.suggestions} | set(current_classes)
+        draft.suggestions.extend(x for x in gap_suggestions if str(x.cls) not in known)
 
     # 4. Job summary and LLM call logs
     draft.summary = generate_job_summary(draft)

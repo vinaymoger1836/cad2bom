@@ -1,0 +1,12 @@
+{
+  "key": "144a879abd56489c",
+  "role": "agent",
+  "model": "fixture/scripted",
+  "prompt_summary": "You are the CAD-to-BoM engineering assistant. Answer the user query using only the job context.  Product: Assembly Lines",
+  "response": "I have prepared suggestions to change the material of the M4 screw lines to stainless steel (A2). Your BoM lines stay unchanged until you review and accept each suggestion.",
+  "prompt_tokens": 310,
+  "completion_tokens": 55,
+  "total_tokens": 365,
+  "latency_ms": 100,
+  "created_at": "2026-11-23T14:47:02.426114+00:00"
+}

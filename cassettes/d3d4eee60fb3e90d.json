@@ -1,0 +1,16 @@
+{
+  "key": "d3d4eee60fb3e90d",
+  "role": "reasoner",
+  "model": "fixture/scripted",
+  "prompt_summary": "You are a CAD classification reasoner. Classify this mechanical part into exactly one taxonomy class code from the allow",
+  "response": {
+    "cls": "seal.gasket.flat",
+    "confidence": 0.7,
+    "reason": "Flat perimeter frame: sealing gasket"
+  },
+  "prompt_tokens": 220,
+  "completion_tokens": 40,
+  "total_tokens": 260,
+  "latency_ms": 100,
+  "created_at": "2026-11-23T14:47:02.235980+00:00"
+}

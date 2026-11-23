@@ -20,6 +20,9 @@ credentials*.json
 
 # --- Local data: uploads, converted files, exports, GLB ---
 /data/
+/out/
+/golden/**/out/
+*.glb
 
 # --- LLM cassettes that contain user data ---
 cassettes/**/user-*

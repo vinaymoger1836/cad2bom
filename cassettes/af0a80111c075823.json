@@ -1,0 +1,25 @@
+{
+  "key": "af0a80111c075823",
+  "role": "extractor",
+  "model": "fixture/scripted",
+  "prompt_summary": "You are a tabular BoM mapping specialist. Map the spreadsheet columns to canonical BoM fields.  Header Row: Pos | Teilen",
+  "response": {
+    "mappings": {
+      "Pos": "find_no",
+      "Teilenummer": "part_number",
+      "Item": "description",
+      "Menge": "quantity",
+      "Unit": "uom",
+      "Designator": "refdes",
+      "Hersteller": "manufacturer",
+      "MPN": "mpn",
+      "Bemerkung": "notes"
+    },
+    "reason": "'Item' also looks like a find number, but its cells are long part texts"
+  },
+  "prompt_tokens": 180,
+  "completion_tokens": 65,
+  "total_tokens": 245,
+  "latency_ms": 100,
+  "created_at": "2026-11-23T14:47:01.854890+00:00"
+}

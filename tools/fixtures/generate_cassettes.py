@@ -1,331 +1,174 @@
-"""Generate golden cassette recordings for B3, B4, B6, and agent tests."""
+"""Record the golden LLM cassettes (B4 L3, B6 L1/L4, chat agent) through the real flows.
 
+Cassettes are keyed by role + prompt hash (CLAUDE.md rule 9). To get keys that really match, this
+script runs the real pipeline code (`resolve_draft_with_ladder`, `ChatAgent`) with the router in
+record mode and replaces ONLY the provider call with a scripted answer, so every prompt is built
+by the production code and hashed by the production router. The answers are authored here, not
+produced by a model: each cassette is stamped `model: "fixture/scripted"` so nobody mistakes it
+for a real recording. Re-record against real models with GROQ_API_KEY / GEMINI_API_KEY set and
+C2B_CASSETTE_MODE=record when keys are available.
+
+Run from the repo root:  uv run python tools/fixtures/generate_cassettes.py
+"""
+
+from __future__ import annotations
+
+import asyncio
+import dataclasses
 import json
+import os
+import re
+import shutil
 from pathlib import Path
+from typing import Any
 
-from c2b_agents.cassettes import Cassette, CassetteStore
-from c2b_agents.schemas import (
-    get_taxonomy_codes,
-)
+os.environ.setdefault("LITELLM_LOCAL_MODEL_COST_MAP", "True")
+
+from pydantic import BaseModel
+
+from c2b_agents.agent import ChatAgent
+from c2b_agents.config import get_agent_config
+from c2b_agents.pipeline import resolve_draft_with_ladder
+from c2b_agents.router import LlmRouter, RouterResult
 from c2b_cad_worker.extract import extract_step
 from c2b_library.loader import load_library
+from c2b_rules.engine import build_ebom
+
+CASSETTE_DIR = Path("cassettes")
+MODEL = "fixture/scripted"
+
+B6_CLASSES = {
+    "Body1": ("moulded.housing.top", "Thin-wall open shell (1.8 mm): top housing"),
+    "Body2": ("moulded.housing.bottom", "Thin-wall open shell (1.8 mm): bottom housing"),
+    "Body3": ("electrical.pcb", "Flat plate with mounting holes: printed circuit board"),
+    "Body4": ("moulded.knob", "Rotational part with a bore: rotary knob"),
+    "Body5": ("moulded.button", "Small cylindrical solid: push button"),
+    "Body6": ("spring.compression", "Helical wire: battery contact spring"),
+    "Body7": ("sheetmetal.clip", "Formed sheet-metal strip: battery contact clip"),
+    "Body8": ("seal.gasket.flat", "Flat perimeter frame: sealing gasket"),
+    "Body9": ("electrical.battery.li_ion", "18 x 65 mm cylinder: 18650 Li-ion cell"),
+}
+B4_FIELDS = {
+    "Pos": "find_no",
+    "Teilenummer": "part_number",
+    "Item": "description",
+    "Menge": "quantity",
+    "Unit": "uom",
+    "Designator": "refdes",
+    "Hersteller": "manufacturer",
+    "MPN": "mpn",
+    "Bemerkung": "notes",
+}
+L4_CANDIDATES = [
+    ("label.rating", "Serial and rating label on the housing"),
+    ("documentation.manual", "Operating and calibration instructions"),
+    ("packaging.carton", "Retail carton for the handheld unit"),
+    ("fastener.screw.socket_head", "Screws closing the two housing halves"),
+]
+CHAT_REPLY = (
+    "I have prepared suggestions to change the material of the M4 screw lines to stainless steel "
+    "(A2). Your BoM lines stay unchanged until you review and accept each suggestion."
+)
 
 
-def generate_all_cassettes() -> None:
-    store = CassetteStore("cassettes")
-    library, _ = load_library(Path("library"))
-    valid_classes = get_taxonomy_codes(library)
-
-    # -------------------------------------------------------------------------
-    # 1. B3 Vision Cassette
-    # -------------------------------------------------------------------------
-    b3_dir = Path("cassettes/b3")
-    b3_dir.mkdir(parents=True, exist_ok=True)
-    b3_vision_data = {
-        "findings": [
+def script(role: str, prompt: str, schema: type[BaseModel] | None) -> tuple[Any, int, int]:
+    """The authored answer for one prompt: (response, prompt_tokens, completion_tokens)."""
+    name = schema.__name__ if schema else ""
+    if name == "L1Output":
+        part = re.search(r"Part Name: (\S+)", prompt)
+        cls, reason = B6_CLASSES[part.group(1)] if part else ("moulded.housing", "General part")
+        return {"cls": cls, "confidence": 0.70, "reason": reason}, 220, 40
+    if name == "L3Output":
+        return (
             {
-                "description": "Ceiling fan motor housing and 3 blades visible in photo",
-                "class": "electrical.motor.ac_induction",
-                "count": 1,
-                "detected_text": ["230V AC", "75W"],
-                "confidence": 0.35,
-            }
-        ]
-    }
-    (b3_dir / "vision_photo.json").write_text(
-        json.dumps(b3_vision_data, indent=2) + "\n", encoding="utf-8"
-    )
-    print("Recorded B3 vision cassette.")
-
-    # -------------------------------------------------------------------------
-    # 2. B4 L3 Header Mapping Cassette
-    # -------------------------------------------------------------------------
-    b4_dir = Path("cassettes/b4")
-    b4_dir.mkdir(parents=True, exist_ok=True)
-
-    header_row = [
-        "Pos",
-        "Teilenummer",
-        "Item",
-        "Menge",
-        "Unit",
-        "Designator",
-        "Hersteller",
-        "MPN",
-        "Bemerkung",
-    ]
-    sample_rows = [
-        [
-            "1",
-            "PB-0001",
-            "Li-ion Battery Pack 10000mAh",
-            "1",
-            "pcs",
-            "BT1",
-            "PowerMax",
-            "PM-10000",
-            "Main battery",
-        ],
-        [
-            "2",
-            "PB-0002",
-            "Top Enclosure Shell ABS",
-            "1",
-            "pcs",
-            "",
-            "PlastiTech",
-            "PT-TOP-01",
-            "UL94-V0",
-        ],
-        [
-            "3",
-            "PB-0003",
-            "Bottom Enclosure Shell ABS",
-            "1",
-            "pcs",
-            "",
-            "PlastiTech",
-            "PT-BOT-01",
-            "UL94-V0",
-        ],
-        [
-            "4",
-            "PB-0004",
-            "Main Controller PCBA",
-            "1",
-            "pcs",
-            "PCB1",
-            "TechDesign",
-            "TD-PB-V2",
-            "SMT",
-        ],
-        [
-            "5",
-            "PB-0005",
-            "USB-C Interface Port",
-            "2",
-            "pcs",
-            "J1, J2",
-            "Amphenol",
-            "12401610E402A",
-            "Dual port",
-        ],
-    ]
-    ambiguous_column = "Item"
-    valid_fields = [
-        "find_no",
-        "part_number",
-        "description",
-        "qty",
-        "uom",
-        "level",
-        "refdes",
-        "material",
-        "manufacturer",
-        "mpn",
-        "notes",
-        "unmapped",
-    ]
-
-    samples_fmt = "\n".join(
-        f"Row {i + 1}: " + " | ".join(str(cell) for cell in row)
-        for i, row in enumerate(sample_rows[:5])
-    )
-    b4_prompt = (
-        f"You are a tabular BoM mapping specialist. Map the spreadsheet columns to canonical BoM fields.\n\n"
-        f"Header Row: {' | '.join(header_row)}\n"
-        f"Sample Data Rows:\n{samples_fmt}\n\n"
-        f"Ambiguous Column to Resolve: '{ambiguous_column}'\n"
-        f"Allowed Canonical Fields: {', '.join(valid_fields)}\n\n"
-        f"Return JSON conforming to schema with 'mappings' (dict of col -> field) and 'reason'."
-    )
-    b4_key = store.make_key("extractor", b4_prompt, "L3Output")
-    b4_cassette = Cassette(
-        key=b4_key,
-        role="extractor",
-        model="groq/llama-3.1-8b-instant",
-        prompt_summary="B4 header mapping for ambiguous column 'Item'",
-        response={
-            "mappings": {
-                "Item": "description",
-                "Pos": "find_no",
-                "Teilenummer": "part_number",
-                "Menge": "quantity",
-                "Unit": "uom",
-                "Designator": "refdes",
-                "Hersteller": "manufacturer",
-                "MPN": "mpn",
-                "Bemerkung": "notes",
+                "mappings": B4_FIELDS,
+                "reason": "'Item' also looks like a find number, but its cells are long part texts",
             },
-            "reason": "header 'Item' scores for find_no (also claimed by 'Pos'); values are long text descriptions",
-        },
-        prompt_tokens=180,
-        completion_tokens=65,
-        total_tokens=245,
-        latency_ms=120,
-    )
-    store.save(b4_cassette, subdir="b4")
-    print(f"Recorded B4 L3 cassette ({b4_key}).")
+            180,
+            65,
+        )
+    if name == "L4Output":
+        return {"candidates": [{"cls": c, "reason": r} for c, r in L4_CANDIDATES]}, 240, 85
+    if role == "agent":
+        return CHAT_REPLY, 310, 55
+    raise RuntimeError(f"No scripted answer for role={role} schema={name!r}")
 
-    # -------------------------------------------------------------------------
-    # 3. B6 Unknown Product: L1 Reasoner Cassettes for Body1..Body9
-    # -------------------------------------------------------------------------
-    b6_dir = Path("cassettes/b6")
-    b6_dir.mkdir(parents=True, exist_ok=True)
 
-    b6_step = Path("golden/B6_unknown/input/unknown_product.step")
-    product_desc = (
-        "Handheld soil-moisture controller with a rotary knob, one button and a rechargeable cell."
-    )
-    cad = extract_step(b6_step)
+class ScriptedRouter(LlmRouter):
+    """The production router with only the provider call replaced by `script`."""
 
-    expected_b6_classes = {
-        "Body1": (
-            "moulded.housing.top",
-            "Thin-wall open shell geometry (1.8mm) representing top housing of handheld controller",
-        ),
-        "Body2": (
-            "moulded.housing.bottom",
-            "Thin-wall open shell geometry (1.8mm) representing bottom housing of handheld controller",
-        ),
-        "Body3": (
-            "electrical.pcb",
-            "Flat plate with mounting holes matching printed circuit board",
-        ),
-        "Body4": ("moulded.knob", "Rotational component with bore matching controller rotary knob"),
-        "Body5": ("moulded.button", "Small cylindrical solid matching push button actuator"),
-        "Body6": (
-            "spring.compression",
-            "Helical wire geometry matching battery contact compression spring",
-        ),
-        "Body7": ("sheetmetal.clip", "Formed sheet metal strip matching battery contact clip"),
-        "Body8": ("seal.gasket.flat", "Flat perimeter frame matching moisture sealing gasket"),
-        "Body9": (
-            "electrical.battery.li_ion",
-            "18x65mm cylindrical volume matching 18650 Li-ion rechargeable battery cell",
-        ),
-    }
-
-    sibling_classes = [cls for (cls, _) in expected_b6_classes.values()]
-
-    for node in cad.nodes:
-        if node.kind != "part":
-            continue
-        feat = cad.shapes.get(node.shape_id) if node.shape_id else None
-        feat_summary = ""
-        if feat:
-            feat_summary = (
-                f"size=({feat.obb_mm[0]:.1f}, {feat.obb_mm[1]:.1f}, {feat.obb_mm[2]:.1f}) mm, "
-                f"vol={feat.volume_mm3:.1f} mm3, rot_sym={feat.rot_symmetry:.2f}, "
-                f"const_thick={feat.const_thickness_mm}, thin_plate={feat.thin_plate}, "
-                f"helix={feat.helix_evidence}"
-            )
-
-        chosen_cls, reason_text = expected_b6_classes.get(
-            node.name, ("moulded.housing", "General enclosure part")
+    async def _call_provider_with_retry(  # type: ignore[override]
+        self,
+        primary_model: str,
+        fallback_model: str | None,
+        role: str,
+        prompt: str,
+        schema: type[BaseModel] | None = None,
+        system_prompt: str | None = None,
+    ) -> RouterResult:
+        response, p_tok, c_tok = script(role, prompt, schema)
+        raw = json.dumps(response) if isinstance(response, dict) else str(response)
+        parsed = schema.model_validate(response) if schema else None
+        return RouterResult(
+            raw_text=raw,
+            parsed=parsed,
+            role=role,
+            model=MODEL,
+            prompt_tokens=p_tok,
+            completion_tokens=c_tok,
+            total_tokens=p_tok + c_tok,
+            latency_ms=100,
         )
 
-        l1_prompt = (
-            f"You are a CAD classification reasoner. Classify this mechanical part into exactly one "
-            f"taxonomy class code from the allowed taxonomy.\n\n"
-            f"Part Name: {node.name}\n"
-            f"Parent Assemblies: Root\n"
-            f"Sibling Classes: {', '.join(sibling_classes)}\n"
-            f"Geometric Features: {feat_summary}\n"
-            f"Product Context: {product_desc}\n"
-            f"Candidate Classes from Rules: None\n\n"
-            f"Allowed Taxonomy Codes: {', '.join(valid_classes)}\n\n"
-            f"Return JSON strictly conforming to schema with fields 'cls', 'confidence' (0.0-1.0), and 'reason'."
-        )
 
-        key = store.make_key("reasoner", l1_prompt, "L1Output")
-        cassette = Cassette(
-            key=key,
-            role="reasoner",
-            model="groq/llama-3.3-70b-versatile",
-            prompt_summary=f"B6 L1 classification for {node.name}",
-            response={
-                "cls": chosen_cls,
-                "confidence": 0.70,
-                "reason": reason_text,
-            },
-            prompt_tokens=220,
-            completion_tokens=40,
-            total_tokens=260,
-            latency_ms=250,
-        )
-        store.save(cassette, subdir="b6")
-        print(f"Recorded B6 L1 cassette for {node.name} ({key} -> {chosen_cls}).")
+def new_router() -> ScriptedRouter:
+    cfg = dataclasses.replace(get_agent_config(), cassette_mode="record", cassette_dir=CASSETTE_DIR)
+    return ScriptedRouter(config=cfg)
 
-    # -------------------------------------------------------------------------
-    # 4. B6 L4 Gap Candidates Cassette
-    # -------------------------------------------------------------------------
-    l4_prompt = (
-        f"You are a design-for-manufacturing expert. Identify missing components commonly required "
-        f"for this product that are not yet in the BoM.\n\n"
-        f"Product Description: {product_desc}\n"
-        f"Current BoM Component Classes: {', '.join(sibling_classes)}\n\n"
-        f"Allowed Taxonomy Classes: {', '.join(valid_classes)}\n\n"
-        f"Return JSON strictly conforming to schema with at most 8 'candidates' (each having 'cls' and 'reason')."
-    )
-    l4_key = store.make_key("reasoner", l4_prompt, "L4Output")
-    l4_cassette = Cassette(
-        key=l4_key,
-        role="reasoner",
-        model="groq/llama-3.3-70b-versatile",
-        prompt_summary="B6 L4 gap candidates for handheld soil-moisture controller",
-        response={
-            "candidates": [
-                {
-                    "cls": "label.rating",
-                    "reason": "Serial and rating label required on handheld controller housing",
-                },
-                {
-                    "cls": "documentation.manual",
-                    "reason": "Operating instructions and calibration guide for soil moisture meter",
-                },
-                {
-                    "cls": "packaging.carton",
-                    "reason": "Retail protective carton for packaging the handheld unit",
-                },
-                {
-                    "cls": "fastener.screw.socket_head",
-                    "reason": "Assembly fasteners to secure top and bottom enclosure halves",
-                },
-            ]
-        },
-        prompt_tokens=240,
-        completion_tokens=85,
-        total_tokens=325,
-        latency_ms=280,
-    )
-    store.save(l4_cassette, subdir="b6")
-    print(f"Recorded B6 L4 gap cassette ({l4_key}).")
 
-    # -------------------------------------------------------------------------
-    # 5. Agent Chat Cassette ("make all M4 screws stainless")
-    # -------------------------------------------------------------------------
-    agent_dir = Path("cassettes/agent")
-    agent_dir.mkdir(parents=True, exist_ok=True)
-    agent_cassette = Cassette(
-        key="agent_m4_stainless",
-        role="agent",
-        model="groq/llama-3.3-70b-versatile",
-        prompt_summary="Chat agent response for make all M4 screws stainless",
-        response=(
-            "I have processed your request to make all M4 screws stainless. I have prepared suggestions "
-            "for the 4 matching M4 screw lines to update their material to stainless steel (A2). "
-            "In accordance with our governance rules, your BoM lines remain unchanged until you "
-            "review and accept these suggestions."
-        ),
-        prompt_tokens=310,
-        completion_tokens=55,
-        total_tokens=365,
-        latency_ms=190,
+async def record_all() -> None:
+    library, _ = load_library(Path("library"))
+    assert library is not None
+
+    # B4: the ambiguous 'Item' column through L3
+    b4 = build_ebom(
+        None, library, "B4", bom_file_path=Path("golden/B4_power_bank/input/supplier_bom.xlsx")
     )
-    store.save(agent_cassette, subdir="agent")
-    print("Recorded Agent chat cassette.")
+    await resolve_draft_with_ladder(
+        b4,
+        library,
+        new_router(),
+        extract=None,
+        product_desc="Power bank assembly with Li-ion battery",
+    )
+
+    # B6: nine unknown parts through L1, then L4 gap candidates
+    b6_dir = Path("golden/B6_unknown/input")
+    desc = (b6_dir / "details.txt").read_text(encoding="utf-8").strip()
+    cad = extract_step(b6_dir / "unknown_product.step")
+    b6 = build_ebom(cad, library, "B6", details_path=b6_dir / "details.txt", assign_numbers=True)
+    await resolve_draft_with_ladder(
+        b6, library, new_router(), extract=cad, product_desc=desc, run_l4_gap=True
+    )
+
+    # Chat agent: "make all M4 screws stainless" on B2
+    b2_cad = extract_step(Path("golden/B2_bracket/input/bracket_assembly.step"))
+    b2 = build_ebom(b2_cad, library, "B2")
+    await ChatAgent(new_router()).chat(
+        job_id="B2", message="make all M4 screws stainless", draft=b2
+    )
+
+
+def main() -> None:
+    # Keep the hand-made vision file read by the photo stub; everything else is re-recorded.
+    for sub in ("b4", "b6", "agent"):
+        shutil.rmtree(CASSETTE_DIR / sub, ignore_errors=True)
+    for stale in CASSETTE_DIR.glob("*.json"):
+        stale.unlink()
+    asyncio.run(record_all())
+    files = sorted(CASSETTE_DIR.glob("*.json"))
+    print(f"Recorded {len(files)} cassettes under {CASSETTE_DIR}/ (model {MODEL!r}).")
 
 
 if __name__ == "__main__":
-    generate_all_cassettes()
+    main()

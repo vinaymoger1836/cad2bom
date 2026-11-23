@@ -68,35 +68,6 @@ class CassetteStore:
             except Exception:  # noqa: S112 - unreadable cassette files are skipped
                 continue
 
-        # Fallback 2: role + prompt keyword matching for test flexibility
-        prompt_lower = prompt.lower()
-        for path in self.base_dir.rglob("*.json"):
-            try:
-                data = json.loads(path.read_text(encoding="utf-8"))
-                if data.get("role") != role:
-                    continue
-                summary = str(data.get("prompt_summary", "")).lower()
-                c_key = str(data.get("key", "")).lower()
-
-                # If prompt references the summary keywords or key name
-                if c_key in prompt_lower or (summary and summary in prompt_lower):
-                    return Cassette(**data)
-                # Specific keywords: e.g. "make all m4 screws stainless"
-                if "m4" in prompt_lower and "stainless" in prompt_lower and "m4" in summary:
-                    return Cassette(**data)
-                if "ambiguous column to resolve: 'item'" in prompt_lower and "item" in summary:
-                    return Cassette(**data)
-                # Body matching for L1: e.g. "part name: body1" and "body1" in summary
-                for body_idx in range(1, 15):
-                    b_name = f"body{body_idx}"
-                    if f"part name: {b_name}" in prompt_lower and b_name in summary:
-                        return Cassette(**data)
-                # L4 gap candidates matching
-                if "identify missing components" in prompt_lower and "gap" in summary:
-                    return Cassette(**data)
-            except Exception:  # noqa: S112 - unreadable cassette files are skipped
-                continue
-
         return None
 
     def save(self, cassette: Cassette, subdir: str | None = None) -> Path:

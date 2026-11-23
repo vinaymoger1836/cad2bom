@@ -1,0 +1,31 @@
+{
+  "key": "3795c68706dc468f",
+  "role": "reasoner",
+  "model": "fixture/scripted",
+  "prompt_summary": "You are a design-for-manufacturing expert. Identify missing components commonly required for this product that are not y",
+  "response": {
+    "candidates": [
+      {
+        "cls": "label.rating",
+        "reason": "Serial and rating label on the housing"
+      },
+      {
+        "cls": "documentation.manual",
+        "reason": "Operating and calibration instructions"
+      },
+      {
+        "cls": "packaging.carton",
+        "reason": "Retail carton for the handheld unit"
+      },
+      {
+        "cls": "fastener.screw.socket_head",
+        "reason": "Screws closing the two housing halves"
+      }
+    ]
+  },
+  "prompt_tokens": 240,
+  "completion_tokens": 85,
+  "total_tokens": 325,
+  "latency_ms": 100,
+  "created_at": "2026-11-23T14:47:02.242645+00:00"
+}

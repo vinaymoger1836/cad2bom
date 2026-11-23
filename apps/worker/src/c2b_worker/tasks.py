@@ -124,6 +124,7 @@ async def _build_bom_for_job_inner(
         router=router,
         extract=extract_obj,
         product_desc=product_desc,
+        run_l4_gap=True,
     )
 
     # Persist audited LLM calls to database

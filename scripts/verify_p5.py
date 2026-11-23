@@ -289,8 +289,14 @@ def test_l6_acceptance_rule() -> None:
     """Assert L6 acceptance rule: quote must contain value, otherwise rejected."""
     print("\n--- Verifying L6 Datasheet Field Acceptance Rule ---")
     import asyncio
+    import dataclasses
+    import tempfile
 
-    router = LlmRouter()
+    from c2b_agents.config import get_agent_config
+
+    # L6 cases are scripted inline: keep their cassettes out of the repo's cassettes/ folder.
+    tmp = tempfile.mkdtemp(prefix="c2b-l6-")
+    router = LlmRouter(config=dataclasses.replace(get_agent_config(), cassette_dir=Path(tmp)))
 
     # Pre-populate router cassette for valid L6
     valid_snippet = "The operating voltage is 230 VAC at 50 Hz with rated power of 75 W."

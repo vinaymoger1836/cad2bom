@@ -120,6 +120,49 @@ def _read_color(label: TDF_Label, ct: Any) -> tuple[float, float, float] | None:
     return None
 
 
+def _export_glb(
+    doc: Any,
+    shape_tool: Any,
+    shapes: dict[str, ShapeFeatures],
+    entry_to_shape_id: dict[str, str],
+    out_dir: Path,
+    notices: list[CadNotice],
+) -> str | None:
+    """Tessellate the unique shapes and write `<out_dir>/model.glb` (mm -> m). Returns its
+    path relative to the data dir (`out/<job id>/model.glb`), or None if it could not be made."""
+    try:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        glb_path = out_dir / "model.glb"
+
+        for sid in shapes:
+            for entry_str, registered_sid in entry_to_shape_id.items():
+                if registered_sid == sid:
+                    proto_lbl = TDF_Label()
+                    TDF_Tool.Label_s(doc.GetData(), TCollection_AsciiString(entry_str), proto_lbl)
+                    if not proto_lbl.IsNull():
+                        s = shape_tool.GetShape_s(proto_lbl)
+                        if not s.IsNull():
+                            BRepMesh_IncrementalMesh(s, 0.05, False, 0.5, True)
+                    break
+
+        writer = RWGltf_CafWriter(TCollection_AsciiString(str(glb_path)), True)
+        writer.ChangeCoordinateSystemConverter().SetInputLengthUnit(0.001)  # mm -> meters
+        writer.Perform(doc, TColStd_IndexedDataMapOfStringString(), Message_ProgressRange())
+
+        if glb_path.exists() and glb_path.stat().st_size > 0:
+            return f"out/{out_dir.name}/model.glb"
+    except Exception as exc:
+        log.warning("GLB export failed: %s", exc)
+        notices.append(
+            CadNotice(
+                code="glb_export_failed",
+                message=f"3D GLB preview generation failed: {exc}",
+                severity="warning",
+            )
+        )
+    return None
+
+
 def extract_step(step_path: Path, out_dir: Path | None = None) -> CadExtractResult:
     """Full extraction pipeline for a STEP file."""
     if not step_path.exists():
@@ -456,48 +499,14 @@ def extract_step(step_path: Path, out_dir: Path | None = None) -> CadExtractResu
 
     shape_tool.UpdateAssemblies()
 
-    # GLB Generation
+    # GLB preview only when the caller names an output folder (the cad-worker server always does;
+    # library-style calls such as the verification scripts must not write into the repository).
     glb_relpath: str | None = None
-    target_out_dir = out_dir
-    if target_out_dir is None:
-        # <data>/jobs/<id>/in/<file> -> <data>/out/<id>/
-        job_dir = step_path.resolve().parent.parent
-        target_out_dir = job_dir.parent.parent / "out" / job_dir.name
-
-    try:
-        target_out_dir.mkdir(parents=True, exist_ok=True)
-        glb_path = target_out_dir / "model.glb"
-
-        # Tessellate all unique shapes
-        for sid, _sfeat in shapes.items():
-            for entry_str, registered_sid in entry_to_shape_id.items():
-                if registered_sid == sid:
-                    proto_lbl = TDF_Label()
-                    TDF_Tool.Label_s(doc.GetData(), TCollection_AsciiString(entry_str), proto_lbl)
-                    if not proto_lbl.IsNull():
-                        s = shape_tool.GetShape_s(proto_lbl)
-                        if not s.IsNull():
-                            BRepMesh_IncrementalMesh(s, 0.05, False, 0.5, True)
-                    break
-
-        writer = RWGltf_CafWriter(TCollection_AsciiString(str(glb_path)), True)
-        writer.ChangeCoordinateSystemConverter().SetInputLengthUnit(0.001)  # mm -> meters
-        writer.Perform(doc, TColStd_IndexedDataMapOfStringString(), Message_ProgressRange())
-
-        if glb_path.exists() and glb_path.stat().st_size > 0:
-            glb_relpath = f"out/{target_out_dir.name}/model.glb"
-    except Exception as exc:
-        log.warning("GLB export failed: %s", exc)
-        notices.append(
-            CadNotice(
-                code="glb_export_failed",
-                message=f"3D GLB preview generation failed: {exc}",
-                severity="warning",
-            )
-        )
+    if out_dir is not None:
+        glb_relpath = _export_glb(doc, shape_tool, shapes, entry_to_shape_id, out_dir, notices)
 
     return CadExtractResult(
-        job_id=target_out_dir.parent.name if target_out_dir else None,
+        job_id=out_dir.name if out_dir else None,
         status="done",
         unit_length="mm",
         unit_mass="g",

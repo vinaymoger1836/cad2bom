@@ -8,7 +8,7 @@ Brings the real stack up with Docker Compose, then drives it through the public 
   * a program renamed .step, a native CAD file, an unknown type and an over-limit file are
     all refused with a clear message, and leave nothing behind
   * starting the job moves it to `extracting`; a STEP with no geometry ends cleanly
-  * golden B3 (fan) and B5 (CAD + incomplete BoM) run through the real worker and cad-worker:
+  * golden B3 (fan), B4 (supplier BoM file) and B5 (CAD + incomplete BoM) run through the real worker and cad-worker:
     draft EBOM/MBOM, suggestions, questions, GLB, blocked approval, then approval after review
   * the SSE job stream and the public demo stream work
   * both procrastinate queues (`pipeline`, `cad`) ran a job
@@ -251,6 +251,63 @@ def golden_b3(c: httpx.Client) -> None:
     )
 
 
+def golden_b4(c: httpx.Client) -> None:
+    """B4: a messy supplier BoM file, no CAD. One ambiguous column must be confirmed by a person."""
+    g = ROOT / "golden" / "B4_power_bank"
+    xlsx = g / "input" / "supplier_bom.xlsx"
+    job_id, auth, jobs = new_job(c, "B4 power bank", [xlsx], description="Power bank assembly")
+    status = wait_status(c, jobs, auth, {"review", "failed"}, 240)
+    check(status == "review", "[B4] job reaches `review` without CAD", status)
+
+    exp = json.loads((g / "expected" / "bom.json").read_text(encoding="utf-8"))["lines"]
+    bom = c.get(f"{jobs}/bom", headers=auth).json()
+    check(len(bom["ebom"]) == len(exp) == 14, "[B4] 14 user lines kept", len(bom["ebom"]))
+    raws = [ln.get("raw") for ln in bom["ebom"]]
+    check(raws == [x["raw"] for x in exp], "[B4] every user line is unchanged in `raw`")
+
+    mq = [q for q in bom["questions"] if q.get("mapping_column")]
+    check(
+        len(mq) == 1 and mq[0]["mapping_column"] == "Item" and mq[0]["blocking"],
+        "[B4] the ambiguous 'Item' column is a blocking question",
+        [q["text"] for q in bom["questions"]],
+    )
+    check(mq[0].get("answer") is None, "[B4] nothing was confirmed without a person")
+    r = c.get(f"{jobs}/mapping", headers=auth)
+    item = r.json()["columns"]["Item"]
+    check(
+        r.status_code == 200 and item["by"] != "user" and not item["confirmed_by_user"],
+        "[B4] mapping shows 'Item' as an unconfirmed proposal",
+        item,
+    )
+    r = c.post(f"{jobs}/approve", headers=auth)
+    check(
+        r.status_code == 409,
+        "[B4] approval is blocked until the column is confirmed",
+        r.status_code,
+    )
+
+    r = c.post(f"{jobs}/mapping/confirm", json={"columns": {"Item": "nonsense"}}, headers=auth)
+    check(r.status_code == 422, "[B4] an unknown field is refused", r.text)
+    r = c.post(f"{jobs}/mapping/confirm", json={"columns": {"NoSuchCol": "notes"}}, headers=auth)
+    check(r.status_code == 422, "[B4] an unknown column is refused", r.text)
+    r = c.post(f"{jobs}/mapping/confirm", json={"columns": {"Item": "description"}}, headers=auth)
+    check(
+        r.status_code == 200 and r.json()["rebuild_needed"] is False, "[B4] confirm saved", r.text
+    )
+    item = c.get(f"{jobs}/mapping", headers=auth).json()["columns"]["Item"]
+    check(
+        item["by"] == "user" and item["confirmed_by_user"] is True,
+        "[B4] 'Item' is now source=user",
+        item,
+    )
+    saved = ROOT / "data" / "jobs" / job_id / "mapping_overrides.json"
+    check(
+        json.loads(saved.read_text(encoding="utf-8")) == {"Item": "description"},
+        "[B4] the choice is stored per job",
+    )
+    resolve_everything(c, jobs, auth, {})
+
+
 def golden_b5(c: httpx.Client) -> None:
     g = ROOT / "golden" / "B5_cad_plus_bom"
     job_id, auth, jobs = new_job(
@@ -418,6 +475,7 @@ def run_checks(base: str) -> None:
 
         # --- golden cases through the real worker and cad-worker
         golden_b3(c)
+        golden_b4(c)
         golden_b5(c)
 
         # --- demo stream
@@ -459,6 +517,9 @@ def run_checks(base: str) -> None:
     for path in [
         ".env",
         "data/jobs/x",
+        "data/out/x/model.glb",
+        "out/B1/model.glb",
+        "golden/B1/out/model.glb",
         "packages/ts-types/index.d.ts",
         "node_modules/x",
         ".venv/x",
