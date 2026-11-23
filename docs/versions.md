@@ -26,6 +26,8 @@ Updated in P0 (2026-11-20). Exact Python versions are locked in `uv.lock`, web v
 | cadquery | 2.8.0 | Apache-2.0 | cad-worker image only |
 | cadquery-ocp | 7.9.3.1.1 | Apache-2.0 (bindings); OpenCascade is LGPL-2.1 with exception | cad-worker image only; pulls `vtk` 9.6.2 (BSD) |
 | numba / scipy | 0.68.1 / 1.18.1 | BSD-2/3-Clause | pulled in by cadquery |
+| openpyxl | 3.1.5 | MIT | Excel reading & writing (rules & fixtures) |
+| pdfplumber | 0.11.4 | MIT | PDF datasheet text and table extraction |
 | hatchling | latest at build | MIT | build backend |
 | ruff / mypy / httpx | 0.17.6 / 2.4.1 / 0.28.1 | MIT / MIT / BSD-3-Clause | dev only |
 
