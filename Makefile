@@ -43,6 +43,8 @@ lint:
 	cd packages/domain && uv run mypy src
 	cd packages/rules && uv run mypy src
 	cd packages/jobs && uv run mypy src
+	cd packages/library && uv run mypy src
+	cd tools/fixtures && uv run mypy src
 	cd apps/api && uv run mypy src
 	cd apps/worker && uv run mypy src
 	cd apps/cad-worker && uv run mypy src

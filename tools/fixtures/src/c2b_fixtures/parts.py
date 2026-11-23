@@ -6,6 +6,7 @@ Threads are plain cylinders: docs/04 §4 treats thread evidence as optional.
 """
 
 import math
+from typing import cast
 
 import cadquery as cq
 
@@ -32,7 +33,7 @@ def _solid(wp: cq.Workplane) -> cq.Shape:
     solids = wp.solids().vals()
     if len(solids) != 1:
         raise RuntimeError(f"expected one solid, got {len(solids)}")
-    return solids[0]
+    return cast(cq.Shape, solids[0])
 
 
 # --- standard parts -----------------------------------------------------------------------------

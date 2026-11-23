@@ -48,8 +48,8 @@ def main(argv: list[str] | None = None) -> int:
     files = build(lib, args.out, cases)
     if set(cases) == set(ALL_CASES):
         write_readme(args.out, lib)
-    for f in files:
-        print(f"wrote {f}  ({f.stat().st_size} bytes)")
+    for out_path in files:
+        print(f"wrote {out_path}  ({out_path.stat().st_size} bytes)")
     return 0
 
 

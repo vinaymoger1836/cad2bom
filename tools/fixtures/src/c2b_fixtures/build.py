@@ -279,7 +279,7 @@ def build_b4(lib: Library, out: Path) -> None:
             "'Item' is resolved through the extractor cassette (L3) and confirmed by the user.",
         ],
     }
-    lines = []
+    lines: list[dict[str, Any]] = []
     for src, row in zip(xlsx.B4_ROWS, raw_rows, strict=True):
         refdes = expand_refdes(src[5]) if src[5] else []
         lines.append(
@@ -475,7 +475,7 @@ def import_real_fan(lib: Library, src: Path, out: Path) -> Path:
     tree = read_step_tree(dest)
     unique = sorted(
         ({"name": c.name, "instances": c.count, "volume_mm3": round(c.volume_mm3 or 0.0, 2)} for c in tree.children),
-        key=lambda x: -x["volume_mm3"],
+        key=lambda x: -float(x["volume_mm3"]),
     )
     data = {
         "case": "B3b",
