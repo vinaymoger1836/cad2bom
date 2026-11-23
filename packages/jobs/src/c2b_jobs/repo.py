@@ -29,12 +29,19 @@ async def create_job(
     product: ProductInfo,
     token_hash: bytes,
     library_version: str,
+    consent_native_conversion: bool = False,
 ) -> None:
     async with pool.connection() as conn:
         await conn.execute(
-            "INSERT INTO job (id, token_hash, status, product, library_version)"
-            " VALUES (%s, %s, 'uploading', %s, %s)",
-            (job_id, token_hash, Jsonb(product.model_dump(mode="json")), library_version),
+            "INSERT INTO job (id, token_hash, status, product, library_version, consent_native_conversion)"
+            " VALUES (%s, %s, 'uploading', %s, %s, %s)",
+            (
+                job_id,
+                token_hash,
+                Jsonb(product.model_dump(mode="json")),
+                library_version,
+                consent_native_conversion,
+            ),
         )
 
 
@@ -151,3 +158,39 @@ async def first_cad_upload(pool: Pool, job_id: UUID) -> UUID | None:
         )
         row = await cur.fetchone()
         return None if row is None else UUID(str(row["id"]))
+
+
+async def set_consent_native_conversion(pool: Pool, job_id: UUID, consent: bool) -> None:
+    async with pool.connection() as conn:
+        await conn.execute(
+            "UPDATE job SET consent_native_conversion = %s, updated_at = now() WHERE id = %s",
+            (consent, job_id),
+        )
+
+
+async def save_cad_extract(
+    pool: Pool,
+    job_id: UUID,
+    upload_id: UUID,
+    data: dict[str, Any],
+    leaf_count: int = 0,
+) -> None:
+    async with pool.connection() as conn:
+        await conn.execute(
+            "INSERT INTO cad_extract (job_id, upload_id, data, leaf_count)"
+            " VALUES (%s, %s, %s, %s)"
+            " ON CONFLICT (job_id, upload_id) DO UPDATE"
+            " SET data = EXCLUDED.data, leaf_count = EXCLUDED.leaf_count, created_at = now()",
+            (job_id, upload_id, Jsonb(data), leaf_count),
+        )
+
+
+async def get_cad_extract(pool: Pool, job_id: UUID) -> dict[str, Any] | None:
+    async with pool.connection() as conn:
+        cur = await conn.execute(
+            "SELECT data FROM cad_extract WHERE job_id = %s ORDER BY created_at DESC LIMIT 1",
+            (job_id,),
+        )
+        row = await cur.fetchone()
+        return None if row is None else dict(row["data"])
+
