@@ -1,5 +1,6 @@
 /docs/10-claude-code-handoff.md
 CLAUDE.md
+AGENTS.md
 
 # --- Secrets (owner rule 1) ---
 .env
