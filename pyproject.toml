@@ -22,6 +22,7 @@ members = [
   "packages/rules",
   "packages/jobs",
   "packages/library",
+  "packages/agents",
   "tools/fixtures",
   "apps/api",
   "apps/worker",
@@ -34,6 +35,7 @@ c2b-domain = { workspace = true }
 c2b-rules = { workspace = true }
 c2b-jobs = { workspace = true }
 c2b-library = { workspace = true }
+c2b-agents = { workspace = true }
 c2b-fixtures = { workspace = true }
 c2b-api = { workspace = true }
 c2b-worker = { workspace = true }

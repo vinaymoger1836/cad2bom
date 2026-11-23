@@ -13,9 +13,14 @@ from pydantic import BaseModel
 from c2b_domain.bom import (
     BomDraft,
     BomLine,
+    ChatMessage,
+    ChatRequest,
+    ChatResponse,
     ColumnMapping,
     DatasheetSpec,
     Designation,
+    JobSummary,
+    LlmCallRecord,
     PhotoFinding,
     Question,
     Suggestion,
@@ -62,10 +67,15 @@ MODELS: list[type[BaseModel]] = [
     UserBomRow,
     DatasheetSpec,
     PhotoFinding,
+    LlmCallRecord,
+    ChatMessage,
+    ChatRequest,
+    ChatResponse,
+    JobSummary,
 ]
 
 
-REQUEST_MODELS: set[type[BaseModel]] = {ProductInfo, JobCreate, JobUpdate}
+REQUEST_MODELS: set[type[BaseModel]] = {ProductInfo, JobCreate, JobUpdate, ChatRequest}
 
 
 def _repo_root() -> Path:

@@ -305,7 +305,7 @@ def classify_node(
             cls="unclassified",
             confidence=0.3,
             rule_ids=[],
-            source="cad",
+            source="cad_geom",
             open_items=[f"Part '{node.name}' could not be classified (no matching rules)"],
             notes=["L1 fallback: unclassified part becomes an open question"],
         )

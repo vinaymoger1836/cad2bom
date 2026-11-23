@@ -1,5 +1,6 @@
 """BoM domain models (docs/05 §1). Pure Pydantic."""
 
+from datetime import datetime, timezone
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -186,6 +187,67 @@ class BomLine(BaseModel):
     raw: dict[str, Any] | None = None
 
 
+class LlmCallRecord(BaseModel):
+    """Audited log entry for an LLM call (docs/05 §2)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: int | None = None
+    job_id: str
+    role: Literal["reasoner", "extractor", "vision", "agent"]
+    model: str
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    latency_ms: int = 0
+    fallback_reason: str = ""
+    line_id: str | None = None
+    cassette_key: str | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ChatMessage(BaseModel):
+    """Message in conversational agent chat."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    role: Literal["user", "assistant", "system"]
+    content: str
+
+
+class ChatRequest(BaseModel):
+    """User chat message request."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    message: str
+    history: list[ChatMessage] = Field(default_factory=list)
+
+
+class ChatResponse(BaseModel):
+    """Agent chat reply with proposed suggestions."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    reply: str
+    suggestions: list[Suggestion] = Field(default_factory=list)
+    line_refs: list[str] = Field(default_factory=list)
+
+
+class JobSummary(BaseModel):
+    """Summary of a completed BoM run produced by the agent."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    text: str
+    total_lines: int = 0
+    standard_parts_count: int = 0
+    custom_parts_count: int = 0
+    open_questions_count: int = 0
+    pending_suggestions_count: int = 0
+    open_items_count: int = 0
+
+
 class BomDraft(BaseModel):
     """Draft BoM container for a job."""
 
@@ -202,14 +264,21 @@ class BomDraft(BaseModel):
     suggestions: list[Suggestion] = Field(default_factory=list)
     mapping: TableMapping | None = None
     user_rows_raw: list[dict[str, Any]] = Field(default_factory=list)
+    llm_calls: list[LlmCallRecord] = Field(default_factory=list)
+    summary: JobSummary | None = None
 
 
 __all__ = [
     "BomDraft",
     "BomLine",
+    "ChatMessage",
+    "ChatRequest",
+    "ChatResponse",
     "ColumnMapping",
     "DatasheetSpec",
     "Designation",
+    "JobSummary",
+    "LlmCallRecord",
     "MakeBuyType",
     "PhotoFinding",
     "Question",

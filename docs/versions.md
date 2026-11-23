@@ -28,6 +28,8 @@ Updated in P0 (2026-11-20). Exact Python versions are locked in `uv.lock`, web v
 | numba / scipy | 0.68.1 / 1.18.1 | BSD-2/3-Clause | pulled in by cadquery |
 | openpyxl | 3.1.5 | MIT | Excel reading & writing (rules & fixtures) |
 | pdfplumber | 0.11.4 | MIT | PDF datasheet text and table extraction |
+| litellm | 1.63.0 | MIT | LLM router across Groq and Gemini free tiers |
+| langgraph | 0.3.0 | MIT | Conversational chat agent graph |
 | hatchling | latest at build | MIT | build backend |
 | ruff / mypy / httpx | 0.17.6 / 2.4.1 / 0.28.1 | MIT / MIT / BSD-3-Clause | dev only |
 

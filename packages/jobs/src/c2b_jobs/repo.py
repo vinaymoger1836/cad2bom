@@ -265,3 +265,58 @@ async def review_suggestion(
         bom["suggestions"] = suggestions
         await save_bom(pool, job_id, bom)
     return updated
+
+
+async def record_llm_call(
+    pool: Pool,
+    job_id: UUID,
+    role: str,
+    model: str,
+    prompt_tokens: int,
+    completion_tokens: int,
+    total_tokens: int,
+    latency_ms: int,
+    fallback_reason: str,
+    line_id: str | None = None,
+    cassette_key: str | None = None,
+) -> int:
+    """Insert an audited record of an LLM call into llm_call table."""
+    async with pool.connection() as conn:
+        cur = await conn.execute(
+            """
+            INSERT INTO llm_call (
+                job_id, role, model, prompt_tokens, completion_tokens,
+                total_tokens, latency_ms, fallback_reason, line_id, cassette_key
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (
+                job_id,
+                role,
+                model,
+                prompt_tokens,
+                completion_tokens,
+                total_tokens,
+                latency_ms,
+                fallback_reason,
+                line_id,
+                cassette_key,
+            ),
+        )
+        row = await cur.fetchone()
+        return int(row["id"]) if row else 0
+
+
+async def list_llm_calls(
+    pool: Pool,
+    job_id: UUID,
+) -> list[dict[str, Any]]:
+    """List all LLM calls for a job ordered chronologically."""
+    async with pool.connection() as conn:
+        cur = await conn.execute(
+            "SELECT * FROM llm_call WHERE job_id = %s ORDER BY id ASC",
+            (job_id,),
+        )
+        rows = await cur.fetchall()
+        return list(rows)
