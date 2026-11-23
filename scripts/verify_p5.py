@@ -103,7 +103,8 @@ def test_b4_l3_header_mapping(library) -> int:
     # Assert 'Item' is resolved to 'description'
     assert "Item" not in b4_draft.mapping.ambiguous_columns, "Item should no longer be ambiguous"
     assert b4_draft.mapping.columns["Item"].field == "description", "Item should map to description"
-    assert b4_draft.mapping.columns["Item"].rule_id == "R-MAP-L3"
+    assert b4_draft.mapping.columns["Item"].by == "extractor_L3"
+    assert b4_draft.mapping.columns["Item"].confirmed_by_user is True
 
     # Assert user lines have populated descriptions
     for line in b4_draft.ebom:
@@ -141,6 +142,7 @@ def test_b6_unknown_product(library) -> int:
             router,
             extract=b6_cad,
             product_desc=product_desc,
+            run_l4_gap=True,
         )
     )
     dt = time.perf_counter() - t0

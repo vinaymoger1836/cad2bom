@@ -29,6 +29,7 @@ async def resolve_draft_with_ladder(
     extract: CadExtractResult | None = None,
     product_desc: str = "",
     confirm_l3_immediately: bool = True,
+    run_l4_gap: bool = False,
 ) -> BomDraft:
     """Execute LLM fallback ladder steps L1-L6 on a draft BoM where needed."""
     node_map = {n.id: n for n in (extract.nodes if extract else [])}
@@ -141,11 +142,11 @@ async def resolve_draft_with_ladder(
             elif isinstance(l3_res, dict) and "field" in l3_res:
                 resolved_field = l3_res["field"]
                 draft.mapping.columns[col] = ColumnMapping(
-                    source_header=col,
                     field=resolved_field,
-                    confidence=0.85,
-                    rule_id="R-MAP-L3",
-                    sample_values=[str(r.get(col, "")) for r in draft.user_rows_raw[:3]],
+                    by="extractor_L3",
+                    score=0.85,
+                    confirmed_by_user=confirm_l3_immediately,
+                    why="Resolved via L3 LLM header mapping",
                 )
                 draft.mapping.ambiguous_columns.remove(col)
 
@@ -158,7 +159,7 @@ async def resolve_draft_with_ladder(
                                 line.description = desc_val
 
     # 3. Ladder Step L4: Gap candidates for unknown product types
-    if product_desc and not draft.suggestions:
+    if run_l4_gap and product_desc and not draft.suggestions:
         current_classes = [
             (l.cls if isinstance(l.cls, str) else l.cls.value)
             for l in draft.ebom
