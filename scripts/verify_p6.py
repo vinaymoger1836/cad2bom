@@ -13,6 +13,9 @@ Acceptance criteria (docs/10 §4, docs/10 §5 P6):
 from __future__ import annotations
 
 import os
+import warnings
+
+warnings.filterwarnings("ignore", category=UserWarning)
 
 os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = "True"
 
@@ -161,7 +164,7 @@ def test_b5_approval_blocking_and_success(library) -> None:
         mbom=b5_draft.mbom,
         open_items=b5_draft.open_items,
         stats=b5_draft.stats,
-        library_version=library.taxonomy.version,
+        library_version=library.version.version,
     )
     assert version.version == 1
     assert len(version.ebom) > 0
@@ -215,7 +218,7 @@ def test_b6_approval_blocking_and_success(library) -> None:
         mbom=b6_draft.mbom,
         open_items=b6_draft.open_items,
         stats=b6_draft.stats,
-        library_version=library.taxonomy.version,
+        library_version=library.version.version,
     )
     assert version.version == 1
     print(f"  B6 Approval Release: SUCCESS (version {version.version} frozen).", flush=True)

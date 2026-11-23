@@ -135,7 +135,8 @@ def main() -> None:
                 )
 
             # Check make/buy
-            assert gen.make_buy == exp["make_buy"], (
+            gen_mb = gen.make_buy.value if hasattr(gen.make_buy, "value") else str(gen.make_buy)
+            assert gen_mb == exp["make_buy"], (
                 f"Line {i} make_buy mismatch: {gen.make_buy} != {exp['make_buy']}"
             )
 

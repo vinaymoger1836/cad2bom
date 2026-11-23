@@ -55,11 +55,15 @@ def _check_match(
     u_pn = (user_row.part_number or "").strip().upper()
     c_pn = ""
     if cad_line.part_number:
-        c_pn = str(
-            cad_line.part_number.value
-            if isinstance(cad_line.part_number, Prov)
-            else cad_line.part_number
-        ).strip().upper()
+        c_pn = (
+            str(
+                cad_line.part_number.value
+                if isinstance(cad_line.part_number, Prov)
+                else cad_line.part_number
+            )
+            .strip()
+            .upper()
+        )
     c_name = (cad_line.cad_name or "").strip().upper()
 
     if u_pn and c_pn and u_pn == c_pn:
@@ -197,8 +201,7 @@ def merge_cad_and_user_bom(
                         ],
                         answer=None,
                         note=(
-                            "The user's value is kept until answered; "
-                            "the line is never rewritten."
+                            "The user's value is kept until answered; the line is never rewritten."
                         ),
                     )
                 )

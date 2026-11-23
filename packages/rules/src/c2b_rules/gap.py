@@ -10,8 +10,6 @@ Evaluates:
 from __future__ import annotations
 
 import logging
-import re
-from typing import Any
 
 from c2b_domain.bom import BomLine, Suggestion
 from c2b_library.loader import Library
@@ -31,9 +29,7 @@ def evaluate_gap_rules(
     """Evaluate gap rules and return candidate suggestions."""
     rejected = rejected_keys or set()
     suggestions: list[Suggestion] = list(existing_suggestions or [])
-    existing_cls = {
-        (l.cls if isinstance(l.cls, str) else l.cls.value) for l in ebom
-    }
+    existing_cls = {(ln.cls if isinstance(ln.cls, str) else ln.cls.value) for ln in ebom}
     # Also include existing suggestion classes
     for s in suggestions:
         if s.cls:
@@ -46,7 +42,7 @@ def evaluate_gap_rules(
     counter = len(suggestions) + 1
 
     desc_lower = product_desc.lower()
-    hints = set(h.lower() for h in (process_hints or []))
+    hints = {h.lower() for h in (process_hints or [])}
     if "hand solder" in desc_lower or "hand soldered" in desc_lower or "soldered" in desc_lower:
         hints.add("hand_solder")
     if "wave solder" in desc_lower:

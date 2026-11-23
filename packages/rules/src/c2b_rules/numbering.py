@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any
 
 from c2b_domain.bom import BomLine
 from c2b_domain.prov import Prov

@@ -151,8 +151,7 @@ def detect_and_map_bom(
                 c_str = str(cell).strip().lower()
                 for _f_name, f_def in h_config.fields.items():
                     if any(
-                        re.search(pat.regex, c_str, re.IGNORECASE)
-                        for pat in f_def.header_patterns
+                        re.search(pat.regex, c_str, re.IGNORECASE) for pat in f_def.header_patterns
                     ):
                         matches += 1
                         break
@@ -202,8 +201,7 @@ def detect_and_map_bom(
     ambiguous_columns: list[str] = []
 
     col_headers = [
-        str(c).strip() if c is not None else f"Col_{i}"
-        for i, c in enumerate(header_cells)
+        str(c).strip() if c is not None else f"Col_{i}" for i, c in enumerate(header_cells)
     ]
     valid_cols = [i for i, h in enumerate(col_headers) if h]
 
@@ -314,8 +312,7 @@ def detect_and_map_bom(
     # Step 4: Extract Normalised User Rows
     user_rows: list[UserBomRow] = []
     col_to_field = {
-        col_headers[c]: m.field
-        for c, m in zip(valid_cols, columns.values(), strict=False)
+        col_headers[c]: m.field for c, m in zip(valid_cols, columns.values(), strict=False)
     }
 
     for r_idx, r in data_rows_with_idx:

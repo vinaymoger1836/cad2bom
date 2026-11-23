@@ -11,11 +11,9 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from c2b_domain.bom import BomDraft, BomLine, Question, Suggestion
+from c2b_domain.bom import BomDraft, BomLine
 from c2b_domain.prov import Prov
 from c2b_library.loader import Library
-from c2b_rules.descriptions import build_description
-from c2b_rules.gap import evaluate_gap_rules
 from c2b_rules.makebuy import recommend_make_buy
 from c2b_rules.mbom import derive_mbom
 from c2b_rules.validator import validate_draft
@@ -31,7 +29,7 @@ def apply_user_line_edit(
     library: Library | None = None,
 ) -> BomDraft:
     """Apply an explicit user edit to a line with source='user' and confidence 1.0."""
-    target_line = next((l for l in draft.ebom if l.id == line_id), None)
+    target_line = next((ln for ln in draft.ebom if ln.id == line_id), None)
     if not target_line:
         raise ValueError(f"Line '{line_id}' not found in draft EBOM")
 
@@ -50,7 +48,10 @@ def apply_user_line_edit(
         target_line.material = user_prov
         # Recalculate mass if volume is known
         if target_line.cad_volume_mm3 and library and library.materials:
-            mat_info = library.materials.get(str(new_value))
+            mat_info = next(
+                (m for m in library.materials.materials if m.code == str(new_value)),
+                None,
+            )
             if mat_info and mat_info.density_g_cm3:
                 density = float(mat_info.density_g_cm3)
                 vol_cm3 = target_line.cad_volume_mm3 / 1000.0
@@ -88,13 +89,14 @@ def apply_question_answer(
 
     # Apply answer to target lines if applicable
     import re
+
     match = re.search(r"\b(\d+(?:\.\d+)?)\b", str(answer))
     for lid in question.line_ids:
-        line = next((l for l in draft.ebom if l.id == lid), None)
+        line = next((ln for ln in draft.ebom if ln.id == lid), None)
         if line and match:
             num_val = float(match.group(1))
             if line.parent:
-                parent_line = next((l for l in draft.ebom if l.id == line.parent), None)
+                parent_line = next((ln for ln in draft.ebom if ln.id == line.parent), None)
                 if parent_line:
                     parent_line.qty_per_parent = num_val
                     parent_line.qty_total = num_val
@@ -124,25 +126,24 @@ def apply_suggestion_review(
         key = f"{sug.rule}:{sug.cls}"
         draft.rejected_suggestion_keys.add(key)
         draft.rejected_suggestion_keys.add(sug.id)
-    elif decision == "accepted":
+    elif decision == "accepted" and getattr(sug, "action", "add") == "add" and sug.level == "ebom":
         # If suggestion is an addition to EBOM, add as a new line
-        if getattr(sug, "action", "add") == "add" and sug.level == "ebom":
-            new_id = f"L-{len(draft.ebom) + 1:04d}"
-            desc = sug.text or (sug.cls or "Item").upper()
-            new_line = BomLine(
-                id=new_id,
-                level=1,
-                find_no=(len(draft.ebom) + 1) * 10,
-                cls=sug.cls or "unclassified",
-                noun=(sug.cls or "ITEM").split(".")[-1].upper(),
-                description=desc,
-                qty_per_parent=sug.qty_total or 1.0,
-                qty_total=sug.qty_total or 1.0,
-                uom="EA",
-                origin="gap_rule",
-                review="accepted",
-            )
-            draft.ebom.append(new_line)
+        new_id = f"L-{len(draft.ebom) + 1:04d}"
+        desc = sug.text or (sug.cls or "Item").upper()
+        new_line = BomLine(
+            id=new_id,
+            level=1,
+            find_no=(len(draft.ebom) + 1) * 10,
+            cls=sug.cls or "unclassified",
+            noun=(sug.cls or "ITEM").split(".")[-1].upper(),
+            description=desc,
+            qty_per_parent=sug.qty_total or 1.0,
+            qty_total=sug.qty_total or 1.0,
+            uom="EA",
+            origin="gap_rule",
+            review="accepted",
+        )
+        draft.ebom.append(new_line)
 
     recalculate_draft(draft, library)
     return draft
@@ -153,15 +154,16 @@ def recalculate_draft(
     library: Library | None = None,
 ) -> None:
     """Recalculate roll-up quantities, MBOM, open items, and validation."""
-    line_map = {l.id: l for l in draft.ebom}
+    line_map = {ln.id: ln for ln in draft.ebom}
 
     # 1. Recalculate total quantities down the tree
     def compute_total_qty(line: BomLine) -> float:
         parent_qty = 1.0
         if line.parent and line.parent in line_map:
             parent_qty = compute_total_qty(line_map[line.parent])
-        curr_qty = line.qty_per_parent if hasattr(line, "qty_per_parent") else 1.0
-        tot = parent_qty * (curr_qty or 1.0)
+        raw_qty = line.qty_per_parent if hasattr(line, "qty_per_parent") else 1.0
+        curr_qty = float(raw_qty.value if isinstance(raw_qty, Prov) else (raw_qty or 1.0))
+        tot = parent_qty * curr_qty
         line.qty_total = tot
         return tot
 
@@ -169,7 +171,7 @@ def recalculate_draft(
         compute_total_qty(line)
 
     # 2. Recalculate MBOM
-    accepted_suggs = [s for s in draft.suggestions if getattr(s, "review", "") in ("accepted", "suggested")]
+    accepted_suggs = [s for s in draft.suggestions if getattr(s, "review", "") == "accepted"]
     draft.mbom = derive_mbom(draft.ebom, library, accepted_suggestions=accepted_suggs)
 
     # 3. Recalculate open items

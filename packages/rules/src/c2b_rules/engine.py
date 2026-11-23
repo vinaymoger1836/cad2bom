@@ -124,7 +124,11 @@ def build_ebom(
         if blade_m:
             text_blade_count = int(blade_m.group(1))
             blade_line = next(
-                (l for l in final_lines if l.cad_name == "Blade" or "blade" in str(l.cls).lower()),
+                (
+                    ln
+                    for ln in final_lines
+                    if ln.cad_name == "Blade" or "blade" in str(ln.cls).lower()
+                ),
                 None,
             )
             if blade_line and int(blade_line.qty_total) != text_blade_count:
@@ -141,7 +145,10 @@ def build_ebom(
                         ),
                         options=[str(int(blade_line.qty_total)), str(text_blade_count)],
                         evidence=[
-                            f"cad: BladeAssy x{int(blade_line.qty_total)} -> Blade x1 each (qty_total {int(blade_line.qty_total)})",
+                            (
+                                f"cad: BladeAssy x{int(blade_line.qty_total)} -> "
+                                f"Blade x1 each (qty_total {int(blade_line.qty_total)})"
+                            ),
                             f"text: '{text_blade_count} blades' (details.txt)",
                         ],
                         answer=None,

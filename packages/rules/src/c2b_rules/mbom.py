@@ -11,9 +11,9 @@ Transforms an indented Engineering BoM (EBOM) into an MBOM by:
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from c2b_domain.bom import BomLine, MbomLine, Suggestion
+from c2b_domain.prov import Prov
 from c2b_library.loader import Library
 
 log = logging.getLogger(__name__)
@@ -28,14 +28,14 @@ def derive_mbom(
     if not ebom:
         return []
 
-    line_map = {l.id: l for l in ebom}
+    line_map = {ln.id: ln for ln in ebom}
     children_map: dict[str | None, list[BomLine]] = {}
-    for l in ebom:
-        children_map.setdefault(l.parent, []).append(l)
+    for ln in ebom:
+        children_map.setdefault(ln.parent, []).append(ln)
 
     # Detect phantoms and purchased assemblies
-    phantom_ids = {l.id for l in ebom if l.phantom or l.cls == "assembly.phantom"}
-    buy_assembly_ids = {l.id for l in ebom if l.buy_as_assembly}
+    phantom_ids = {ln.id for ln in ebom if ln.phantom or ln.cls == "assembly.phantom"}
+    buy_assembly_ids = {ln.id for ln in ebom if ln.buy_as_assembly}
 
     mbom_lines: list[MbomLine] = []
     mbom_counter = 1
@@ -76,9 +76,17 @@ def derive_mbom(
         # Description string
         desc_val = node.description if isinstance(node.description, str) else node.description.value
         cls_val = node.cls if isinstance(node.cls, str) else node.cls.value
-        make_buy_val = (
-            node.make_buy.value if hasattr(node.make_buy, "value") else str(node.make_buy or "make")
+        if isinstance(node.make_buy, Prov):
+            make_buy_val = str(node.make_buy.value)
+        else:
+            make_buy_val = str(node.make_buy or "make")
+
+        raw_val = (
+            node.qty_per_parent.value
+            if isinstance(node.qty_per_parent, Prov)
+            else node.qty_per_parent
         )
+        q_pp = float(raw_val)
 
         mbom_line = MbomLine(
             id=m_id,
@@ -86,7 +94,7 @@ def derive_mbom(
             ebom_refs=[node.id],
             cls=cls_val,
             description=desc_val,
-            qty_per_parent=node.qty_per_parent if hasattr(node, "qty_per_parent") else 1.0,
+            qty_per_parent=q_pp,
             qty_total=node.qty_total if hasattr(node, "qty_total") else 1.0,
             uom=node.uom,
             make_buy=make_buy_val,
@@ -95,8 +103,7 @@ def derive_mbom(
         )
         mbom_lines.append(mbom_line)
 
-        # 3. Children processing
-        # If this is a purchased assembly (buy_as_assembly), do NOT include child parts as separate MBOM lines
+        # 3. Children processing (skip children if purchased as an assembly)
         if node.id in buy_assembly_ids:
             return
 
@@ -116,7 +123,7 @@ def derive_mbom(
     # 4. Integrate accepted suggestions that target level="mbom"
     if accepted_suggestions:
         for s in accepted_suggestions:
-            if s.level == "mbom" and s.review in ("accepted", "suggested"):
+            if s.level == "mbom" and s.review == "accepted":
                 m_id = f"M-{mbom_counter:04d}"
                 mbom_counter += 1
                 mbom_lines.append(

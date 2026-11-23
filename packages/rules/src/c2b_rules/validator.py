@@ -9,16 +9,13 @@ Evaluates blocking conditions that prevent release approval and non-blocking war
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from c2b_domain.bom import (
     BomDraft,
-    BomLine,
-    Question,
-    Suggestion,
     ValidationIssue,
     ValidationReport,
 )
+from c2b_domain.prov import Prov
 from c2b_library.loader import Library
 
 log = logging.getLogger(__name__)
@@ -54,17 +51,18 @@ def validate_draft(
     for s in draft.suggestions:
         review_val = getattr(s, "review", getattr(s, "status", "suggested"))
         if review_val == "suggested":
+            s_text = s.text or s.cls
             blocking.append(
                 ValidationIssue(
                     code="open_suggestion",
-                    message=f"Open suggestion '{s.id}' must be accepted or rejected: {s.text or s.cls}",
+                    message=f"Open suggestion '{s.id}' must be accepted or rejected: {s_text}",
                     blocking=True,
                     rule_id="R-VAL-002",
                 )
             )
 
     # 3. Hierarchy cycle check
-    line_map = {l.id: l for l in draft.ebom}
+    line_map = {ln.id: ln for ln in draft.ebom}
     for line in draft.ebom:
         visited = set()
         curr = line.parent
@@ -93,10 +91,11 @@ def validate_draft(
 
         # Unclassified part
         if cls_val == "unclassified":
+            c_name = line.cad_name or "N/A"
             blocking.append(
                 ValidationIssue(
                     code="unclassified_part",
-                    message=f"Line '{line.id}' ({line.cad_name or 'N/A'}) has unclassified component class",
+                    message=f"Line '{line.id}' ({c_name}) has unclassified component class",
                     blocking=True,
                     line_id=line.id,
                     rule_id="R-VAL-CLS",
@@ -104,12 +103,13 @@ def validate_draft(
             )
 
         # Quantity checks
-        qty = line.qty_per_parent if hasattr(line, "qty_per_parent") else 1.0
-        if qty is None or qty <= 0:
+        raw_qty = line.qty_per_parent if hasattr(line, "qty_per_parent") else 1.0
+        qty_val = float(raw_qty.value if isinstance(raw_qty, Prov) else raw_qty)
+        if qty_val <= 0:
             blocking.append(
                 ValidationIssue(
                     code="invalid_quantity",
-                    message=f"Line '{line.id}' has non-positive quantity: {qty}",
+                    message=f"Line '{line.id}' has non-positive quantity: {qty_val}",
                     blocking=True,
                     line_id=line.id,
                     rule_id="R-VAL-QTY",
@@ -136,10 +136,14 @@ def validate_draft(
                 if pn_str in part_numbers_seen:
                     prev_desc = part_numbers_seen[pn_str]
                     if prev_desc.lower() != desc_val.lower():
+                        msg = (
+                            f"Part number '{pn_str}' reused with conflicting description: "
+                            f"'{desc_val}' vs '{prev_desc}'"
+                        )
                         blocking.append(
                             ValidationIssue(
                                 code="duplicate_part_number_conflict",
-                                message=f"Part number '{pn_str}' reused with conflicting description: '{desc_val}' vs '{prev_desc}'",
+                                message=msg,
                                 blocking=True,
                                 line_id=line.id,
                                 rule_id="R-VAL-DPN",

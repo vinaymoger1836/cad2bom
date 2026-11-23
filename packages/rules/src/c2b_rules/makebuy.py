@@ -28,9 +28,13 @@ def recommend_make_buy(
 ) -> Prov[MakeBuyType]:
     """Determine make/buy recommendation with rules and volume considerations."""
     # 1. User specified always has highest priority
-    if hasattr(line, "make_buy") and line.make_buy:
-        if isinstance(line.make_buy, Prov) and line.make_buy.source == "user":
-            return line.make_buy
+    if (
+        hasattr(line, "make_buy")
+        and line.make_buy
+        and isinstance(line.make_buy, Prov)
+        and line.make_buy.source == "user"
+    ):
+        return line.make_buy
 
     cls_str = line.cls if isinstance(line.cls, str) else line.cls.value
     rules: list[str] = []
@@ -110,10 +114,15 @@ def recommend_make_buy(
 
         if annual_volume is not None:
             if cls_str.startswith("moulded") and annual_volume < 5000:
-                note += f"; annual volume ({annual_volume}) suggests low-volume tooling or soft tooling"
+                note += (
+                    f"; annual volume ({annual_volume}) suggests low-volume tooling or soft tooling"
+                )
                 rules.append("R-MKB-VOL")
             elif cls_str.startswith("moulded") and annual_volume >= 50000:
-                note += f"; annual volume ({annual_volume}) justifies hardened steel multi-cavity injection mould"
+                note += (
+                    f"; annual volume ({annual_volume}) justifies "
+                    "hardened steel multi-cavity injection mould"
+                )
                 rules.append("R-MKB-VOL")
 
         return Prov(
