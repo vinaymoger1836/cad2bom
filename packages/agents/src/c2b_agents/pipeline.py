@@ -31,6 +31,7 @@ async def resolve_draft_with_ladder(
     confirm_l3_immediately: bool = True,
 ) -> BomDraft:
     """Execute LLM fallback ladder steps L1-L6 on a draft BoM where needed."""
+    print("START resolve_draft_with_ladder", flush=True)
     node_map = {n.id: n for n in (extract.nodes if extract else [])}
     shape_map = extract.shapes if extract else {}
 
