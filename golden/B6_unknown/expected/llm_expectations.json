@@ -7,8 +7,19 @@
     "Approval is blocked until all questions are answered and all suggestions are accepted or rejected.",
     "Every LLM output enum value is a class code from the taxonomy."
   ],
-  "which_parts_call_l1": "Not fixed here: it depends on the rule scores the engine produces (P3). Expectation: all parts named Body1..Body9 lack name and standard evidence, so geometry alone (weights 0.4-0.7) is below the 0.75 threshold and each goes to L1 unless a C6 context boost lifts it. P5 records the cassette and this file is updated then with the exact prompt keys.",
-  "cassette": "to be recorded in P5",
+  "which_parts_call_l1": [
+    {"name": "Body1", "key": "54a3e1f1b7867195", "cls": "moulded.housing.top"},
+    {"name": "Body2", "key": "a054254d5920c491", "cls": "moulded.housing.bottom"},
+    {"name": "Body3", "key": "4ad1e4dbbde5620c", "cls": "electrical.pcb"},
+    {"name": "Body4", "key": "f4fb69e28ff84a2e", "cls": "moulded.knob"},
+    {"name": "Body5", "key": "b095c7aae2e6c4aa", "cls": "moulded.button"},
+    {"name": "Body6", "key": "89fb62606219aebe", "cls": "spring.compression"},
+    {"name": "Body7", "key": "3d7ba58284360354", "cls": "sheetmetal.clip"},
+    {"name": "Body8", "key": "e14c23eea72348fa", "cls": "seal.gasket.flat"},
+    {"name": "Body9", "key": "6c7013ce76fed132", "cls": "electrical.battery.li_ion"}
+  ],
+  "cassette": "cassettes/b6/",
+  "gap_cassette_key": "3795c68706dc468f",
   "llm_confidence_cap": 0.7,
   "threshold_class": 0.75
 }
