@@ -355,6 +355,24 @@ export function JobUpload() {
                 </li>
               ))}
             </ul>
+            {job.uploads.some((u) =>
+              [".xlsx", ".xls", ".csv"].some((ext) => u.filename.toLowerCase().endsWith(ext))
+            ) ? (
+              <div
+                style={{
+                  marginTop: "1rem",
+                  padding: "0.75rem",
+                  border: "1px solid var(--accent, #3b82f6)",
+                  borderRadius: "var(--radius, 6px)",
+                  background: "var(--accent-soft, rgba(59,130,246,0.08))",
+                }}
+              >
+                <p className="small" style={{ margin: 0 }}>
+                  <strong>BoM file detected:</strong> You can review and confirm column mappings for your parts list.{" "}
+                  <Link to={`/j/${id}/mapping`}>Review Column Mapping &rarr;</Link>
+                </p>
+              </div>
+            ) : null}
           </>
         ) : null}
       </section>

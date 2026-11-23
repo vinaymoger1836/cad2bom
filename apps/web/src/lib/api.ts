@@ -154,3 +154,36 @@ export function uploadFile(
     },
   };
 }
+
+export async function getMapping(id: string, token: string): Promise<any> {
+  const res = await fetch(`${API}/jobs/${id}/mapping`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw problemFrom(res.status, await res.text());
+  return res.json();
+}
+
+export async function confirmMapping(
+  id: string,
+  token: string,
+  columns: Record<string, any>,
+): Promise<any> {
+  const res = await fetch(`${API}/jobs/${id}/mapping/confirm`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ columns }),
+  });
+  if (!res.ok) throw problemFrom(res.status, await res.text());
+  return res.json();
+}
+
+export async function getBom(id: string, token: string): Promise<any> {
+  const res = await fetch(`${API}/jobs/${id}/bom`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw problemFrom(res.status, await res.text());
+  return res.json();
+}

@@ -13,7 +13,14 @@ from pydantic import BaseModel
 from c2b_domain.bom import (
     BomDraft,
     BomLine,
+    ColumnMapping,
+    DatasheetSpec,
     Designation,
+    PhotoFinding,
+    Question,
+    Suggestion,
+    TableMapping,
+    UserBomRow,
 )
 from c2b_domain.cad import (
     CadExtractResult,
@@ -48,6 +55,13 @@ MODELS: list[type[BaseModel]] = [
     Designation,
     BomLine,
     BomDraft,
+    Question,
+    Suggestion,
+    ColumnMapping,
+    TableMapping,
+    UserBomRow,
+    DatasheetSpec,
+    PhotoFinding,
 ]
 
 

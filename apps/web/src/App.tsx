@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Link, Route, Routes, useLocation } from "react-router";
 import { TopMenu } from "./components/TopMenu";
 import { JobUpload } from "./screens/JobUpload";
+import { MappingConfirm } from "./screens/MappingConfirm";
 import { NewBom } from "./screens/NewBom";
 
 /** On route change, move focus to the page heading so keyboard and screen-reader users land on the new screen. */
@@ -40,6 +41,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<NewBom />} />
           <Route path="/j/:id" element={<JobUpload />} />
+          <Route path="/j/:id/mapping" element={<MappingConfirm />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </FocusOnNavigate>

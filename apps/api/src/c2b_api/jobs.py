@@ -10,7 +10,18 @@ from c2b_api import sse, uploads
 from c2b_api.auth import JobRow, hash_token, new_token
 from c2b_api.errors import ProblemError
 from c2b_api.magic import ACCEPTED_EXTENSIONS
-from c2b_domain import BomDraft, JobCreate, JobCreated, JobOut, JobUpdate, ProductInfo, UploadOut
+from c2b_domain import (
+    BomDraft,
+    JobCreate,
+    JobCreated,
+    JobOut,
+    JobUpdate,
+    ProductInfo,
+    Question,
+    Suggestion,
+    TableMapping,
+    UploadOut,
+)
 from c2b_jobs import queue, repo
 from c2b_jobs.repo import Pool
 from c2b_jobs.settings import get_settings
@@ -123,6 +134,124 @@ async def get_job_bom(
             "No BoM has been generated for this job yet.",
         )
     return BomDraft.model_validate(bom_data)
+
+
+class QuestionAnswerRequest(BaseModel):
+    answer: Any
+
+
+class SuggestionReviewRequest(BaseModel):
+    review: Literal["accepted", "rejected", "suggested"] = "accepted"
+
+
+class MappingConfirmRequest(BaseModel):
+    columns: dict[str, Any]
+
+
+@router.get("/jobs/{job_id}/mapping", tags=["jobs"])
+async def get_job_mapping(
+    job_id: UUID,
+    job: JobRow,
+    request: Request,
+) -> TableMapping:
+    bom_data = await repo.get_bom(_pool(request), job_id)
+    if bom_data and bom_data.get("mapping"):
+        return TableMapping.model_validate(bom_data["mapping"])
+
+    # If no draft mapping exists yet, check if there is an uploaded BoM spreadsheet
+    pool = _pool(request)
+    s = get_settings()
+    uploads_list = await repo.list_uploads(pool, job_id)
+    bom_path: Path | None = None
+    for u in uploads_list:
+        rel = await repo.get_upload_path(pool, job_id, u.id)
+        if rel and Path(rel).suffix.lower() in [".xlsx", ".xls", ".csv"]:
+            bom_path = s.data_dir / rel
+            break
+
+    if not bom_path or not bom_path.exists():
+        raise ProblemError(
+            404,
+            "not_found",
+            "No BoM file found",
+            "Upload an Excel or CSV BoM file to map headers.",
+        )
+
+    from c2b_library.loader import load_library
+    from c2b_rules.bom_intake import detect_and_map_bom
+
+    library, _ = load_library(Path("library"))
+    if not library:
+        raise ProblemError(500, "internal_error", "Library could not be loaded")
+    mapping, _ = detect_and_map_bom(bom_path, library)
+    return mapping
+
+
+@router.post("/jobs/{job_id}/mapping/confirm", tags=["jobs"])
+async def confirm_mapping(
+    job_id: UUID,
+    job: JobRow,
+    body: MappingConfirmRequest,
+    request: Request,
+) -> dict[str, Any]:
+    pool = _pool(request)
+    bom_data = await repo.get_bom(pool, job_id)
+    if not bom_data:
+        raise ProblemError(404, "not_found", "BoM draft not found")
+    if "mapping" in bom_data and bom_data["mapping"]:
+        for col_name, col_info in body.columns.items():
+            if col_name in bom_data["mapping"].get("columns", {}):
+                if isinstance(col_info, dict):
+                    bom_data["mapping"]["columns"][col_name].update(col_info)
+                elif isinstance(col_info, str):
+                    bom_data["mapping"]["columns"][col_name]["field"] = col_info
+        await repo.save_bom(pool, job_id, bom_data)
+    await repo.add_event(pool, job_id, "user_edit", "Confirmed column mapping")
+    return {"status": "ok", "message": "Column mapping confirmed"}
+
+
+@router.post("/jobs/{job_id}/questions/{question_id}/answer", tags=["jobs"])
+async def answer_question_endpoint(
+    job_id: UUID,
+    job: JobRow,
+    question_id: str,
+    body: QuestionAnswerRequest,
+    request: Request,
+) -> dict[str, Any]:
+    pool = _pool(request)
+    ok = await repo.answer_question(pool, job_id, question_id, body.answer)
+    if not ok:
+        raise ProblemError(404, "not_found", f"Question {question_id} not found")
+    await repo.add_event(
+        pool,
+        job_id,
+        "question_answered",
+        f"Answered {question_id}: {body.answer}",
+        {"question_id": question_id, "answer": body.answer},
+    )
+    return {"status": "ok", "question_id": question_id, "answer": body.answer}
+
+
+@router.post("/jobs/{job_id}/suggestions/{suggestion_id}", tags=["jobs"])
+async def review_suggestion_endpoint(
+    job_id: UUID,
+    job: JobRow,
+    suggestion_id: str,
+    body: SuggestionReviewRequest,
+    request: Request,
+) -> dict[str, Any]:
+    pool = _pool(request)
+    ok = await repo.review_suggestion(pool, job_id, suggestion_id, body.review)
+    if not ok:
+        raise ProblemError(404, "not_found", f"Suggestion {suggestion_id} not found")
+    await repo.add_event(
+        pool,
+        job_id,
+        "suggestion_reviewed",
+        f"Suggestion {suggestion_id} set to {body.review}",
+        {"suggestion_id": suggestion_id, "review": body.review},
+    )
+    return {"status": "ok", "suggestion_id": suggestion_id, "review": body.review}
 
 
 @router.get("/jobs/{job_id}/files", tags=["uploads"])

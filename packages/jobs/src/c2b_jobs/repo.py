@@ -219,3 +219,49 @@ async def get_bom(pool: Pool, job_id: UUID) -> dict[str, Any] | None:
         )
         row = await cur.fetchone()
         return None if row is None else dict(row["data"])
+
+
+async def answer_question(
+    pool: Pool,
+    job_id: UUID,
+    question_id: str,
+    answer: Any,
+) -> bool:
+    """Record an answer to a question in the draft BoM."""
+    bom = await get_bom(pool, job_id)
+    if not bom:
+        return False
+    questions = bom.get("questions") or []
+    updated = False
+    for q in questions:
+        if q.get("id") == question_id:
+            q["answer"] = answer
+            updated = True
+            break
+    if updated:
+        bom["questions"] = questions
+        await save_bom(pool, job_id, bom)
+    return updated
+
+
+async def review_suggestion(
+    pool: Pool,
+    job_id: UUID,
+    suggestion_id: str,
+    review: str,
+) -> bool:
+    """Record accept or reject on a suggestion in the draft BoM."""
+    bom = await get_bom(pool, job_id)
+    if not bom:
+        return False
+    suggestions = bom.get("suggestions") or []
+    updated = False
+    for s in suggestions:
+        if s.get("id") == suggestion_id:
+            s["review"] = review
+            updated = True
+            break
+    if updated:
+        bom["suggestions"] = suggestions
+        await save_bom(pool, job_id, bom)
+    return updated

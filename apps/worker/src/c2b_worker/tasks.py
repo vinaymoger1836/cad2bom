@@ -1,34 +1,112 @@
-"""Procrastinate tasks for the two queues: `pipeline` and `cad`.
+"""Procrastinate task handlers (docs/02 §3, docs/03 §3).
 
-P0 behaviour: run_pipeline moves the job to `extracting` and asks the cad-worker for a stub
-extraction. Later phases add the real pipeline steps (docs/02 §3) here.
+Runs in the `worker` container. Dispatches CAD extraction to the sandboxed
+`cad-worker` over a UNIX domain socket.
 """
 
+from __future__ import annotations
+
 import logging
+from pathlib import Path
+from typing import Any
 from uuid import UUID
 
-from c2b_jobs import repo
-from c2b_jobs.queue import (
+from psycopg_pool import AsyncConnectionPool as Pool
+
+from c2b_domain.cad import CadExtractResult
+from c2b_jobs import cad_client, repo
+from c2b_library.loader import load_library
+from c2b_rules.engine import build_ebom
+from c2b_worker.app import (
     QUEUE_CAD,
     QUEUE_PIPELINE,
     TASK_CAD_EXTRACT,
     TASK_RUN_PIPELINE,
     app,
-    defer_cad_extract,
+    get_settings,
+    pool,
 )
-from c2b_jobs.settings import get_settings
-from c2b_worker import cad_client
-from c2b_worker.context import pool
 
-log = logging.getLogger("c2b.worker")
+log = logging.getLogger("c2b_worker")
 
 
-async def _fail(jid: UUID, message: str, **data: object) -> None:
-    """Stop the job with a message for the person, as both a notice and a status change."""
+async def _fail(
+    jid: UUID,
+    message: str,
+    notices: list[dict[str, Any]] | None = None,
+) -> None:
     db = pool()
     await repo.set_status(db, jid, "failed")
-    await repo.add_event(db, jid, "notice", message, dict(data))
+    data: dict[str, Any] = {"error": message}
+    if notices:
+        data["notices"] = notices
+    await repo.add_event(db, jid, "notice", message, data)
     await repo.add_event(db, jid, "status", "Stopped", {"status": "failed"})
+
+
+async def _build_bom_for_job(
+    db: Pool,
+    jid: UUID,
+    job_id: str,
+    extract_obj: CadExtractResult | None,
+) -> None:
+    """Build draft EBOM from CAD extract and other uploads (BoM files, datasheets, photos)."""
+    settings = get_settings()
+    library, _ = load_library(Path("library"))
+    if library is None:
+        log.error("Failed to load library for job %s", job_id)
+        await _fail(jid, "Internal error: could not load library definitions")
+        return
+
+    # Discover non-CAD uploads
+    uploads = await repo.list_uploads(db, jid)
+    bom_file_path: Path | None = None
+    datasheet_paths: list[Path] = []
+    photo_paths: list[Path] = []
+
+    for u in uploads:
+        rel = await repo.get_upload_path(db, jid, u.id)
+        if not rel:
+            continue
+        p = settings.data_dir / rel
+        ext = p.suffix.lower()
+        if ext in [".xlsx", ".xls", ".csv"] and bom_file_path is None:
+            bom_file_path = p
+        elif ext == ".pdf":
+            datasheet_paths.append(p)
+        elif ext in [".png", ".jpg", ".jpeg", ".webp"]:
+            photo_paths.append(p)
+
+    # Checkpoint step 4
+    await repo.add_event(db, jid, "step", "Step 4: Classification and recognition")
+    # Checkpoint step 5
+    await repo.add_event(db, jid, "step", "Step 5: Materials and mass")
+    # Checkpoint step 6
+    await repo.add_event(db, jid, "step", "Step 6: EBOM Structure")
+
+    # Step 7: Merge if other inputs present
+    if bom_file_path or datasheet_paths or photo_paths:
+        await repo.add_event(db, jid, "step", "Step 7: Merge with user BoM, photos, datasheets")
+
+    bom_draft = build_ebom(
+        extract=extract_obj,
+        library=library,
+        job_id=job_id,
+        bom_file_path=bom_file_path,
+        datasheet_paths=datasheet_paths if datasheet_paths else None,
+        photo_paths=photo_paths if photo_paths else None,
+        photo_opt_in=True,
+    )
+
+    # Checkpoint step 11
+    await repo.add_event(db, jid, "step", "Step 11: Validation and confidence")
+
+    # Persist draft BoM
+    await repo.save_bom(db, jid, bom_draft.model_dump(by_alias=True))
+
+    # Move status to review
+    await repo.set_status(db, jid, "review")
+    await repo.add_event(db, jid, "status", "Ready for review", {"status": "review"})
 
 
 @app.task(name=TASK_RUN_PIPELINE, queue=QUEUE_PIPELINE)
@@ -39,10 +117,24 @@ async def run_pipeline(job_id: str) -> None:
     await repo.add_event(db, jid, "status", "Reading your files", {"status": "extracting"})
     cad_upload = await repo.first_cad_upload(db, jid)
     if cad_upload is None:
+        # Check if there are other files (e.g. BoM file in B4)
+        uploads = await repo.list_uploads(db, jid)
+        if uploads:
+            await repo.add_event(
+                db,
+                jid,
+                "notice",
+                "No CAD file was uploaded; processing tabular and document inputs directly.",
+            )
+            await _build_bom_for_job(db, jid, job_id, extract_obj=None)
+            return
+
         await repo.add_event(
-            db, jid, "notice", "No CAD file was uploaded, so there is no 3D structure to read."
+            db, jid, "notice", "No files were uploaded to build from."
         )
+        await _fail(jid, "No files were uploaded to build from.")
         return
+
     await defer_cad_extract(jid, cad_upload)
 
 
@@ -102,35 +194,12 @@ async def cad_extract(job_id: str, upload_id: str) -> None:
     await repo.set_status(db, jid, "building")
     await repo.add_event(db, jid, "status", "Building BoM", {"status": "building"})
 
-    # Phase 3 rules engine execution: steps 4-6 and 11
-    from pathlib import Path
-
-    from c2b_domain.cad import CadExtractResult
-    from c2b_library.loader import load_library
-    from c2b_rules.engine import build_ebom
-
-    library, _ = load_library(Path("library"))
-    if library is None:
-        log.error("Failed to load library for job %s", job_id)
-        await _fail(jid, "Internal error: could not load library definitions")
-        return
-
-    # Checkpoint step 4
-    await repo.add_event(db, jid, "step", "Step 4: Classification and recognition")
-    # Checkpoint step 5
-    await repo.add_event(db, jid, "step", "Step 5: Materials and mass")
-    # Checkpoint step 6
-    await repo.add_event(db, jid, "step", "Step 6: EBOM Structure")
-
+    # Build BoM
     extract_obj = CadExtractResult.model_validate(result)
-    bom_draft = build_ebom(extract_obj, library, job_id=job_id)
+    await _build_bom_for_job(db, jid, job_id, extract_obj=extract_obj)
 
-    # Checkpoint step 11
-    await repo.add_event(db, jid, "step", "Step 11: Validation and confidence")
 
-    # Persist draft BoM
-    await repo.save_bom(db, jid, bom_draft.model_dump(by_alias=True))
-
-    # Move status to review
-    await repo.set_status(db, jid, "review")
-    await repo.add_event(db, jid, "status", "Ready for review", {"status": "review"})
+async def defer_cad_extract(job_id: UUID, upload_id: UUID) -> None:
+    await app.configure_async(pool=pool()).defer_async(
+        TASK_CAD_EXTRACT, job_id=str(job_id), upload_id=str(upload_id)
+    )
