@@ -1,5 +1,7 @@
 """Job routes: create, read, upload, start, events."""
 
+import functools
+import re
 from pathlib import Path
 from typing import Annotated, Any, Literal
 from uuid import UUID, uuid4
@@ -24,7 +26,7 @@ from c2b_domain import (
     TableMapping,
     UploadOut,
 )
-from c2b_jobs import queue, repo
+from c2b_jobs import mapping_store, queue, repo
 from c2b_jobs.repo import Pool
 from c2b_jobs.settings import get_settings
 
@@ -49,17 +51,28 @@ async def config() -> dict[str, Any]:
     }
 
 
+@functools.cache
+def _library_version() -> str:
+    """The library version a new job is pinned to (first `version:` line of VERSION.yaml)."""
+    path = get_settings().library_dir / "VERSION.yaml"
+    try:
+        m = re.search(r'^version:\s*"?([^"\s#]+)', path.read_text(encoding="utf-8"), re.MULTILINE)
+    except OSError:
+        m = None
+    return m.group(1) if m else get_settings().library_version
+
+
 @router.post("/jobs", status_code=201, tags=["jobs"])
 async def create_job(body: JobCreate, request: Request) -> JobCreated:
     job_id = uuid4()
     token = new_token()
-    product = ProductInfo.model_validate(body.model_dump())
+    product = ProductInfo.model_validate(body.model_dump(exclude={"consent_native_conversion"}))
     await repo.create_job(
         _pool(request),
         job_id,
         product,
         hash_token(token),
-        get_settings().library_version,
+        _library_version(),
         consent_native_conversion=body.consent_native_conversion,
     )
     await repo.add_event(_pool(request), job_id, "status", "Job created", {"status": "uploading"})
@@ -106,7 +119,7 @@ async def get_model_glb(
     job: JobRow,
 ) -> FileResponse:
     s = get_settings()
-    glb_path = s.data_dir / "jobs" / str(job_id) / "out" / "model.glb"
+    glb_path = s.data_dir / "out" / str(job_id) / "model.glb"
     if not glb_path.exists():
         raise ProblemError(
             404,
@@ -150,43 +163,50 @@ class MappingConfirmRequest(BaseModel):
     columns: dict[str, Any]
 
 
+async def _bom_file_path(pool: Pool, job_id: UUID) -> Path | None:
+    s = get_settings()
+    for u in await repo.list_uploads(pool, job_id):
+        rel = await repo.get_upload_path(pool, job_id, u.id)
+        if rel and Path(rel).suffix.lower() in [".xlsx", ".xls", ".csv"]:
+            path = s.data_dir / rel
+            return path if path.exists() else None
+    return None
+
+
+def _detect_mapping(job_id: UUID, bom_path: Path) -> TableMapping:
+    from c2b_library.loader import load_library
+    from c2b_rules.bom_intake import detect_and_map_bom
+
+    s = get_settings()
+    library, _ = load_library(s.library_dir)
+    if not library:
+        raise ProblemError(
+            500, "internal_error", "Library error", "The rule library could not be loaded."
+        )
+    overrides = mapping_store.load_overrides(s.data_dir, job_id)
+    mapping, _rows = detect_and_map_bom(bom_path, library, overrides=overrides)
+    return mapping
+
+
 @router.get("/jobs/{job_id}/mapping", tags=["jobs"])
 async def get_job_mapping(
     job_id: UUID,
     job: JobRow,
     request: Request,
 ) -> TableMapping:
-    bom_data = await repo.get_bom(_pool(request), job_id)
+    pool = _pool(request)
+    bom_data = await repo.get_bom(pool, job_id)
     if bom_data and bom_data.get("mapping"):
         return TableMapping.model_validate(bom_data["mapping"])
-
-    # If no draft mapping exists yet, check if there is an uploaded BoM spreadsheet
-    pool = _pool(request)
-    s = get_settings()
-    uploads_list = await repo.list_uploads(pool, job_id)
-    bom_path: Path | None = None
-    for u in uploads_list:
-        rel = await repo.get_upload_path(pool, job_id, u.id)
-        if rel and Path(rel).suffix.lower() in [".xlsx", ".xls", ".csv"]:
-            bom_path = s.data_dir / rel
-            break
-
-    if not bom_path or not bom_path.exists():
+    bom_path = await _bom_file_path(pool, job_id)
+    if bom_path is None:
         raise ProblemError(
             404,
             "not_found",
             "No BoM file found",
             "Upload an Excel or CSV BoM file to map headers.",
         )
-
-    from c2b_library.loader import load_library
-    from c2b_rules.bom_intake import detect_and_map_bom
-
-    library, _ = load_library(Path("library"))
-    if not library:
-        raise ProblemError(500, "internal_error", "Library could not be loaded")
-    mapping, _ = detect_and_map_bom(bom_path, library)
-    return mapping
+    return _detect_mapping(job_id, bom_path)
 
 
 @router.post("/jobs/{job_id}/mapping/confirm", tags=["jobs"])
@@ -196,20 +216,65 @@ async def confirm_mapping(
     body: MappingConfirmRequest,
     request: Request,
 ) -> dict[str, Any]:
+    """Save the user's column choices. They apply to the next build of the BoM and, when a draft
+    already exists, are recorded on it too (source=user)."""
+    from c2b_library.loader import load_library
+    from c2b_rules.dependency import apply_mapping_confirmation
+
     pool = _pool(request)
+    s = get_settings()
+    chosen: dict[str, str] = {}
+    for col, info in body.columns.items():
+        field = info.get("field") if isinstance(info, dict) else info
+        if isinstance(field, str):
+            chosen[col] = field
+
+    library, _ = load_library(s.library_dir)
+    if not library:
+        raise ProblemError(
+            500, "internal_error", "Library error", "The rule library could not be loaded."
+        )
+    allowed = set(library.headers.fields) | {"ignore"}
+    bad = sorted(f for f in set(chosen.values()) if f not in allowed)
+    if bad:
+        raise ProblemError(
+            422, "bad_field", "Unknown field", f"These are not BoM fields: {', '.join(bad)}."
+        )
+
     bom_data = await repo.get_bom(pool, job_id)
-    if not bom_data:
-        raise ProblemError(404, "not_found", "BoM draft not found")
-    if bom_data.get("mapping"):
-        for col_name, col_info in body.columns.items():
-            if col_name in bom_data["mapping"].get("columns", {}):
-                if isinstance(col_info, dict):
-                    bom_data["mapping"]["columns"][col_name].update(col_info)
-                elif isinstance(col_info, str):
-                    bom_data["mapping"]["columns"][col_name]["field"] = col_info
-        await repo.save_bom(pool, job_id, bom_data)
+    draft = BomDraft.model_validate(bom_data) if bom_data else None
+    if draft is None or draft.mapping is None:
+        bom_path = await _bom_file_path(pool, job_id)
+        if bom_path is None:
+            raise ProblemError(
+                404, "not_found", "No BoM file found", "Upload an Excel or CSV BoM file first."
+            )
+        known = set(_detect_mapping(job_id, bom_path).columns)
+    else:
+        known = set(draft.mapping.columns)
+    unknown = sorted(set(chosen) - known)
+    if unknown:
+        raise ProblemError(
+            422, "bad_column", "Unknown column", f"The file has no column named {unknown[0]!r}."
+        )
+
+    rebuild_needed = False
+    if draft is not None and draft.mapping is not None:
+        for col, field in chosen.items():
+            if draft.mapping.columns[col].field != field:
+                rebuild_needed = True
+            apply_mapping_confirmation(draft, col, field)
+            for q in draft.questions:
+                if q.mapping_column == col:
+                    q.answer = field
+        await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True, mode="json"))
+    mapping_store.save_overrides(s.data_dir, job_id, chosen)
     await repo.add_event(pool, job_id, "user_edit", "Confirmed column mapping")
-    return {"status": "ok", "message": "Column mapping confirmed"}
+    return {
+        "status": "ok",
+        "message": "Column mapping confirmed",
+        "rebuild_needed": rebuild_needed,
+    }
 
 
 class LineEditRequest(BaseModel):
@@ -228,20 +293,22 @@ async def answer_question_endpoint(
     pool = _pool(request)
     bom_data = await repo.get_bom(pool, job_id)
     if not bom_data:
-        raise ProblemError(404, "not_found", "BoM draft not found")
+        raise ProblemError(
+            404, "not_found", "BoM not found", "There is no draft BoM for this job yet."
+        )
 
     from c2b_domain.bom import BomDraft
     from c2b_library.loader import load_library
     from c2b_rules.dependency import apply_question_answer
 
-    library, _ = load_library(Path("library"))
+    library, _ = load_library(get_settings().library_dir)
     draft = BomDraft.model_validate(bom_data)
     try:
         draft = apply_question_answer(draft, question_id, body.answer, library)
     except ValueError as exc:
-        raise ProblemError(404, "not_found", str(exc))
+        raise ProblemError(404, "not_found", "Not found", str(exc)) from exc
 
-    await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True))
+    await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True, mode="json"))
     await repo.add_event(
         pool,
         job_id,
@@ -263,20 +330,22 @@ async def review_suggestion_endpoint(
     pool = _pool(request)
     bom_data = await repo.get_bom(pool, job_id)
     if not bom_data:
-        raise ProblemError(404, "not_found", "BoM draft not found")
+        raise ProblemError(
+            404, "not_found", "BoM not found", "There is no draft BoM for this job yet."
+        )
 
     from c2b_domain.bom import BomDraft
     from c2b_library.loader import load_library
     from c2b_rules.dependency import apply_suggestion_review
 
-    library, _ = load_library(Path("library"))
+    library, _ = load_library(get_settings().library_dir)
     draft = BomDraft.model_validate(bom_data)
     try:
         draft = apply_suggestion_review(draft, suggestion_id, body.review, library)
     except ValueError as exc:
-        raise ProblemError(404, "not_found", str(exc))
+        raise ProblemError(404, "not_found", "Not found", str(exc)) from exc
 
-    await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True))
+    await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True, mode="json"))
     await repo.add_event(
         pool,
         job_id,
@@ -298,20 +367,22 @@ async def edit_line_endpoint(
     pool = _pool(request)
     bom_data = await repo.get_bom(pool, job_id)
     if not bom_data:
-        raise ProblemError(404, "not_found", "BoM draft not found")
+        raise ProblemError(
+            404, "not_found", "BoM not found", "There is no draft BoM for this job yet."
+        )
 
     from c2b_domain.bom import BomDraft
     from c2b_library.loader import load_library
     from c2b_rules.dependency import apply_user_line_edit
 
-    library, _ = load_library(Path("library"))
+    library, _ = load_library(get_settings().library_dir)
     draft = BomDraft.model_validate(bom_data)
     try:
         draft = apply_user_line_edit(draft, line_id, body.field, body.value, library)
     except ValueError as exc:
-        raise ProblemError(404, "not_found", str(exc))
+        raise ProblemError(404, "not_found", "Not found", str(exc)) from exc
 
-    await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True))
+    await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True, mode="json"))
     await repo.add_event(pool, job_id, "user_edit", f"Edited {line_id}.{body.field}")
     return {"status": "ok", "line_id": line_id, "field": body.field, "value": body.value}
 
@@ -326,13 +397,15 @@ async def approve_bom_endpoint(
     pool = _pool(request)
     bom_data = await repo.get_bom(pool, job_id)
     if not bom_data:
-        raise ProblemError(404, "not_found", "BoM draft not found")
+        raise ProblemError(
+            404, "not_found", "BoM not found", "There is no draft BoM for this job yet."
+        )
 
     from c2b_domain.bom import BomDraft
     from c2b_library.loader import load_library
     from c2b_rules.validator import validate_draft
 
-    library, _ = load_library(Path("library"))
+    library, _ = load_library(get_settings().library_dir)
     draft = BomDraft.model_validate(bom_data)
     report = validate_draft(draft, library)
 
@@ -345,9 +418,28 @@ async def approve_bom_endpoint(
             "; ".join(blocking_msgs),
         )
 
-    # Freeze version
-    version_num = await repo.freeze_bom_version(pool, job_id, draft.model_dump(by_alias=True))
+    # Freeze an immutable version: the BomVersion plus what the reviewer decided (audit trail).
+    from datetime import UTC, datetime
+
+    from c2b_domain.bom import BomVersion
+
+    frozen = BomVersion(
+        job_id=str(job_id),
+        ebom=draft.ebom,
+        mbom=draft.mbom,
+        open_items=draft.open_items,
+        stats=draft.stats,
+        library_version=draft.library_version,
+        llm_calls=len(await repo.list_llm_calls(pool, job_id)),
+        created_at=datetime.now(UTC).isoformat(),
+    ).model_dump(by_alias=True, mode="json")
+    frozen["validation"] = report.model_dump(mode="json")
+    frozen["questions"] = [q.model_dump(mode="json") for q in draft.questions]
+    frozen["suggestions"] = [x.model_dump(mode="json", by_alias=True) for x in draft.suggestions]
+    version_num = await repo.freeze_bom_version(pool, job_id, frozen)
+    await repo.set_status(pool, job_id, "approved")
     await repo.add_event(pool, job_id, "bom_approved", f"Approved BoM version {version_num}")
+    await repo.add_event(pool, job_id, "status", "Approved", {"status": "approved"})
     return {
         "status": "approved",
         "version": version_num,
@@ -375,7 +467,9 @@ async def get_version_endpoint(
     pool = _pool(request)
     v_data = await repo.get_bom_version(pool, job_id, version)
     if not v_data:
-        raise ProblemError(404, "not_found", f"Version {version} not found")
+        raise ProblemError(
+            404, "not_found", "Version not found", f"Version {version} does not exist."
+        )
     return v_data
 
 
@@ -412,7 +506,7 @@ async def chat_endpoint(
                 draft.suggestions.append(s)
                 added_count += 1
         if added_count > 0:
-            await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True))
+            await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True, mode="json"))
             await repo.add_event(
                 pool,
                 job_id,

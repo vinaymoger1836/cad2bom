@@ -17,6 +17,8 @@ log = logging.getLogger("c2b.cad_worker")
 
 SOCKET_PATH = Path(os.environ.get("C2B_CAD_SOCKET", "/run/c2b/cad.sock"))
 DATA_ROOT = Path(os.environ.get("C2B_DATA_DIR", "/data")).resolve()
+# Results go to a separate writable tree so the input mount can stay read-only: <out>/<job id>/.
+OUT_ROOT = Path(os.environ.get("C2B_CAD_OUT_DIR", str(DATA_ROOT / "out")))
 TIMEOUT_S = int(os.environ.get("C2B_CAD_TIMEOUT_S", "120"))
 MAX_REQUEST_BYTES = 64 * 1024
 
@@ -45,7 +47,7 @@ def _safe_input_path(raw: object) -> Path | None:
 
 
 async def _run_child(path: Path) -> bytes:
-    out_dir = path.parent.parent / "out"
+    out_dir = OUT_ROOT / path.parent.parent.name
     out_dir.mkdir(parents=True, exist_ok=True)
     proc = await asyncio.create_subprocess_exec(
         sys.executable,

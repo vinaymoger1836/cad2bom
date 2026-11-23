@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from c2b_domain.prov import Prov, Source
 
@@ -40,6 +40,8 @@ class Question(BaseModel):
     evidence: list[str] = Field(default_factory=list)
     answer: Any | None = None
     note: str | None = None
+    # Set for "which field is this spreadsheet column?" questions (header mapping, docs/04 §9 L3).
+    mapping_column: str | None = None
 
 
 class Suggestion(BaseModel):
@@ -336,6 +338,10 @@ class BomDraft(BaseModel):
     summary: JobSummary | None = None
     validation: ValidationReport | None = None
     rejected_suggestion_keys: set[str] = Field(default_factory=set)
+
+    @field_serializer("rejected_suggestion_keys")
+    def _sorted_keys(self, keys: set[str]) -> list[str]:
+        return sorted(keys)  # stable output: sets have no order
 
 
 __all__ = [

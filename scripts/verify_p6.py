@@ -25,11 +25,10 @@ import time
 from pathlib import Path
 from typing import Any
 
-from c2b_agents.ladder import run_l6_datasheet_field
 from c2b_agents.pipeline import resolve_draft_with_ladder
 from c2b_agents.router import LlmRouter
 from c2b_cad_worker.extract import extract_step
-from c2b_domain.bom import BomDraft, BomLine, BomVersion
+from c2b_domain.bom import BomVersion
 from c2b_library.loader import load_library
 from c2b_rules.dependency import (
     apply_question_answer,
@@ -39,9 +38,6 @@ from c2b_rules.dependency import (
 )
 from c2b_rules.engine import build_ebom
 from c2b_rules.gap import evaluate_gap_rules
-from c2b_rules.makebuy import recommend_make_buy
-from c2b_rules.mbom import derive_mbom
-from c2b_rules.numbering import assign_part_numbers
 from c2b_rules.validator import validate_draft
 
 
@@ -74,15 +70,24 @@ def test_b3_gap_suggestions_and_mbom(library) -> None:
     for act_s, exp_s in zip(b3_draft.suggestions, exp_suggs):
         assert act_s.id == exp_s["id"], f"Suggestion id mismatch: {act_s.id} vs {exp_s['id']}"
         act_cls = act_s.cls
-        assert act_cls == exp_s["class"], f"Suggestion class mismatch: {act_cls} vs {exp_s['class']}"
+        assert act_cls == exp_s["class"], (
+            f"Suggestion class mismatch: {act_cls} vs {exp_s['class']}"
+        )
         assert act_s.rule == exp_s["rule"], f"Rule mismatch: {act_s.rule} vs {exp_s['rule']}"
-        assert act_s.origin == exp_s["origin"], f"Origin mismatch: {act_s.origin} vs {exp_s['origin']}"
+        assert act_s.origin == exp_s["origin"], (
+            f"Origin mismatch: {act_s.origin} vs {exp_s['origin']}"
+        )
         assert act_s.level == exp_s["level"], f"Level mismatch: {act_s.level} vs {exp_s['level']}"
         if exp_s["qty"] is not None:
-            assert act_s.qty_total == exp_s["qty"], f"Qty mismatch: {act_s.qty_total} vs {exp_s['qty']}"
+            assert act_s.qty_total == exp_s["qty"], (
+                f"Qty mismatch: {act_s.qty_total} vs {exp_s['qty']}"
+            )
         assert act_s.review == exp_s["review"]
 
-    print(f"  B3 suggestions verified: exactly {len(b3_draft.suggestions)} gap suggestions match expected.", flush=True)
+    print(
+        f"  B3 suggestions verified: exactly {len(b3_draft.suggestions)} gap suggestions match expected.",
+        flush=True,
+    )
 
     # 2. Check MBOM against golden/B3_fan/expected/bom.json
     exp_bom_path = Path("golden/B3_fan/expected/bom.json")
@@ -99,13 +104,19 @@ def test_b3_gap_suggestions_and_mbom(library) -> None:
         assert act_m.ebom_refs == exp_m["ebom_refs"], f"MBOM ebom_refs mismatch for {act_m.id}"
         act_cls = act_m.cls if isinstance(act_m.cls, str) else act_m.cls.value
         assert act_cls == exp_m["class"], f"MBOM class mismatch: {act_cls} vs {exp_m['class']}"
-        assert act_m.qty_per_parent == exp_m["qty_per_parent"], f"MBOM qty_per_parent mismatch for {act_m.id}"
+        assert act_m.qty_per_parent == exp_m["qty_per_parent"], (
+            f"MBOM qty_per_parent mismatch for {act_m.id}"
+        )
         assert act_m.qty_total == exp_m["qty_total"], f"MBOM qty_total mismatch for {act_m.id}"
         act_mb = act_m.make_buy if isinstance(act_m.make_buy, str) else act_m.make_buy.value
-        assert act_mb == exp_m["make_buy"], f"MBOM make_buy mismatch: {act_mb} vs {exp_m['make_buy']}"
+        assert act_mb == exp_m["make_buy"], (
+            f"MBOM make_buy mismatch: {act_mb} vs {exp_m['make_buy']}"
+        )
         assert act_m.find_no == exp_m["find_no"], f"MBOM find_no mismatch for {act_m.id}"
 
-    print(f"  B3 MBOM verified: exactly {len(b3_draft.mbom)} MBOM lines match expected.", flush=True)
+    print(
+        f"  B3 MBOM verified: exactly {len(b3_draft.mbom)} MBOM lines match expected.", flush=True
+    )
 
 
 def test_b5_approval_blocking_and_success(library) -> None:
@@ -133,7 +144,10 @@ def test_b5_approval_blocking_and_success(library) -> None:
     assert any(i.code == "open_suggestion" for i in val_initial.blocking_issues), (
         "B5 should have open_suggestion blocking issue"
     )
-    print(f"  Initial validation: BLOCKED with {len(val_initial.blocking_issues)} issues (expected).", flush=True)
+    print(
+        f"  Initial validation: BLOCKED with {len(val_initial.blocking_issues)} issues (expected).",
+        flush=True,
+    )
 
     # 2. Answer question Q-001 (e.g. choose 4)
     q_id = b5_draft.questions[0].id
@@ -169,7 +183,10 @@ def test_b5_approval_blocking_and_success(library) -> None:
     assert version.version == 1
     assert len(version.ebom) > 0
     assert len(version.mbom) > 0
-    print(f"  B5 Approval Release: SUCCESS (version {version.version} frozen with {len(version.ebom)} EBOM lines).", flush=True)
+    print(
+        f"  B5 Approval Release: SUCCESS (version {version.version} frozen with {len(version.ebom)} EBOM lines).",
+        flush=True,
+    )
 
 
 def test_b6_approval_blocking_and_success(library) -> None:
@@ -200,7 +217,10 @@ def test_b6_approval_blocking_and_success(library) -> None:
     val_initial = validate_draft(b6_draft, library)
     assert not val_initial.valid, "B6 should initially be blocked by open gap suggestions"
     assert any(i.code == "open_suggestion" for i in val_initial.blocking_issues)
-    print(f"  B6 initial validation: BLOCKED with {len(val_initial.blocking_issues)} issues (expected).", flush=True)
+    print(
+        f"  B6 initial validation: BLOCKED with {len(val_initial.blocking_issues)} issues (expected).",
+        flush=True,
+    )
 
     # 2. Review all suggestions
     for sug in b6_draft.suggestions:
@@ -208,7 +228,9 @@ def test_b6_approval_blocking_and_success(library) -> None:
 
     # 3. Assert validation now passes
     val_resolved = validate_draft(b6_draft, library)
-    assert val_resolved.valid, f"B6 should now be valid for approval, but got: {val_resolved.blocking_issues}"
+    assert val_resolved.valid, (
+        f"B6 should now be valid for approval, but got: {val_resolved.blocking_issues}"
+    )
 
     # 4. Freeze BomVersion
     version = BomVersion(
@@ -348,7 +370,10 @@ def test_partial_rerun_and_user_edit_persistence(library) -> None:
     assert updated_line.material.value == "stainless_304"
     assert updated_line.material.source == "user"
     assert updated_line.material.confidence == 1.0
-    print(f"  User edit applied: {line_id} material='{updated_line.material.value}', source='{updated_line.material.source}', conf={updated_line.material.confidence}", flush=True)
+    print(
+        f"  User edit applied: {line_id} material='{updated_line.material.value}', source='{updated_line.material.source}', conf={updated_line.material.confidence}",
+        flush=True,
+    )
 
     # 2. Check that re-running recalculate_draft does NOT overwrite user edit
     recalculate_draft(draft, library)

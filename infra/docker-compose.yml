@@ -19,6 +19,13 @@ x-limits-env: &limits-env
   C2B_MAX_FILES_PER_JOB: ${C2B_MAX_FILES_PER_JOB:-50}
   C2B_CAD_TIMEOUT_S: ${C2B_CAD_TIMEOUT_S:-120}
   C2B_CAD_SOCKET: /run/c2b/cad.sock
+  C2B_LIBRARY_DIR: /app/library
+
+# LLM provider keys (from .env, never baked into images). Empty = no live calls; recorded cassettes
+# still replay. Passed only to services that use the router.
+x-llm-env: &llm-env
+  GROQ_API_KEY: ${GROQ_API_KEY:-}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
 
 services:
   # One-shot: makes data/ and the cad socket volume writable by the app user, then exits.
@@ -33,9 +40,9 @@ services:
       - sh
       - -c
       - >-
-        mkdir -p /data/jobs &&
-        (chown ${C2B_UID:-1000}:${C2B_GID:-1000} /data /data/jobs || true) &&
-        chmod 750 /data /data/jobs &&
+        mkdir -p /data/jobs /data/out &&
+        (chown ${C2B_UID:-1000}:${C2B_GID:-1000} /data /data/jobs /data/out || true) &&
+        chmod 750 /data /data/jobs /data/out &&
         chown ${C2B_UID:-1000}:${C2B_GID:-1000} /run/c2b &&
         chmod 770 /run/c2b
     volumes:
@@ -67,7 +74,7 @@ services:
     <<: *hardening
     user: *app-user
     environment:
-      <<: *limits-env
+      <<: [*limits-env, *llm-env]
       C2B_DATABASE_URL: postgresql://${POSTGRES_USER:-c2b}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-c2b}
     volumes:
       - ../data:/data
@@ -86,7 +93,7 @@ services:
     <<: *hardening
     user: *app-user
     environment:
-      <<: *limits-env
+      <<: [*limits-env, *llm-env]
       C2B_DATABASE_URL: postgresql://${POSTGRES_USER:-c2b}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-c2b}
     volumes:
       - ../data:/data:ro
@@ -117,10 +124,12 @@ services:
     stop_grace_period: 10s
     environment:
       C2B_DATA_DIR: /data
+      C2B_CAD_OUT_DIR: /out
       C2B_CAD_TIMEOUT_S: ${C2B_CAD_TIMEOUT_S:-120}
       C2B_CAD_SOCKET: /run/c2b/cad.sock
     volumes:
-      - ../data:/data:ro
+      - ../data:/data:ro        # input: read-only
+      - ../data/out:/out        # results (GLB): the only writable path
       - c2b-cadsock:/run/c2b
     tmpfs:
       - /tmp:size=512m,mode=1777,noexec,nosuid

@@ -1,4 +1,4 @@
-"""LiteLLM router with roles, rate limits, 429 backoff, fallback roles, and budget tracking (docs/02 §4)."""
+"""LiteLLM router: roles, rate limits, 429 backoff, fallback roles, budget (docs/02 §4)."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ import logging
 import time
 from dataclasses import dataclass
 from typing import Any, TypeVar
-from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -124,15 +123,13 @@ class LlmRouter:
         self.call_logs: list[LlmCallRecord] = []
 
     def get_model_for_role(self, role: Role) -> str:
-        if role == "reasoner":
-            return self.config.model_reasoner
-        elif role == "extractor":
-            return self.config.model_extractor
-        elif role == "vision":
-            return self.config.model_vision
-        elif role == "agent":
-            return self.config.model_agent
-        return self.config.model_reasoner
+        models = {
+            "reasoner": self.config.model_reasoner,
+            "extractor": self.config.model_extractor,
+            "vision": self.config.model_vision,
+            "agent": self.config.model_agent,
+        }
+        return models.get(role, self.config.model_reasoner)
 
     def get_fallback_model_for_role(self, role: Role) -> str | None:
         if role == "reasoner":
@@ -166,7 +163,7 @@ class LlmRouter:
             cached = self.cassettes.find(role, prompt, schema_name)
             if cached:
                 self.budget_tracker.add_tokens(job_id, cached.total_tokens)
-                parsed_val = None
+                parsed_val: Any = None
                 raw_text = ""
                 if isinstance(cached.response, dict):
                     raw_text = json.dumps(cached.response)
@@ -360,9 +357,7 @@ class LlmRouter:
                         )
                         time.sleep(wait)
                     else:
-                        log.warning(
-                            "Model %s failed on attempt %d: %s", model, attempt + 1, exc
-                        )
+                        log.warning("Model %s failed on attempt %d: %s", model, attempt + 1, exc)
                         break  # Non-retryable error, try next model
 
         raise RuntimeError(f"All models failed for role {role}: {last_exc}") from last_exc

@@ -52,11 +52,13 @@ select = ["E", "F", "I", "B", "UP", "S", "SIM", "RUF"]
 ignore = ["S101"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["c2b_domain", "c2b_jobs", "c2b_library", "c2b_fixtures", "c2b_rules", "c2b_api", "c2b_worker", "c2b_cad_worker"]
+known-first-party = ["c2b_domain", "c2b_jobs", "c2b_library", "c2b_fixtures", "c2b_rules", "c2b_agents", "c2b_api", "c2b_worker", "c2b_cad_worker", "c2b_native_adapter"]
 
 [tool.ruff.lint.per-file-ignores]
-"scripts/*" = ["S603", "S607", "S310", "S608", "E501"]
+"scripts/*" = ["S603", "S607", "S310", "S608", "E501", "E402", "E741", "B905"]
 "tools/fixtures/*" = ["E501"]
+# LLM prompt templates are long literal strings
+"packages/agents/*" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"

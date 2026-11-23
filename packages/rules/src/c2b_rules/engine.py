@@ -51,6 +51,7 @@ def build_ebom(
     bom_file_path: Path | str | None = None,
     datasheet_paths: list[Path | str] | None = None,
     photo_paths: list[Path | str] | None = None,
+    mapping_overrides: dict[str, str] | None = None,
     photo_opt_in: bool = False,
     cassette_dir: Path | str | None = None,
     details_path: Path | str | None = None,
@@ -96,7 +97,7 @@ def build_ebom(
     final_lines = cad_lines
 
     if bom_file_path is not None:
-        mapping, user_rows = detect_and_map_bom(bom_file_path, library)
+        mapping, user_rows = detect_and_map_bom(bom_file_path, library, overrides=mapping_overrides)
         user_rows_raw = [r.raw for r in user_rows]
         final_lines, questions, suggestions = merge_cad_and_user_bom(
             cad_lines=cad_lines,
@@ -105,6 +106,23 @@ def build_ebom(
             photo_findings=photo_findings,
             library=library,
         )
+        # Ambiguous spreadsheet columns become blocking questions; L3 may propose an answer, but
+        # only the user confirms it (docs/04 §9, CLAUDE.md rule 5).
+        for col in mapping.ambiguous_columns:
+            proposal = mapping.columns[col]
+            next_id = 1 + max((int(q.id.split("-")[1]) for q in questions), default=0)
+            questions.append(
+                Question(
+                    id=f"Q-{next_id:03d}",
+                    kind="choice",
+                    blocking=True,
+                    mapping_column=col,
+                    text=f"Column '{col}' could be more than one BoM field. Which field is it?",
+                    options=list(library.headers.fields.keys()),
+                    evidence=[proposal.why or "", f"rules propose: {proposal.field}"],
+                    note="R-MAP-AMB",
+                )
+            )
 
     # Details text ingestion
     details_text = product_desc

@@ -4,6 +4,7 @@ version = "0.0.0"
 description = "Sandboxed OpenCascade worker: no network, no database, Unix-socket only (ADR-012)"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+  "c2b-domain",
   "cadquery>=2.5",
   "cadquery-ocp>=7.7",
 ]

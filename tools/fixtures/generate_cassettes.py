@@ -5,9 +5,6 @@ from pathlib import Path
 
 from c2b_agents.cassettes import Cassette, CassetteStore
 from c2b_agents.schemas import (
-    L1Output,
-    L3Output,
-    L4Output,
     get_taxonomy_codes,
 )
 from c2b_cad_worker.extract import extract_step
@@ -47,24 +44,91 @@ def generate_all_cassettes() -> None:
     b4_dir.mkdir(parents=True, exist_ok=True)
 
     header_row = [
-        "Pos", "Teilenummer", "Item", "Menge", "Unit",
-        "Designator", "Hersteller", "MPN", "Bemerkung"
+        "Pos",
+        "Teilenummer",
+        "Item",
+        "Menge",
+        "Unit",
+        "Designator",
+        "Hersteller",
+        "MPN",
+        "Bemerkung",
     ]
     sample_rows = [
-        ["1", "PB-0001", "Li-ion Battery Pack 10000mAh", "1", "pcs", "BT1", "PowerMax", "PM-10000", "Main battery"],
-        ["2", "PB-0002", "Top Enclosure Shell ABS", "1", "pcs", "", "PlastiTech", "PT-TOP-01", "UL94-V0"],
-        ["3", "PB-0003", "Bottom Enclosure Shell ABS", "1", "pcs", "", "PlastiTech", "PT-BOT-01", "UL94-V0"],
-        ["4", "PB-0004", "Main Controller PCBA", "1", "pcs", "PCB1", "TechDesign", "TD-PB-V2", "SMT"],
-        ["5", "PB-0005", "USB-C Interface Port", "2", "pcs", "J1, J2", "Amphenol", "12401610E402A", "Dual port"],
+        [
+            "1",
+            "PB-0001",
+            "Li-ion Battery Pack 10000mAh",
+            "1",
+            "pcs",
+            "BT1",
+            "PowerMax",
+            "PM-10000",
+            "Main battery",
+        ],
+        [
+            "2",
+            "PB-0002",
+            "Top Enclosure Shell ABS",
+            "1",
+            "pcs",
+            "",
+            "PlastiTech",
+            "PT-TOP-01",
+            "UL94-V0",
+        ],
+        [
+            "3",
+            "PB-0003",
+            "Bottom Enclosure Shell ABS",
+            "1",
+            "pcs",
+            "",
+            "PlastiTech",
+            "PT-BOT-01",
+            "UL94-V0",
+        ],
+        [
+            "4",
+            "PB-0004",
+            "Main Controller PCBA",
+            "1",
+            "pcs",
+            "PCB1",
+            "TechDesign",
+            "TD-PB-V2",
+            "SMT",
+        ],
+        [
+            "5",
+            "PB-0005",
+            "USB-C Interface Port",
+            "2",
+            "pcs",
+            "J1, J2",
+            "Amphenol",
+            "12401610E402A",
+            "Dual port",
+        ],
     ]
     ambiguous_column = "Item"
     valid_fields = [
-        "find_no", "part_number", "description", "qty", "uom", "level",
-        "refdes", "material", "manufacturer", "mpn", "notes", "unmapped"
+        "find_no",
+        "part_number",
+        "description",
+        "qty",
+        "uom",
+        "level",
+        "refdes",
+        "material",
+        "manufacturer",
+        "mpn",
+        "notes",
+        "unmapped",
     ]
 
     samples_fmt = "\n".join(
-        f"Row {i+1}: " + " | ".join(str(cell) for cell in row)
+        f"Row {i + 1}: " + " | ".join(str(cell) for cell in row)
         for i, row in enumerate(sample_rows[:5])
     )
     b4_prompt = (
@@ -110,19 +174,36 @@ def generate_all_cassettes() -> None:
     b6_dir.mkdir(parents=True, exist_ok=True)
 
     b6_step = Path("golden/B6_unknown/input/unknown_product.step")
-    product_desc = "Handheld soil-moisture controller with a rotary knob, one button and a rechargeable cell."
+    product_desc = (
+        "Handheld soil-moisture controller with a rotary knob, one button and a rechargeable cell."
+    )
     cad = extract_step(b6_step)
 
     expected_b6_classes = {
-        "Body1": ("moulded.housing.top", "Thin-wall open shell geometry (1.8mm) representing top housing of handheld controller"),
-        "Body2": ("moulded.housing.bottom", "Thin-wall open shell geometry (1.8mm) representing bottom housing of handheld controller"),
-        "Body3": ("electrical.pcb", "Flat plate with mounting holes matching printed circuit board"),
+        "Body1": (
+            "moulded.housing.top",
+            "Thin-wall open shell geometry (1.8mm) representing top housing of handheld controller",
+        ),
+        "Body2": (
+            "moulded.housing.bottom",
+            "Thin-wall open shell geometry (1.8mm) representing bottom housing of handheld controller",
+        ),
+        "Body3": (
+            "electrical.pcb",
+            "Flat plate with mounting holes matching printed circuit board",
+        ),
         "Body4": ("moulded.knob", "Rotational component with bore matching controller rotary knob"),
         "Body5": ("moulded.button", "Small cylindrical solid matching push button actuator"),
-        "Body6": ("spring.compression", "Helical wire geometry matching battery contact compression spring"),
+        "Body6": (
+            "spring.compression",
+            "Helical wire geometry matching battery contact compression spring",
+        ),
         "Body7": ("sheetmetal.clip", "Formed sheet metal strip matching battery contact clip"),
         "Body8": ("seal.gasket.flat", "Flat perimeter frame matching moisture sealing gasket"),
-        "Body9": ("electrical.battery.li_ion", "18x65mm cylindrical volume matching 18650 Li-ion rechargeable battery cell"),
+        "Body9": (
+            "electrical.battery.li_ion",
+            "18x65mm cylindrical volume matching 18650 Li-ion rechargeable battery cell",
+        ),
     }
 
     sibling_classes = [cls for (cls, _) in expected_b6_classes.values()]

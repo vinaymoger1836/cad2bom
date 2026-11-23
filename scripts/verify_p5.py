@@ -41,12 +41,12 @@ def test_b1_and_b2_zero_llm_calls(library) -> tuple[int, int]:
     router = LlmRouter()
 
     # B1 Fastener Zoo
-    t0 = time.perf_counter()
     b1_step = Path("golden/B1_fastener_zoo/input/fastener_zoo.step")
     b1_cad = extract_step(b1_step)
     b1_draft = build_ebom(b1_cad, library, "B1")
     # Run ladder resolution
     import asyncio
+
     t1 = time.perf_counter()
     b1_draft = asyncio.run(
         resolve_draft_with_ladder(b1_draft, library, router, b1_cad, product_desc="")
@@ -81,13 +81,16 @@ def test_b4_l3_header_mapping(library) -> int:
     """Assert B4's ambiguous column 'Item' is resolved through L3 and confirmed."""
     print("\n--- Verifying B4 Ambiguous Column Resolution via L3 ---")
     import asyncio
+
     router = LlmRouter()
 
     b4_xlsx = Path("golden/B4_power_bank/input/supplier_bom.xlsx")
     b4_draft = build_ebom(None, library, "B4", bom_file_path=b4_xlsx)
 
     assert b4_draft.mapping is not None
-    assert "Item" in b4_draft.mapping.ambiguous_columns, "Column 'Item' should be detected as ambiguous"
+    assert "Item" in b4_draft.mapping.ambiguous_columns, (
+        "Column 'Item' should be detected as ambiguous"
+    )
 
     b4_draft = asyncio.run(
         resolve_draft_with_ladder(
@@ -111,6 +114,29 @@ def test_b4_l3_header_mapping(library) -> int:
         desc = line.description if isinstance(line.description, str) else line.description.value
         assert desc and len(desc) > 0, f"Line {line.id} missing description"
 
+    # Production default: L3 only proposes. The column stays unconfirmed and the mapping question
+    # stays open and blocking until a person answers it.
+    from c2b_rules.dependency import apply_question_answer
+
+    prod = build_ebom(None, library, "B4", bom_file_path=b4_xlsx)
+    mq = next(q for q in prod.questions if q.mapping_column == "Item")
+    assert mq.blocking and mq.answer is None, "Mapping question must be open and blocking"
+    prod = asyncio.run(
+        resolve_draft_with_ladder(
+            prod, library, LlmRouter(), extract=None, product_desc="Power bank assembly"
+        )
+    )
+    item = prod.mapping.columns["Item"]
+    assert item.by == "extractor_L3" and item.confirmed_by_user is False, "L3 must not self-confirm"
+    assert "Item" in prod.mapping.ambiguous_columns, "Item stays ambiguous until confirmed"
+    assert any(q.mapping_column == "Item" and q.answer is None for q in prod.questions)
+    assert not prod.validation.valid, "Approval must be blocked while the mapping is unconfirmed"
+    prod = apply_question_answer(prod, mq.id, "description", library)
+    item = prod.mapping.columns["Item"]
+    assert item.by == "user" and item.confirmed_by_user is True
+    assert "Item" not in prod.mapping.ambiguous_columns
+    print("  B4 production path: L3 proposes, user confirms: PASS")
+
     b4_tokens = sum(c.total_tokens for c in router.call_logs)
     print(f"  B4 L3 resolution: PASS ({len(router.call_logs)} call, {b4_tokens} tokens)")
     return b4_tokens
@@ -120,6 +146,7 @@ def test_b6_unknown_product(library) -> int:
     """Assert B6 unknown product passes through L1 and L4 per contract."""
     print("\n--- Verifying B6 Unknown Product (L1 Reasoner + L4 Gap Suggestions) ---")
     import asyncio
+
     router = LlmRouter()
 
     b6_step = Path("golden/B6_unknown/input/unknown_product.step")
@@ -159,7 +186,9 @@ def test_b6_unknown_product(library) -> int:
 
         # 1. Source is LLM
         cls_source = line.cls.source if hasattr(line.cls, "source") else "unknown"
-        assert cls_source == "llm", f"Line {line.id} ({cad_name}) source should be 'llm', got '{cls_source}'"
+        assert cls_source == "llm", (
+            f"Line {line.id} ({cad_name}) source should be 'llm', got '{cls_source}'"
+        )
 
         # 2. Confidence <= 0.70 (llm.class_cap)
         conf = line.confidence
@@ -180,7 +209,9 @@ def test_b6_unknown_product(library) -> int:
     assert len(b6_draft.suggestions) > 0, "L4 should produce gap suggestions"
     assert len(b6_draft.suggestions) <= 8, "L4 should produce at most 8 suggestions"
     for s in b6_draft.suggestions:
-        assert s.confidence == 0.40, f"Gap suggestion {s.id} confidence should be 0.40, got {s.confidence}"
+        assert s.confidence == 0.40, (
+            f"Gap suggestion {s.id} confidence should be 0.40, got {s.confidence}"
+        )
         assert s.status == "suggested", f"Gap suggestion {s.id} should have status 'suggested'"
 
     # 4. Assert summary generated
@@ -189,7 +220,9 @@ def test_b6_unknown_product(library) -> int:
     assert b6_draft.summary.pending_suggestions_count == len(b6_draft.suggestions)
 
     b6_tokens = sum(c.total_tokens for c in router.call_logs)
-    print(f"  B6 passed all contract assertions in {dt:.2f}s ({len(router.call_logs)} calls, {b6_tokens} tokens).")
+    print(
+        f"  B6 passed all contract assertions in {dt:.2f}s ({len(router.call_logs)} calls, {b6_tokens} tokens)."
+    )
     return b6_tokens
 
 
@@ -197,6 +230,7 @@ def test_agent_chat_suggestions_only(library) -> int:
     """Assert chat request produces suggestions, not direct line changes."""
     print("\n--- Verifying Chat Agent Suggestions-Only Contract ---")
     import asyncio
+
     router = LlmRouter()
     agent = ChatAgent(router)
 
@@ -206,7 +240,9 @@ def test_agent_chat_suggestions_only(library) -> int:
     b2_draft = build_ebom(b2_cad, library, "B2")
 
     # M4 screw lines currently have material steel_8_8
-    m4_screw_lines = [l for l in b2_draft.ebom if "M4" in str(l.description) or l.cad_name == "Part1"]
+    m4_screw_lines = [
+        l for l in b2_draft.ebom if "M4" in str(l.description) or l.cad_name == "Part1"
+    ]
     initial_materials = [
         (l.id, l.material.value if hasattr(l.material, "value") else str(l.material))
         for l in m4_screw_lines
@@ -233,13 +269,19 @@ def test_agent_chat_suggestions_only(library) -> int:
     # 2. CRITICAL CONTRACT: Actual BoM lines must remain untouched!
     for l_id, initial_mat in initial_materials:
         cur_line = next(l for l in b2_draft.ebom if l.id == l_id)
-        cur_mat = cur_line.material.value if hasattr(cur_line.material, "value") else str(cur_line.material)
+        cur_mat = (
+            cur_line.material.value
+            if hasattr(cur_line.material, "value")
+            else str(cur_line.material)
+        )
         assert cur_mat == initial_mat, (
             f"BoM line {l_id} material was modified directly to '{cur_mat}'; MUST NOT be modified!"
         )
 
     chat_tokens = sum(c.total_tokens for c in router.call_logs)
-    print(f"  Chat Agent Suggestions-Only: PASS ({len(response.suggestions)} suggestions proposed, 0 lines modified, {chat_tokens} tokens).")
+    print(
+        f"  Chat Agent Suggestions-Only: PASS ({len(response.suggestions)} suggestions proposed, 0 lines modified, {chat_tokens} tokens)."
+    )
     return chat_tokens
 
 
@@ -254,12 +296,13 @@ def test_l6_acceptance_rule() -> None:
     valid_snippet = "The operating voltage is 230 VAC at 50 Hz with rated power of 75 W."
     prompt_valid = (
         f"You are a technical document extractor. Extract the value for field 'power'.\n"
-        f"Page Text Snippet:\n\"\"\"{valid_snippet}\"\"\"\n\n"
+        f'Page Text Snippet:\n"""{valid_snippet}"""\n\n'
         f"Return JSON conforming to schema with 'field', 'value', 'unit', 'page', and 'quote'.\n"
         f"CRITICAL RULE: 'quote' MUST be an exact sentence from the text that contains 'value'."
     )
     key_valid = router.cassettes.make_key("extractor", prompt_valid, "L6Output")
     from c2b_agents.cassettes import Cassette
+
     router.cassettes.save(
         Cassette(
             key=key_valid,
@@ -290,7 +333,9 @@ def test_l6_acceptance_rule() -> None:
             job_id="test",
         )
     )
-    assert isinstance(valid_res, DatasheetSpec), "Valid L6 quote should be accepted as DatasheetSpec"
+    assert isinstance(valid_res, DatasheetSpec), (
+        "Valid L6 quote should be accepted as DatasheetSpec"
+    )
     assert valid_res.value == "75"
     assert valid_res.unit == "W"
     print("  Valid L6 extraction (value in quote): ACCEPTED -> PASS")
@@ -299,7 +344,7 @@ def test_l6_acceptance_rule() -> None:
     invalid_snippet = "The device operates on nominal mains."
     prompt_invalid = (
         f"You are a technical document extractor. Extract the value for field 'voltage'.\n"
-        f"Page Text Snippet:\n\"\"\"{invalid_snippet}\"\"\"\n\n"
+        f'Page Text Snippet:\n"""{invalid_snippet}"""\n\n'
         f"Return JSON conforming to schema with 'field', 'value', 'unit', 'page', and 'quote'.\n"
         f"CRITICAL RULE: 'quote' MUST be an exact sentence from the text that contains 'value'."
     )
@@ -334,7 +379,9 @@ def test_l6_acceptance_rule() -> None:
             job_id="test",
         )
     )
-    assert isinstance(invalid_res, Question), "Invalid L6 quote (value not in quote) MUST be rejected to Question"
+    assert isinstance(invalid_res, Question), (
+        "Invalid L6 quote (value not in quote) MUST be rejected to Question"
+    )
     print("  Invalid L6 extraction (value not in quote): REJECTED to Question -> PASS")
 
 

@@ -7,8 +7,6 @@ Rules:
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from c2b_library.loader import Library

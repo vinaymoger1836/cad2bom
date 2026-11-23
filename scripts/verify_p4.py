@@ -78,9 +78,17 @@ def test_b4_power_bank(library) -> None:
         assert actual_m.field == exp_info["field"], (
             f"Field for '{col_name}' mismatch: got {actual_m.field}, exp {exp_info['field']}"
         )
-        assert actual_m.by == exp_info["by"], (
-            f"Mapping 'by' for '{col_name}' mismatch: got {actual_m.by}, exp {exp_info['by']}"
-        )
+        if col_name in exp_mapping["ambiguous_columns"]:
+            # Intake only proposes: rules supply a candidate, nobody has confirmed it yet. The
+            # golden file holds the end state (L3 + user confirmation), asserted in verify_p5.
+            assert actual_m.by == "rules" and not actual_m.confirmed_by_user, (
+                f"Ambiguous '{col_name}' must stay an unconfirmed rules proposal at intake, "
+                f"got by={actual_m.by} confirmed={actual_m.confirmed_by_user}"
+            )
+        else:
+            assert actual_m.by == exp_info["by"], (
+                f"Mapping 'by' for '{col_name}' mismatch: got {actual_m.by}, exp {exp_info['by']}"
+            )
 
     # 3. Assert User Rows & Normalisation
     assert len(user_rows) == len(exp_bom["lines"]), (
@@ -90,23 +98,23 @@ def test_b4_power_bank(library) -> None:
     for i, (act_row, exp_line) in enumerate(zip(user_rows, exp_bom["lines"], strict=True)):
         exp_raw = exp_line["raw"]
         # Assert raw verbatim
-        assert act_row.raw == exp_raw, f"Row {i+1} raw mismatch: got {act_row.raw}, exp {exp_raw}"
+        assert act_row.raw == exp_raw, f"Row {i + 1} raw mismatch: got {act_row.raw}, exp {exp_raw}"
         # Assert canonical part number
         assert act_row.part_number == exp_line["part_number"], (
-            f"Row {i+1} PN mismatch: got {act_row.part_number}, exp {exp_line['part_number']}"
+            f"Row {i + 1} PN mismatch: got {act_row.part_number}, exp {exp_line['part_number']}"
         )
         # Assert description
         assert act_row.description == exp_line["description"], (
-            f"Row {i+1} Desc mismatch: got {act_row.description}, exp {exp_line['description']}"
+            f"Row {i + 1} Desc mismatch: got {act_row.description}, exp {exp_line['description']}"
         )
         # Assert quantity & units
-        assert act_row.qty == exp_line["qty"], f"Row {i+1} qty mismatch"
-        assert act_row.uom == exp_line["uom"], f"Row {i+1} uom mismatch"
-        assert act_row.uom_raw == exp_line["uom_raw"], f"Row {i+1} uom_raw mismatch"
+        assert act_row.qty == exp_line["qty"], f"Row {i + 1} qty mismatch"
+        assert act_row.uom == exp_line["uom"], f"Row {i + 1} uom mismatch"
+        assert act_row.uom_raw == exp_line["uom_raw"], f"Row {i + 1} uom_raw mismatch"
         # Assert refdes expansion
-        assert act_row.refdes == exp_line["refdes"], f"Row {i+1} refdes mismatch"
+        assert act_row.refdes == exp_line["refdes"], f"Row {i + 1} refdes mismatch"
         assert act_row.refdes_count_matches_qty == exp_line["refdes_count_matches_qty"], (
-            f"Row {i+1} refdes_count_matches_qty mismatch"
+            f"Row {i + 1} refdes_count_matches_qty mismatch"
         )
 
     print(f"  B4 passed all checks ({len(user_rows)} rows, 9 columns mapped) in {dt:.2f}s.")
@@ -162,20 +170,52 @@ def test_b5_cad_plus_bom(library) -> None:
     )
 
     for i, (act_s, exp_s) in enumerate(zip(suggestions, exp_suggestions, strict=True)):
-        assert act_s.id == exp_s["id"], f"Suggestion {i+1} id mismatch"
-        assert act_s.origin == exp_s["origin"], f"Suggestion {i+1} origin mismatch"
-        assert act_s.review == exp_s["review"], f"Suggestion {i+1} review mismatch"
-        assert act_s.cad_name == exp_s["cad_name"], f"Suggestion {i+1} cad_name mismatch"
-        assert act_s.cls == exp_s["class"], f"Suggestion {i+1} class mismatch"
-        assert act_s.qty_total == exp_s["qty_total"], f"Suggestion {i+1} qty_total mismatch"
-        assert act_s.text == exp_s["text"], f"Suggestion {i+1} text mismatch"
+        assert act_s.id == exp_s["id"], f"Suggestion {i + 1} id mismatch"
+        assert act_s.origin == exp_s["origin"], f"Suggestion {i + 1} origin mismatch"
+        assert act_s.review == exp_s["review"], f"Suggestion {i + 1} review mismatch"
+        assert act_s.cad_name == exp_s["cad_name"], f"Suggestion {i + 1} cad_name mismatch"
+        assert act_s.cls == exp_s["class"], f"Suggestion {i + 1} class mismatch"
+        assert act_s.qty_total == exp_s["qty_total"], f"Suggestion {i + 1} qty_total mismatch"
+        assert act_s.text == exp_s["text"], f"Suggestion {i + 1} text mismatch"
 
     # 4. Assert user lines are unchanged in raw
     exp_raw_rows = [
-        {"row": 2, "Item": 1, "Part No": "BRK-1001", "Description": "Bracket, sheet metal, 2mm", "Qty": 1, "Unit": "pcs", "Material": "CRCA"},
-        {"row": 3, "Item": 2, "Part No": "CVR-1002", "Description": "Cover, moulded", "Qty": 1, "Unit": "pcs", "Material": "ABS"},
-        {"row": 4, "Item": 3, "Part No": "BLK-1003", "Description": "Aluminium block 40x30x25", "Qty": 1, "Unit": "pcs", "Material": "AL6061"},
-        {"row": 5, "Item": 4, "Part No": "SCR-1004", "Description": "Screw M4x12 ISO 4762", "Qty": 6, "Unit": "pcs", "Material": None},
+        {
+            "row": 2,
+            "Item": 1,
+            "Part No": "BRK-1001",
+            "Description": "Bracket, sheet metal, 2mm",
+            "Qty": 1,
+            "Unit": "pcs",
+            "Material": "CRCA",
+        },
+        {
+            "row": 3,
+            "Item": 2,
+            "Part No": "CVR-1002",
+            "Description": "Cover, moulded",
+            "Qty": 1,
+            "Unit": "pcs",
+            "Material": "ABS",
+        },
+        {
+            "row": 4,
+            "Item": 3,
+            "Part No": "BLK-1003",
+            "Description": "Aluminium block 40x30x25",
+            "Qty": 1,
+            "Unit": "pcs",
+            "Material": "AL6061",
+        },
+        {
+            "row": 5,
+            "Item": 4,
+            "Part No": "SCR-1004",
+            "Description": "Screw M4x12 ISO 4762",
+            "Qty": 6,
+            "Unit": "pcs",
+            "Material": None,
+        },
     ]
     for act_row, exp_raw in zip(user_rows, exp_raw_rows, strict=True):
         assert act_row.raw == exp_raw, f"User raw row mismatch: got {act_row.raw}, exp {exp_raw}"

@@ -9,7 +9,6 @@ Rules:
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any
 
@@ -32,7 +31,6 @@ from c2b_domain.bom import (
     Suggestion,
 )
 from c2b_domain.cad import CadNode, ShapeFeatures
-from c2b_domain.prov import Source
 from c2b_library.loader import Library
 
 log = logging.getLogger(__name__)
@@ -118,13 +116,17 @@ async def run_l1_classify(
         return (out.cls, confidence, out.reason, fallback_reason)
 
     except (BudgetExceededError, Exception) as exc:
-        log.warning("L1 classification failed or budget exceeded (%s); falling back to Question", exc)
+        log.warning(
+            "L1 classification failed or budget exceeded (%s); falling back to Question", exc
+        )
         return Question(
             id=f"Q-CLS-{node.id}",
             line_ids=[line_id] if line_id else [],
             kind="choice",
             text=f"Part '{node.name}' could not be classified. Please choose its component class:",
-            options=candidate_classes[:5] if candidate_classes else ["moulded.housing", "sheetmetal.bracket"],
+            options=candidate_classes[:5]
+            if candidate_classes
+            else ["moulded.housing", "sheetmetal.bracket"],
             evidence=[f"cad_node: {node.name}"],
             blocking=True,
         )
@@ -171,7 +173,9 @@ async def run_l2_material_family(
             fallback_reason=fallback_reason,
         )
         out: L2Output | None = res.parsed
-        if not out or not validate_enum_field(out.material_family, valid_families, "material_family"):
+        if not out or not validate_enum_field(
+            out.material_family, valid_families, "material_family"
+        ):
             raise ValueError(f"Invalid material family {getattr(out, 'material_family', None)}")
 
         return Suggestion(
@@ -215,7 +219,7 @@ async def run_l3_header_mapping(
     fallback_reason = f"Column '{ambiguous_column}' unmapped or ambiguous after rules"
 
     samples_fmt = "\n".join(
-        f"Row {i+1}: " + " | ".join(str(cell) for cell in row)
+        f"Row {i + 1}: " + " | ".join(str(cell) for cell in row)
         for i, row in enumerate(sample_rows[:5])
     )
 
@@ -306,7 +310,7 @@ async def run_l4_gap_candidates(
             if validate_enum_field(cand.cls, valid_classes, "class"):
                 suggestions.append(
                     Suggestion(
-                        id=f"S-GAP-{i+1:03d}",
+                        id=f"S-GAP-{i + 1:03d}",
                         line_id="",
                         action="add",
                         cls=cand.cls,
@@ -390,7 +394,7 @@ async def run_l6_datasheet_field(
 
     prompt = (
         f"You are a technical document extractor. Extract the value for field '{needed_field}'.\n"
-        f"Page Text Snippet:\n\"\"\"{page_text}\"\"\"\n\n"
+        f'Page Text Snippet:\n"""{page_text}"""\n\n'
         f"Return JSON conforming to schema with 'field', 'value', 'unit', 'page', and 'quote'.\n"
         f"CRITICAL RULE: 'quote' MUST be an exact sentence from the text that contains 'value'."
     )

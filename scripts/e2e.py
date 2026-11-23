@@ -1,4 +1,4 @@
-"""P0 end-to-end check (`make e2e`).
+"""End-to-end check (`make e2e`): P0 foundations plus the golden cases B3 and B5 (P1-P6).
 
 Brings the real stack up with Docker Compose, then drives it through the public front door
 (Caddy -> API -> Postgres/procrastinate -> worker -> cad-worker) and checks:
@@ -7,10 +7,12 @@ Brings the real stack up with Docker Compose, then drives it through the public 
   * a valid STEP upload is accepted and stored under data/jobs/<id>/in/
   * a program renamed .step, a native CAD file, an unknown type and an over-limit file are
     all refused with a clear message, and leave nothing behind
-  * starting the job moves it to `extracting` and the cad-worker (a stub in P0) answers
+  * starting the job moves it to `extracting`; a STEP with no geometry ends cleanly
+  * golden B3 (fan) and B5 (CAD + incomplete BoM) run through the real worker and cad-worker:
+    draft EBOM/MBOM, suggestions, questions, GLB, blocked approval, then approval after review
   * the SSE job stream and the public demo stream work
   * both procrastinate queues (`pipeline`, `cad`) ran a job
-  * the cad-worker really is sandboxed (no network, read-only root, 2 CPU / 3 GB)
+  * the cad-worker really is sandboxed (no network, read-only root and input, 2 CPU / 3 GB)
   * git ignores .env, data/, caches and generated types
 
 Set KEEP_UP=1 to leave the stack running afterwards. Exit code is non-zero on any failure.
@@ -133,6 +135,148 @@ def main() -> int:
     return 0
 
 
+def wait_status(
+    c: httpx.Client, jobs: str, auth: dict[str, str], want: set[str], timeout: float
+) -> str:
+    deadline = time.monotonic() + timeout
+    status = ""
+    while time.monotonic() < deadline:
+        status = c.get(jobs, headers=auth).json()["status"]
+        if status in want:
+            break
+        time.sleep(1)
+    return status
+
+
+def new_job(
+    c: httpx.Client,
+    name: str,
+    files: list[Path],
+    description: str = "",
+    volume: int | None = None,
+) -> tuple[str, dict[str, str], str]:
+    body: dict[str, object] = {"name": name}
+    if description:
+        body["description"] = description
+    if volume is not None:
+        body["annual_volume"] = volume
+    r = c.post("/api/jobs", json=body)
+    check(r.status_code == 201, f"[{name}] job created", r.text)
+    job = r.json()
+    auth = {"Authorization": f"Bearer {job['token']}"}
+    jobs = f"/api/jobs/{job['id']}"
+    for f in files:
+        r = c.post(
+            f"{jobs}/files",
+            params={"filename": f.name},
+            content=f.read_bytes(),
+            headers={**auth, "Content-Type": "application/octet-stream"},
+        )
+        check(r.status_code == 201, f"[{name}] upload {f.name}", r.text)
+    r = c.post(f"{jobs}/start", headers=auth)
+    check(r.status_code == 202, f"[{name}] start accepted", r.text)
+    return job["id"], auth, jobs
+
+
+def resolve_everything(
+    c: httpx.Client, jobs: str, auth: dict[str, str], answers: dict[str, str]
+) -> None:
+    """Answer every open question, accept every open suggestion, then approve."""
+    bom = c.get(f"{jobs}/bom", headers=auth).json()
+    for q in bom["questions"]:
+        if q.get("answer") is None:
+            ans = answers.get(q["id"]) or (q["options"][0] if q["options"] else "ok")
+            r = c.post(f"{jobs}/questions/{q['id']}/answer", json={"answer": ans}, headers=auth)
+            check(r.status_code == 200, f"answer {q['id']}", r.text)
+    for sg in bom["suggestions"]:
+        if sg.get("review") == "suggested":
+            r = c.post(f"{jobs}/suggestions/{sg['id']}", json={"review": "accepted"}, headers=auth)
+            check(r.status_code == 200, f"accept {sg['id']}", r.text)
+    r = c.post(f"{jobs}/approve", headers=auth)
+    check(
+        r.status_code == 200 and r.json()["version"] == 1,
+        "approval succeeds after review",
+        r.text,
+    )
+
+
+def golden_b3(c: httpx.Client) -> None:
+    g = ROOT / "golden" / "B3_fan"
+    details = (g / "input" / "details.txt").read_text(encoding="utf-8").strip()
+    _, auth, jobs = new_job(
+        c, "B3 fan", [g / "input" / "fan.step"], description=details, volume=5000
+    )
+    status = wait_status(c, jobs, auth, {"review", "failed"}, 240)
+    check(status == "review", "[B3] job reaches `review`", status)
+
+    bom = c.get(f"{jobs}/bom", headers=auth).json()
+    sizes = (len(bom["ebom"]), len(bom["mbom"]))
+    check(sizes == (10, 10), "[B3] EBOM and MBOM have 10 lines", sizes)
+    exp = json.loads((g / "expected" / "suggestions.json").read_text(encoding="utf-8"))
+    got = [(x["id"], x["class"], x["rule"]) for x in bom["suggestions"]]
+    check(
+        got == [(x["id"], x["class"], x["rule"]) for x in exp],
+        "[B3] gap suggestions match golden",
+        got,
+    )
+    check(
+        all(x["review"] == "suggested" for x in bom["suggestions"])
+        and not any(ln.get("origin") == "gap_rule" for ln in bom["ebom"]),
+        "[B3] nothing is added before a suggestion is accepted",
+    )
+    blade_q = [q for q in bom["questions"] if "blades" in q["text"]]
+    check(
+        len(blade_q) == 1 and "3 blades" in blade_q[0]["text"] and "says 4" in blade_q[0]["text"],
+        "[B3] blade-count conflict (CAD 3 vs text 4) is a question",
+        [q["text"] for q in bom["questions"]],
+    )
+    r = c.get(f"{jobs}/model.glb", headers=auth)
+    check(
+        r.status_code == 200 and r.content[:4] == b"glTF",
+        "[B3] GLB model is served",
+        r.status_code,
+    )
+    r = c.post(f"{jobs}/approve", headers=auth)
+    check(
+        r.status_code == 409 and r.json()["code"] == "approval_blocked",
+        "[B3] approval is blocked while items are open",
+        r.text,
+    )
+    resolve_everything(c, jobs, auth, {blade_q[0]["id"]: "3"})
+    v = c.get(f"{jobs}/versions/1", headers=auth).json()
+    check(
+        len(v.get("ebom", [])) >= 10 and v.get("library_version") == bom["library_version"],
+        "[B3] frozen version carries the library version and the lines",
+        (len(v.get("ebom", [])), v.get("library_version")),
+    )
+
+
+def golden_b5(c: httpx.Client) -> None:
+    g = ROOT / "golden" / "B5_cad_plus_bom"
+    job_id, auth, jobs = new_job(
+        c,
+        "B5 bracket + BoM",
+        [g / "input" / "bracket_assembly.step", g / "input" / "user_bom.xlsx"],
+    )
+    status = wait_status(c, jobs, auth, {"review", "failed"}, 240)
+    check(status == "review", "[B5] job reaches `review`", status)
+    bom = c.get(f"{jobs}/bom", headers=auth).json()
+    check(
+        len(bom["suggestions"]) == 3,
+        "[B5] exactly 3 'CAD shows X, add it?' suggestions",
+        [x["id"] for x in bom["suggestions"]],
+    )
+    qty_q = [q for q in bom["questions"] if "your BoM says" in q["text"]]
+    check(
+        len(qty_q) == 1, "[B5] exactly 1 quantity question", [q["text"] for q in bom["questions"]]
+    )
+    llm = psql(f"SELECT count(*) FROM llm_call WHERE job_id = '{job_id}'")
+    check(llm == "0", "[B5] zero LLM calls (rules only)", llm)
+    r = c.post(f"{jobs}/approve", headers=auth)
+    check(r.status_code == 409, "[B5] approval is blocked until resolved", r.status_code)
+    resolve_everything(c, jobs, auth, {})
+
+
 def run_checks(base: str) -> None:
     with httpx.Client(base_url=base, timeout=30) as c:
         # --- front door and web build
@@ -252,30 +396,16 @@ def run_checks(base: str) -> None:
         r = upload("late.step", STEP_OK)
         check(r.status_code == 422, "uploads are closed once building starts", r.status_code)
 
-        stub: dict[str, object] | None = None
-        kinds: list[str] = []
+        statuses: list[str] = []
         for event, data in sse_events(c, f"{jobs}/events", auth, timeout=90):
-            kinds.append(event)
-            if event == "cad_stub":
-                stub = json.loads(data)["data"]
-                break
-        check(stub is not None, "SSE delivered the cad-worker stub result", kinds)
-        assert stub is not None
-        check(
-            stub.get("status") == "stub" and bool(stub.get("ocp_version")),
-            "cad-worker answered from the sandbox (OpenCascade imported)",
-            stub,
-        )
-        check("status" in kinds, "SSE carried status events", kinds)
-
-        deadline = time.monotonic() + 30
-        status = ""
-        while time.monotonic() < deadline:
-            status = c.get(jobs, headers=auth).json()["status"]
-            if status == "extracting":
-                break
-            time.sleep(0.5)
-        check(status == "extracting", "job reached `extracting`", status)
+            if event == "status":
+                st = json.loads(data)["data"].get("status")
+                statuses.append(str(st))
+                if st in {"failed", "review"}:
+                    break
+        check("extracting" in statuses, "SSE reported `extracting`", statuses)
+        status = wait_status(c, jobs, auth, {"failed", "review"}, 60)
+        check(status in {"failed", "review"}, "a STEP without geometry ends cleanly", status)
 
         queues = psql(
             "SELECT queue_name || ':' || status FROM procrastinate_jobs ORDER BY queue_name, status"
@@ -285,6 +415,10 @@ def run_checks(base: str) -> None:
             "both queues (pipeline, cad) ran a job",
             queues,
         )
+
+        # --- golden cases through the real worker and cad-worker
+        golden_b3(c)
+        golden_b5(c)
 
         # --- demo stream
         ticks = [e for e, _ in sse_events(c, "/api/demo/stream", {}, timeout=20)]
@@ -316,6 +450,10 @@ def run_checks(base: str) -> None:
         ]
     )
     check(net.returncode != 0, "cad-worker cannot reach the database or anything else")
+    ro = run([*COMPOSE, "exec", "-T", "cad-worker", "sh", "-c", "touch /data/jobs/.w 2>&1"])
+    check(ro.returncode != 0, "cad-worker input mount is read-only", ro.stdout)
+    rw = run([*COMPOSE, "exec", "-T", "cad-worker", "sh", "-c", "touch /out/.w && rm /out/.w"])
+    check(rw.returncode == 0, "cad-worker can write results to its output mount only", rw.stderr)
 
     # --- git hygiene
     for path in [

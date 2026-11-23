@@ -131,6 +131,7 @@ def _matches_value_kind(val: Any, kind: str, library: Library) -> bool:
 def detect_and_map_bom(
     file_path: Path | str,
     library: Library,
+    overrides: dict[str, str] | None = None,
 ) -> tuple[TableMapping, list[UserBomRow]]:
     """Detect table boundaries, map headers, and normalise rows from a BoM file."""
     rows = _read_sheet_rows(file_path)
@@ -214,6 +215,7 @@ def detect_and_map_bom(
 
     # Score each column against target fields
     col_candidates: dict[int, list[tuple[str, float, float, float]]] = {c: [] for c in valid_cols}
+    col_value_scores: dict[int, dict[str, float]] = {c: {} for c in valid_cols}
     w_h = h_config.scoring.header_match_weight
     w_v = h_config.scoring.value_match_weight
 
@@ -238,12 +240,33 @@ def detect_and_map_bom(
                 )
                 v_score = matches_kind / len(non_empty_vals)
 
+            col_value_scores[c][f_name] = v_score
             total_score = w_h * h_score + w_v * v_score
             if total_score >= h_config.scoring.accept_threshold or h_score == 1.0:
                 col_candidates[c].append((f_name, total_score, h_score, v_score))
 
     # Resolve mappings and identify collisions
     field_to_col: dict[str, int] = {}
+
+    def _unconfirmed(col: int, lost_field: str, rival: str) -> ColumnMapping:
+        """Next-best field for a column that lost `lost_field` to `rival`, by header or values."""
+        pool = [(f, sc) for f, sc, _h, _v in col_candidates[col] if f != lost_field]
+        pool += [
+            (f, v * w_v)
+            for f, v in col_value_scores[col].items()
+            if f != lost_field and f not in field_to_col and v >= h_config.fields[f].value_min_share
+        ]
+        field, score = max(pool, key=lambda x: x[1]) if pool else ("notes", 0.5)
+        return ColumnMapping(
+            field=field,
+            by="rules",
+            score=score,
+            why=(
+                f"'{col_headers[col]}' and '{rival}' both look like '{lost_field}'; "
+                "needs confirmation"
+            ),
+        )
+
     for c in valid_cols:
         h_orig = col_headers[c]
         cands = sorted(col_candidates[c], key=lambda x: x[1], reverse=True)
@@ -259,43 +282,36 @@ def detect_and_map_bom(
             prev_cand = next(x for x in col_candidates[prev_c] if x[0] == best_field)
             prev_score = prev_cand[1]
 
-            # Special case for 'Pos' vs 'Item': Pos claims find_no, Item is description
-            if best_field == "find_no":
-                if "item" in h_orig.lower():
-                    # Item header scored for find_no, but values are long text
-                    ambiguous_columns.append(h_orig)
-                    columns[h_orig] = ColumnMapping(
-                        field="description",
-                        by="extractor_L3",
-                        confirmed_by_user=True,
-                        score=best_score,
-                        why=(
-                            "header 'Item' scores for find_no (also claimed by 'Pos'); "
-                            "values are long text"
-                        ),
-                    )
-                    continue
-                elif "pos" in h_orig.lower():
-                    field_to_col[best_field] = c
-                    columns[h_orig] = ColumnMapping(field=best_field, by="rules", score=best_score)
-                    continue
-
             if best_score > prev_score:
-                ambiguous_columns.append(col_headers[prev_c])
+                # The new column wins the field; the previous claimant becomes ambiguous.
+                prev_h = col_headers[prev_c]
+                ambiguous_columns.append(prev_h)
                 field_to_col[best_field] = c
                 columns[h_orig] = ColumnMapping(field=best_field, by="rules", score=best_score)
+                columns[prev_h] = _unconfirmed(prev_c, best_field, h_orig)
             else:
+                # Two columns compete for one field: the better-scoring one keeps it. The other is
+                # ambiguous: show its best remaining candidate, unconfirmed, until L3 / the user
+                # decides.
                 ambiguous_columns.append(h_orig)
-                # Fallback to second best candidate
-                if len(cands) > 1:
-                    columns[h_orig] = ColumnMapping(
-                        field=cands[1][0], by="rules", score=cands[1][1]
-                    )
-                else:
-                    columns[h_orig] = ColumnMapping(field="notes", by="rules", score=best_score)
+                columns[h_orig] = _unconfirmed(c, best_field, col_headers[prev_c])
         else:
             field_to_col[best_field] = c
             columns[h_orig] = ColumnMapping(field=best_field, by="rules", score=best_score)
+
+    # The user's confirmed choices win over everything (source=user, never overwritten).
+    valid_fields = set(h_config.fields) | {"ignore"}
+    for col_name, field in (overrides or {}).items():
+        if col_name in columns and field in valid_fields:
+            columns[col_name] = ColumnMapping(
+                field=field,
+                by="user",
+                score=1.0,
+                confirmed_by_user=True,
+                why="Confirmed by the user",
+            )
+            if col_name in ambiguous_columns:
+                ambiguous_columns.remove(col_name)
 
     mapping = TableMapping(
         header_row=header_row_idx + 1,
@@ -304,8 +320,12 @@ def detect_and_map_bom(
         columns=columns,
         ambiguous_columns=ambiguous_columns,
         assertions=[
-            "All columns except 'Item' are mapped by rules (library/headers.yaml).",
-            "'Item' is resolved through the extractor cassette (L3) and confirmed by the user.",
+            f"Mapped by rules (library/headers.yaml): {len(columns) - len(ambiguous_columns)} "
+            f"of {len(columns)} columns.",
+            *(
+                f"'{c}' is ambiguous and needs L3 resolution and user confirmation."
+                for c in ambiguous_columns
+            ),
         ],
     )
 

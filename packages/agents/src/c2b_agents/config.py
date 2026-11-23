@@ -16,34 +16,24 @@ class AgentConfig:
 
     # Models per role
     model_reasoner: str = field(
-        default_factory=lambda: os.environ.get(
-            "C2B_MODEL_REASONER", "groq/llama-3.3-70b-versatile"
-        )
+        default_factory=lambda: os.environ.get("C2B_MODEL_REASONER", "groq/llama-3.3-70b-versatile")
     )
     fallback_reasoner: str = field(
-        default_factory=lambda: os.environ.get(
-            "C2B_FALLBACK_REASONER", "gemini/gemini-1.5-flash"
-        )
+        default_factory=lambda: os.environ.get("C2B_FALLBACK_REASONER", "gemini/gemini-2.5-flash")
     )
     model_extractor: str = field(
-        default_factory=lambda: os.environ.get(
-            "C2B_MODEL_EXTRACTOR", "groq/llama-3.1-8b-instant"
-        )
+        default_factory=lambda: os.environ.get("C2B_MODEL_EXTRACTOR", "groq/llama-3.1-8b-instant")
     )
     fallback_extractor: str = field(
         default_factory=lambda: os.environ.get("C2B_FALLBACK_EXTRACTOR", "reasoner")
     )
     model_vision: str = field(
-        default_factory=lambda: os.environ.get(
-            "C2B_MODEL_VISION", "gemini/gemini-1.5-flash"
-        )
+        default_factory=lambda: os.environ.get("C2B_MODEL_VISION", "gemini/gemini-2.5-flash")
     )
     fallback_vision: str | None = None  # None: photo step skipped with a notice per doc 02 §4
 
     model_agent: str = field(
-        default_factory=lambda: os.environ.get(
-            "C2B_MODEL_AGENT", "groq/llama-3.3-70b-versatile"
-        )
+        default_factory=lambda: os.environ.get("C2B_MODEL_AGENT", "groq/llama-3.3-70b-versatile")
     )
     fallback_agent: str = field(
         default_factory=lambda: os.environ.get("C2B_FALLBACK_AGENT", "reasoner")

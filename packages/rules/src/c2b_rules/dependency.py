@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from c2b_domain.bom import BomDraft, BomLine
+from c2b_domain.bom import BomDraft, BomLine, ColumnMapping
 from c2b_domain.prov import Prov
 from c2b_library.loader import Library
 from c2b_rules.makebuy import recommend_make_buy
@@ -34,7 +34,7 @@ def apply_user_line_edit(
         raise ValueError(f"Line '{line_id}' not found in draft EBOM")
 
     # Enforce Non-negotiable Rule 4: source='user', confidence=1.0
-    user_prov = Prov(
+    user_prov: Prov[Any] = Prov(
         value=new_value,
         source="user",
         confidence=1.0,
@@ -74,6 +74,28 @@ def apply_user_line_edit(
     return draft
 
 
+def apply_mapping_confirmation(draft: BomDraft, column: str, field: str) -> None:
+    """The user confirms (or changes) the field of a spreadsheet column: source=user, final."""
+    if draft.mapping is None or column not in draft.mapping.columns:
+        raise ValueError(f"Column '{column}' is not part of the BoM file mapping")
+    draft.mapping.columns[column] = ColumnMapping(
+        field=field,
+        by="user",
+        score=1.0,
+        confirmed_by_user=True,
+        why="Confirmed by the user",
+    )
+    if column in draft.mapping.ambiguous_columns:
+        draft.mapping.ambiguous_columns.remove(column)
+    if field == "description":
+        # User lines keep the user's own text; it only becomes the line description now.
+        for line in draft.ebom:
+            if line.raw and column in line.raw:
+                text = str(line.raw[column]).strip()
+                if text:
+                    line.description = text
+
+
 def apply_question_answer(
     draft: BomDraft,
     question_id: str,
@@ -86,6 +108,10 @@ def apply_question_answer(
         raise ValueError(f"Question '{question_id}' not found in draft")
 
     question.answer = answer
+    if question.mapping_column:
+        apply_mapping_confirmation(draft, question.mapping_column, str(answer))
+        recalculate_draft(draft, library)
+        return draft
 
     # Apply answer to target lines if applicable
     import re

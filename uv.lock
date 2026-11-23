@@ -205,6 +205,7 @@ dependencies = [
     { name = "c2b-domain" },
     { name = "c2b-jobs" },
     { name = "c2b-library" },
+    { name = "c2b-rules" },
     { name = "langgraph" },
     { name = "litellm" },
     { name = "pyyaml" },
@@ -215,6 +216,7 @@ requires-dist = [
     { name = "c2b-domain", editable = "packages/domain" },
     { name = "c2b-jobs", editable = "packages/jobs" },
     { name = "c2b-library", editable = "packages/library" },
+    { name = "c2b-rules", editable = "packages/rules" },
     { name = "langgraph", specifier = ">=0.3.0" },
     { name = "litellm", specifier = ">=1.63.0" },
     { name = "pyyaml", specifier = ">=6" },
@@ -225,16 +227,22 @@ name = "c2b-api"
 version = "0.0.0"
 source = { editable = "apps/api" }
 dependencies = [
+    { name = "c2b-agents" },
     { name = "c2b-domain" },
     { name = "c2b-jobs" },
+    { name = "c2b-library" },
+    { name = "c2b-rules" },
     { name = "fastapi" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "c2b-agents", editable = "packages/agents" },
     { name = "c2b-domain", editable = "packages/domain" },
     { name = "c2b-jobs", editable = "packages/jobs" },
+    { name = "c2b-library", editable = "packages/library" },
+    { name = "c2b-rules", editable = "packages/rules" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
 ]
@@ -244,12 +252,14 @@ name = "c2b-cad-worker"
 version = "0.0.0"
 source = { editable = "apps/cad-worker" }
 dependencies = [
+    { name = "c2b-domain" },
     { name = "cadquery" },
     { name = "cadquery-ocp" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "c2b-domain", editable = "packages/domain" },
     { name = "cadquery", specifier = ">=2.5" },
     { name = "cadquery-ocp", specifier = ">=7.7" },
 ]
@@ -359,15 +369,19 @@ name = "c2b-worker"
 version = "0.0.0"
 source = { editable = "apps/worker" }
 dependencies = [
+    { name = "c2b-agents" },
     { name = "c2b-domain" },
     { name = "c2b-jobs" },
+    { name = "c2b-library" },
     { name = "c2b-rules" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "c2b-agents", editable = "packages/agents" },
     { name = "c2b-domain", editable = "packages/domain" },
     { name = "c2b-jobs", editable = "packages/jobs" },
+    { name = "c2b-library", editable = "packages/library" },
     { name = "c2b-rules", editable = "packages/rules" },
 ]
 

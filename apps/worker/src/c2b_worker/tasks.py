@@ -11,23 +11,24 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from psycopg_pool import AsyncConnectionPool as Pool
-
 from c2b_domain.cad import CadExtractResult
-from c2b_jobs import cad_client, repo
-from c2b_library.loader import load_library
-from c2b_rules.engine import build_ebom
-from c2b_worker.app import (
+from c2b_jobs import mapping_store, repo
+from c2b_jobs.queue import (
     QUEUE_CAD,
     QUEUE_PIPELINE,
     TASK_CAD_EXTRACT,
     TASK_RUN_PIPELINE,
     app,
-    get_settings,
-    pool,
+    defer_cad_extract,
 )
+from c2b_jobs.repo import Pool
+from c2b_jobs.settings import get_settings
+from c2b_library.loader import load_library
+from c2b_rules.engine import build_ebom
+from c2b_worker import cad_client
+from c2b_worker.context import pool
 
-log = logging.getLogger("c2b_worker")
+log = logging.getLogger("c2b.worker")
 
 
 async def _fail(
@@ -44,7 +45,7 @@ async def _fail(
     await repo.add_event(db, jid, "status", "Stopped", {"status": "failed"})
 
 
-async def _build_bom_for_job(
+async def _build_bom_for_job_inner(
     db: Pool,
     jid: UUID,
     job_id: str,
@@ -52,7 +53,7 @@ async def _build_bom_for_job(
 ) -> None:
     """Build draft EBOM from CAD extract and other uploads (BoM files, datasheets, photos)."""
     settings = get_settings()
-    library, _ = load_library(Path("library"))
+    library, _ = load_library(settings.library_dir)
     if library is None:
         log.error("Failed to load library for job %s", job_id)
         await _fail(jid, "Internal error: could not load library definitions")
@@ -61,8 +62,8 @@ async def _build_bom_for_job(
     # Discover non-CAD uploads
     uploads = await repo.list_uploads(db, jid)
     bom_file_path: Path | None = None
-    datasheet_paths: list[Path] = []
-    photo_paths: list[Path] = []
+    datasheet_paths: list[Path | str] = []
+    photo_paths: list[Path | str] = []
 
     for u in uploads:
         rel = await repo.get_upload_path(db, jid, u.id)
@@ -88,24 +89,33 @@ async def _build_bom_for_job(
     if bom_file_path or datasheet_paths or photo_paths:
         await repo.add_event(db, jid, "step", "Step 7: Merge with user BoM, photos, datasheets")
 
+    # What the person typed about the product (description, annual volume) feeds the rules too.
+    product_desc = ""
+    annual_volume: int | None = None
+    job_row = await repo.get_job(db, jid)
+    product = job_row.get("product") if job_row else None
+    if isinstance(product, dict):
+        product_desc = str(product.get("description") or "")
+        vol = product.get("annual_volume")
+        annual_volume = int(vol) if isinstance(vol, int) else None
+
     bom_draft = build_ebom(
         extract=extract_obj,
         library=library,
         job_id=job_id,
         bom_file_path=bom_file_path,
+        mapping_overrides=mapping_store.load_overrides(settings.data_dir, jid),
         datasheet_paths=datasheet_paths if datasheet_paths else None,
         photo_paths=photo_paths if photo_paths else None,
         photo_opt_in=True,
+        product_desc=product_desc,
+        annual_volume=annual_volume,
+        assign_numbers=True,
     )
 
     # Step 4 fallback ladder & agent summary (docs/02 §3, docs/04 §9)
     from c2b_agents.pipeline import resolve_draft_with_ladder
     from c2b_agents.router import LlmRouter
-
-    product_desc = ""
-    job_row = await repo.get_job(db, jid)
-    if job_row and job_row.get("product"):
-        product_desc = job_row["product"].get("description", "")
 
     router = LlmRouter()
     bom_draft = await resolve_draft_with_ladder(
@@ -136,11 +146,29 @@ async def _build_bom_for_job(
     await repo.add_event(db, jid, "step", "Step 11: Validation and confidence")
 
     # Persist draft BoM
-    await repo.save_bom(db, jid, bom_draft.model_dump(by_alias=True))
+    await repo.save_bom(db, jid, bom_draft.model_dump(by_alias=True, mode="json"))
 
     # Move status to review
     await repo.set_status(db, jid, "review")
     await repo.add_event(db, jid, "status", "Ready for review", {"status": "review"})
+
+
+async def _build_bom_for_job(
+    db: Pool,
+    jid: UUID,
+    job_id: str,
+    extract_obj: CadExtractResult | None,
+) -> None:
+    """Build the draft; any unexpected error stops the job with a message instead of hanging."""
+    try:
+        await _build_bom_for_job_inner(db, jid, job_id, extract_obj)
+    except Exception:
+        log.exception("BoM build failed for job %s", job_id)
+        await _fail(
+            jid,
+            "Something went wrong while building the BoM. Your files are safe; "
+            "please try again, and report this if it keeps happening.",
+        )
 
 
 @app.task(name=TASK_RUN_PIPELINE, queue=QUEUE_PIPELINE)
@@ -163,9 +191,7 @@ async def run_pipeline(job_id: str) -> None:
             await _build_bom_for_job(db, jid, job_id, extract_obj=None)
             return
 
-        await repo.add_event(
-            db, jid, "notice", "No files were uploaded to build from."
-        )
+        await repo.add_event(db, jid, "notice", "No files were uploaded to build from.")
         await _fail(jid, "No files were uploaded to build from.")
         return
 
@@ -231,9 +257,3 @@ async def cad_extract(job_id: str, upload_id: str) -> None:
     # Build BoM
     extract_obj = CadExtractResult.model_validate(result)
     await _build_bom_for_job(db, jid, job_id, extract_obj=extract_obj)
-
-
-async def defer_cad_extract(job_id: UUID, upload_id: UUID) -> None:
-    await app.configure_async(pool=pool()).defer_async(
-        TASK_CAD_EXTRACT, job_id=str(job_id), upload_id=str(upload_id)
-    )

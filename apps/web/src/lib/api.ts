@@ -1,8 +1,10 @@
 import type {
+  BomDraft,
   JobCreate,
   JobCreated,
   JobOut,
   ProblemDetail,
+  TableMapping,
   UploadOut,
 } from "@c2b/ts-types";
 
@@ -155,35 +157,44 @@ export function uploadFile(
   };
 }
 
-export async function getMapping(id: string, token: string): Promise<any> {
-  const res = await fetch(`${API}/jobs/${id}/mapping`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw problemFrom(res.status, await res.text());
-  return res.json();
+export interface MappingConfirmResult {
+  status: string;
+  message: string;
+  /** True when a choice differs from what the draft BoM was built with. */
+  rebuild_needed: boolean;
 }
 
-export async function confirmMapping(
-  id: string,
+async function authedJson<T>(
+  url: string,
   token: string,
-  columns: Record<string, any>,
-): Promise<any> {
-  const res = await fetch(`${API}/jobs/${id}/mapping/confirm`, {
-    method: "POST",
+  init?: { method: string; body: string },
+): Promise<T> {
+  const res = await fetch(url, {
+    ...init,
     headers: {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
+      ...(init ? { "Content-Type": "application/json" } : {}),
     },
-    body: JSON.stringify({ columns }),
   });
   if (!res.ok) throw problemFrom(res.status, await res.text());
-  return res.json();
+  return (await res.json()) as T;
 }
 
-export async function getBom(id: string, token: string): Promise<any> {
-  const res = await fetch(`${API}/jobs/${id}/bom`, {
-    headers: { Authorization: `Bearer ${token}` },
+export function getMapping(id: string, token: string): Promise<TableMapping> {
+  return authedJson<TableMapping>(`${API}/jobs/${id}/mapping`, token);
+}
+
+export function confirmMapping(
+  id: string,
+  token: string,
+  columns: Record<string, string>,
+): Promise<MappingConfirmResult> {
+  return authedJson<MappingConfirmResult>(`${API}/jobs/${id}/mapping/confirm`, token, {
+    method: "POST",
+    body: JSON.stringify({ columns }),
   });
-  if (!res.ok) throw problemFrom(res.status, await res.text());
-  return res.json();
+}
+
+export function getBom(id: string, token: string): Promise<BomDraft> {
+  return authedJson<BomDraft>(`${API}/jobs/${id}/bom`, token);
 }

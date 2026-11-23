@@ -23,6 +23,7 @@ class Settings:
     cad_socket: Path
     cad_timeout_s: int
     library_version: str
+    library_dir: Path
 
     @property
     def max_cad_mb(self) -> int:
@@ -50,4 +51,5 @@ def get_settings() -> Settings:
         cad_timeout_s=_int_env("C2B_CAD_TIMEOUT_S", 120),
         # Pinned per job from P1 on (library loader). Placeholder until the library exists.
         library_version=os.environ.get("C2B_LIBRARY_VERSION", "none"),
+        library_dir=Path(os.environ.get("C2B_LIBRARY_DIR", "library")),
     )

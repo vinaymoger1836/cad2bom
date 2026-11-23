@@ -6,6 +6,7 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
   "c2b-domain",
   "c2b-library",
+  "c2b-rules",
   "c2b-jobs",
   "litellm>=1.63.0",
   "langgraph>=0.3.0",

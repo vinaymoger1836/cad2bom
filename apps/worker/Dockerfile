@@ -23,4 +23,6 @@ ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1
 COPY --from=build /opt/venv /opt/venv
 WORKDIR /app
+# The knowledge library is data, read at run time (C2B_LIBRARY_DIR, default ./library).
+COPY library /app/library
 CMD ["c2b-worker"]

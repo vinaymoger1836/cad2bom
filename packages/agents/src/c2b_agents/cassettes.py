@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -27,7 +27,7 @@ class Cassette:
 
     def __post_init__(self) -> None:
         if not self.created_at:
-            self.created_at = datetime.now(timezone.utc).isoformat()
+            self.created_at = datetime.now(UTC).isoformat()
 
 
 class CassetteStore:
@@ -39,7 +39,7 @@ class CassetteStore:
     @staticmethod
     def make_key(role: str, prompt: str, schema_name: str = "") -> str:
         """Deterministic 16-character hex hash keyed by role, prompt and schema."""
-        raw = f"{role}:{prompt.strip()}:{schema_name}".encode("utf-8")
+        raw = f"{role}:{prompt.strip()}:{schema_name}".encode()
         return hashlib.sha256(raw).hexdigest()[:16]
 
     def find(self, role: str, prompt: str, schema_name: str = "") -> Cassette | None:
@@ -65,7 +65,7 @@ class CassetteStore:
                 data = json.loads(path.read_text(encoding="utf-8"))
                 if data.get("key") == key:
                     return Cassette(**data)
-            except Exception:
+            except Exception:  # noqa: S112 - unreadable cassette files are skipped
                 continue
 
         # Fallback 2: role + prompt keyword matching for test flexibility
@@ -94,7 +94,7 @@ class CassetteStore:
                 # L4 gap candidates matching
                 if "identify missing components" in prompt_lower and "gap" in summary:
                     return Cassette(**data)
-            except Exception:
+            except Exception:  # noqa: S112 - unreadable cassette files are skipped
                 continue
 
         return None

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import type { TableMapping } from "@c2b/ts-types";
 import { Link, useNavigate, useParams } from "react-router";
 import { Qa, WhatHappens } from "../components/Help";
-import { confirmMapping, getMapping } from "../lib/api";
+import { ApiError, confirmMapping, getMapping } from "../lib/api";
 import { loadToken } from "../lib/storage";
 
 const TARGET_FIELDS = [
@@ -18,6 +19,9 @@ const TARGET_FIELDS = [
   { value: "mass", label: "Mass / Weight" },
   { value: "level", label: "Hierarchy Level" },
   { value: "revision", label: "Revision" },
+  { value: "value", label: "Component value (e.g. 10k, 100nF)" },
+  { value: "footprint", label: "Footprint / Package" },
+  { value: "make_buy", label: "Make or buy" },
   { value: "notes", label: "Notes / Remarks" },
   { value: "ignore", label: "Ignore this column" },
 ];
@@ -27,7 +31,7 @@ export function MappingConfirm() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mapping, setMapping] = useState<any>(null);
+  const [mapping, setMapping] = useState<TableMapping | null>(null);
   const [columnChoices, setColumnChoices] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -38,14 +42,14 @@ export function MappingConfirm() {
       .then((data) => {
         setMapping(data);
         const initialChoices: Record<string, string> = {};
-        for (const [col, info] of Object.entries<any>(data.columns || {})) {
+        for (const [col, info] of Object.entries(data.columns ?? {})) {
           initialChoices[col] = info.field;
         }
         setColumnChoices(initialChoices);
         setLoading(false);
       })
-      .catch((err: Error) => {
-        setError(err.message);
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : "The mapping could not be loaded.");
         setLoading(false);
       });
   }, [id]);
@@ -60,9 +64,13 @@ export function MappingConfirm() {
     const token = loadToken(id) ?? "";
     try {
       await confirmMapping(id, token, columnChoices);
-      navigate(`/j/${id}`);
-    } catch (err: any) {
-      setError(err.message || "Failed to confirm mapping");
+      void navigate(`/j/${id}`);
+    } catch (err: unknown) {
+      setError(
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "The mapping could not be saved.",
+      );
       setSaving(false);
     }
   };
@@ -92,8 +100,9 @@ export function MappingConfirm() {
     );
   }
 
-  const cols = Object.keys(mapping.columns || {});
-  const ambiguous = new Set<string>(mapping.ambiguous_columns || []);
+  const columns = mapping.columns ?? {};
+  const cols = Object.keys(columns);
+  const ambiguous = new Set<string>(mapping.ambiguous_columns ?? []);
 
   return (
     <div className="stack">
@@ -128,7 +137,7 @@ export function MappingConfirm() {
         <div className="mapping-grid" style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
           {cols.map((colName) => {
             const isAmbiguous = ambiguous.has(colName);
-            const currentField = columnChoices[colName] || mapping.columns[colName]?.field;
+            const currentField = columnChoices[colName] ?? columns[colName]?.field;
             return (
               <div
                 key={colName}
@@ -158,9 +167,9 @@ export function MappingConfirm() {
                       Ambiguous
                     </span>
                   )}
-                  {mapping.columns[colName]?.why && (
+                  {columns[colName]?.why && (
                     <p className="small muted" style={{ margin: "0.25rem 0 0" }}>
-                      {mapping.columns[colName].why}
+                      {columns[colName].why}
                     </p>
                   )}
                 </div>
@@ -168,7 +177,9 @@ export function MappingConfirm() {
                   <select
                     aria-label={`Field mapping for column ${colName}`}
                     value={currentField}
-                    onChange={(e) => handleFieldChange(colName, e.target.value)}
+                    onChange={(e) => {
+                      handleFieldChange(colName, e.target.value);
+                    }}
                     style={{ padding: "0.4rem 0.75rem", borderRadius: "4px" }}
                   >
                     {TARGET_FIELDS.map((tf) => (
@@ -189,7 +200,9 @@ export function MappingConfirm() {
           type="button"
           className="button primary"
           disabled={saving}
-          onClick={handleConfirm}
+          onClick={() => {
+            void handleConfirm();
+          }}
         >
           {saving ? "Confirming..." : "Confirm Mapping & Continue"}
         </button>

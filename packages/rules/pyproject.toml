@@ -24,3 +24,7 @@ platform = "linux"  # the code runs in Linux containers
 strict = true
 plugins = ["pydantic.mypy"]
 mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = ["openpyxl", "openpyxl.*"]
+ignore_missing_imports = true  # openpyxl ships no type stubs

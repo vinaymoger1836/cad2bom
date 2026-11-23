@@ -354,7 +354,8 @@ async def list_bom_versions(
     """List all frozen BoM versions for a job."""
     async with pool.connection() as conn:
         cur = await conn.execute(
-            "SELECT version, created_at, data FROM bom_version WHERE job_id = %s ORDER BY version ASC",
+            "SELECT version, created_at, data FROM bom_version "
+            "WHERE job_id = %s ORDER BY version ASC",
             (job_id,),
         )
         rows = await cur.fetchall()

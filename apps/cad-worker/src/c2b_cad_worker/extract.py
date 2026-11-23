@@ -460,10 +460,9 @@ def extract_step(step_path: Path, out_dir: Path | None = None) -> CadExtractResu
     glb_relpath: str | None = None
     target_out_dir = out_dir
     if target_out_dir is None:
-        try:
-            target_out_dir = step_path.parent.parent / "out"
-        except Exception:
-            target_out_dir = step_path.parent / "out"
+        # <data>/jobs/<id>/in/<file> -> <data>/out/<id>/
+        job_dir = step_path.resolve().parent.parent
+        target_out_dir = job_dir.parent.parent / "out" / job_dir.name
 
     try:
         target_out_dir.mkdir(parents=True, exist_ok=True)
@@ -486,7 +485,7 @@ def extract_step(step_path: Path, out_dir: Path | None = None) -> CadExtractResu
         writer.Perform(doc, TColStd_IndexedDataMapOfStringString(), Message_ProgressRange())
 
         if glb_path.exists() and glb_path.stat().st_size > 0:
-            glb_relpath = f"jobs/{target_out_dir.parent.name}/out/model.glb"
+            glb_relpath = f"out/{target_out_dir.name}/model.glb"
     except Exception as exc:
         log.warning("GLB export failed: %s", exc)
         notices.append(

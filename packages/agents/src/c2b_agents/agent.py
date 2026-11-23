@@ -9,7 +9,6 @@ Rules:
 
 from __future__ import annotations
 
-import re
 from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -24,6 +23,7 @@ from c2b_domain.bom import (
     Question,
     Suggestion,
 )
+from c2b_domain.prov import Prov
 
 
 class AgentState(TypedDict, total=False):
@@ -189,8 +189,16 @@ class ChatAgent:
         if draft and draft.ebom:
             for line in draft.ebom:
                 cls_val = line.cls if isinstance(line.cls, str) else line.cls.value
-                mat_val = line.material.value if hasattr(line.material, "value") else str(line.material or "")
-                desc_val = line.description if isinstance(line.description, str) else line.description.value
+                mat_val = (
+                    line.material.value
+                    if isinstance(line.material, Prov)
+                    else str(line.material or "")
+                )
+                desc_val = (
+                    line.description
+                    if isinstance(line.description, str)
+                    else line.description.value
+                )
                 lines_summary.append(
                     {
                         "id": line.id,
@@ -268,7 +276,11 @@ def explain_line_in_plain_words(line: BomLine) -> str:
     """Translate technical rule traces into plain, understandable markdown."""
     cls_str = line.cls if isinstance(line.cls, str) else line.cls.value
     desc_str = line.description if isinstance(line.description, str) else line.description.value
-    mat_str = line.material.value if hasattr(line.material, "value") else str(line.material or "unspecified")
+    mat_str = (
+        line.material.value
+        if isinstance(line.material, Prov)
+        else str(line.material or "unspecified")
+    )
 
     lines = [
         f"**{desc_str}** (Part identifier: `{line.id}` / CAD name: `{line.cad_name or 'N/A'}`)",
@@ -278,5 +290,7 @@ def explain_line_in_plain_words(line: BomLine) -> str:
         f"- **Procurement**: Recommended as `{line.make_buy}` based on standard manufacturing rules.",
     ]
     if line.rule_ids:
-        lines.append(f"- **Governing Rules**: Applied rules {', '.join(f'`{r}`' for r in line.rule_ids)}.")
+        lines.append(
+            f"- **Governing Rules**: Applied rules {', '.join(f'`{r}`' for r in line.rule_ids)}."
+        )
     return "\n".join(lines)

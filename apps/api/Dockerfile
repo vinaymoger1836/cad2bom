@@ -24,6 +24,8 @@ ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1
 COPY --from=build /opt/venv /opt/venv
 WORKDIR /app
+# The knowledge library is data, read at run time (C2B_LIBRARY_DIR, default ./library).
+COPY library /app/library
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=5 \
   CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]

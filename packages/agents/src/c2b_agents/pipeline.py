@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from c2b_agents.agent import generate_job_summary
 from c2b_agents.ladder import (
@@ -12,10 +11,11 @@ from c2b_agents.ladder import (
     run_l4_gap_candidates,
 )
 from c2b_agents.router import LlmRouter
-from c2b_domain.bom import BomDraft, BomLine, ColumnMapping, Question
+from c2b_domain.bom import BomDraft, ColumnMapping, Question
 from c2b_domain.cad import CadExtractResult
 from c2b_domain.prov import Prov
 from c2b_library.loader import Library
+from c2b_rules.dependency import apply_mapping_confirmation
 from c2b_rules.descriptions import build_description
 from c2b_rules.explainer import explain_line
 
@@ -28,7 +28,7 @@ async def resolve_draft_with_ladder(
     router: LlmRouter,
     extract: CadExtractResult | None = None,
     product_desc: str = "",
-    confirm_l3_immediately: bool = True,
+    confirm_l3_immediately: bool = False,
     run_l4_gap: bool = False,
 ) -> BomDraft:
     """Execute LLM fallback ladder steps L1-L6 on a draft BoM where needed."""
@@ -58,9 +58,10 @@ async def resolve_draft_with_ladder(
             if matched_node:
                 features = shape_map.get(matched_node.shape_id) if matched_node.shape_id else None
                 sibling_classes = [
-                    (l.cls if isinstance(l.cls, str) else l.cls.value)
-                    for l in draft.ebom
-                    if l.id != line.id and (l.cls if isinstance(l.cls, str) else l.cls.value) != "unclassified"
+                    (ln.cls if isinstance(ln.cls, str) else ln.cls.value)
+                    for ln in draft.ebom
+                    if ln.id != line.id
+                    and (ln.cls if isinstance(ln.cls, str) else ln.cls.value) != "unclassified"
                 ]
 
                 l1_res = await run_l1_classify(
@@ -79,7 +80,7 @@ async def resolve_draft_with_ladder(
                 if isinstance(l1_res, Question):
                     draft.questions.append(l1_res)
                 else:
-                    chosen_cls, l1_conf, l1_reason, fallback_reason = l1_res
+                    chosen_cls, l1_conf, l1_reason, _fallback_reason = l1_res
                     # Update line with LLM class provenance (capped at 0.70)
                     line.cls = Prov(
                         value=chosen_cls,
@@ -123,10 +124,7 @@ async def resolve_draft_with_ladder(
     if draft.mapping and draft.mapping.ambiguous_columns:
         ambiguous_cols = list(draft.mapping.ambiguous_columns)
         for col in ambiguous_cols:
-            sample_rows = [
-                list(r.values())
-                for r in draft.user_rows_raw[:5]
-            ]
+            sample_rows = [list(r.values()) for r in draft.user_rows_raw[:5]]
             header_row = list(draft.mapping.columns.keys()) + ambiguous_cols
 
             l3_res = await run_l3_header_mapping(
@@ -137,33 +135,40 @@ async def resolve_draft_with_ladder(
                 job_id=draft.job_id,
             )
 
+            mq = next((q for q in draft.questions if q.mapping_column == col), None)
             if isinstance(l3_res, Question):
-                draft.questions.append(l3_res)
+                # L3 unavailable or failed: the engine's mapping question already asks the user.
+                if mq is None:
+                    draft.questions.append(l3_res)
             elif isinstance(l3_res, dict) and "field" in l3_res:
                 resolved_field = l3_res["field"]
-                draft.mapping.columns[col] = ColumnMapping(
-                    field=resolved_field,
-                    by="extractor_L3",
-                    score=0.85,
-                    confirmed_by_user=confirm_l3_immediately,
-                    why="Resolved via L3 LLM header mapping",
-                )
-                draft.mapping.ambiguous_columns.remove(col)
-
-                # If confirmed, apply resolved field to user rows
-                if confirm_l3_immediately and resolved_field == "description":
-                    for line in draft.ebom:
-                        if line.raw and col in line.raw:
-                            desc_val = str(line.raw[col]).strip()
-                            if desc_val:
-                                line.description = desc_val
+                if confirm_l3_immediately:
+                    # Test/replay switch that stands in for the user's confirmation click.
+                    apply_mapping_confirmation(draft, col, resolved_field)
+                    if mq is not None:
+                        mq.answer = resolved_field
+                    draft.mapping.columns[col].by = "extractor_L3"
+                    draft.mapping.columns[col].score = 0.85
+                    draft.mapping.columns[col].why = "Resolved via L3 LLM header mapping"
+                else:
+                    # LLM proposal only: stays unconfirmed and the question stays open.
+                    draft.mapping.columns[col] = ColumnMapping(
+                        field=resolved_field,
+                        by="extractor_L3",
+                        score=0.85,
+                        confirmed_by_user=False,
+                        why="Proposed by L3 LLM header mapping; needs your confirmation",
+                    )
+                    if mq is not None:
+                        mq.evidence.append(f"L3 suggests: {resolved_field}")
+                        mq.note = "R-MAP-AMB; L3 proposal"
 
     # 3. Ladder Step L4: Gap candidates for unknown product types
     if run_l4_gap and product_desc and not draft.suggestions:
         current_classes = [
-            (l.cls if isinstance(l.cls, str) else l.cls.value)
-            for l in draft.ebom
-            if (l.cls if isinstance(l.cls, str) else l.cls.value) != "unclassified"
+            (ln.cls if isinstance(ln.cls, str) else ln.cls.value)
+            for ln in draft.ebom
+            if (ln.cls if isinstance(ln.cls, str) else ln.cls.value) != "unclassified"
         ]
         gap_suggestions = await run_l4_gap_candidates(
             router=router,
