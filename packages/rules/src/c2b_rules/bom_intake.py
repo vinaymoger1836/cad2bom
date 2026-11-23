@@ -39,9 +39,9 @@ def _read_sheet_rows(file_path: Path | str) -> list[list[Any]]:
     elif ext in [".csv", ".tsv", ".txt"]:
         with open(path, encoding="utf-8-sig", errors="replace") as f:
             content = f.read()
-        dialect = "excel"
+        dialect: type[csv.Dialect] | str = "excel"
         with contextlib.suppress(Exception):
-            dialect = csv.Sniffer().sniff(content[:2048]).name
+            dialect = csv.Sniffer().sniff(content[:2048])
         reader = csv.reader(content.splitlines(), dialect=dialect)
         return [list(r) for r in reader]
     else:

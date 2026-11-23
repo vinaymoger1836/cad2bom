@@ -51,7 +51,6 @@ class Suggestion(BaseModel):
     review: SuggestionReview = "suggested"
     cad_name: str | None = None
     cls: str = Field(
-        alias="class",
         validation_alias="class",
         serialization_alias="class",
     )

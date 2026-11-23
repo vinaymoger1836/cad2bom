@@ -20,18 +20,15 @@ Checks:
 from __future__ import annotations
 
 import json
-import sys
 import time
 from pathlib import Path
 
 from c2b_cad_worker.extract import extract_step
-from c2b_domain.bom import DatasheetSpec, PhotoFinding
 from c2b_library.loader import load_library
 from c2b_rules.bom_intake import detect_and_map_bom, expand_refdes
-from c2b_rules.datasheets import extract_datasheet_specs
 from c2b_rules.merger import merge_cad_and_user_bom
 from c2b_rules.structure import build_ebom_lines
-from c2b_rules.vision import VisionRouterStub, process_photos
+from c2b_rules.vision import VisionRouterStub
 
 
 def test_refdes_expansion() -> None:
@@ -133,7 +130,7 @@ def test_b5_cad_plus_bom(library) -> None:
     cad_lines = build_ebom_lines(cad_extract.nodes, cad_extract.shapes, library)
 
     # Ingest User BoM
-    mapping, user_rows = detect_and_map_bom(xlsx_path, library)
+    _mapping, user_rows = detect_and_map_bom(xlsx_path, library)
 
     # Merge
     reconciled_lines, questions, suggestions = merge_cad_and_user_bom(cad_lines, user_rows)
