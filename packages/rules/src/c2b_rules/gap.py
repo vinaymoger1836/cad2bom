@@ -26,6 +26,7 @@ def evaluate_gap_rules(
     process_hints: list[str] | None = None,
     rejected_keys: set[str] | None = None,
     existing_suggestions: list[Suggestion] | None = None,
+    archetype: str | None = None,
 ) -> list[Suggestion]:
     """Evaluate gap rules and return candidate suggestions."""
     rejected = rejected_keys or set()
@@ -72,6 +73,7 @@ def evaluate_gap_rules(
                 )
             )
             counter += 1
+            existing_cls.add("label.rating")
 
     # R-GAP-002: User manual
     if not has_class_prefix("documentation.manual") and not has_class_prefix("documentation"):
@@ -91,6 +93,7 @@ def evaluate_gap_rules(
                 )
             )
             counter += 1
+            existing_cls.add("documentation.manual")
 
     # R-GAP-003: Shipper carton (MBOM packaging level)
     if not has_class_prefix("packaging.carton") and not has_class_prefix("packaging.box"):
@@ -110,6 +113,7 @@ def evaluate_gap_rules(
                 )
             )
             counter += 1
+            existing_cls.add("packaging.carton")
 
     # -------------------------------------------------------------------------
     # 2. Class-Triggered Rules
@@ -142,6 +146,7 @@ def evaluate_gap_rules(
                 )
             )
             counter += 1
+            existing_cls.add("consumable.solder")
 
     # R-GAP-004: Transport label for Li-ion battery
     if has_class_prefix("electrical.battery.li_ion") and not has_class_prefix("label.transport"):
@@ -161,6 +166,7 @@ def evaluate_gap_rules(
                 )
             )
             counter += 1
+            existing_cls.add("label.transport")
 
     # R-GAP-030: Clamps for fluid hoses
     if has_class_prefix("fluid.hose") and not has_class_prefix("fluid.clamp"):
@@ -180,33 +186,33 @@ def evaluate_gap_rules(
                 )
             )
             counter += 1
+            existing_cls.add("fluid.clamp")
 
     # -------------------------------------------------------------------------
-    # 3. Archetype Skeletons
+    # 3. Archetype Skeletons (when explicit archetype requested)
     # -------------------------------------------------------------------------
-    if library.archetypes and product_desc:
-        for arch_id, arch in library.archetypes.items():
-            # Check match keywords
-            matches = any(kw.lower() in desc_lower for kw in arch.match_keywords)
-            if matches:
-                for expected_item in arch.expected:
-                    exp_cls = expected_item.class_
-                    if not has_class_prefix(exp_cls):
-                        s_id = f"S-{counter:03d}"
-                        key = f"ARCH-{arch_id}:{exp_cls}"
-                        if key not in rejected and s_id not in rejected:
-                            suggestions.append(
-                                Suggestion(
-                                    id=s_id,
-                                    cls=exp_cls,
-                                    rule=f"ARCH-{arch_id.upper()}",
-                                    origin="skeleton",
-                                    level="ebom",
-                                    qty_total=float(expected_item.min_count),
-                                    text=f"Add {expected_item.note or exp_cls}?",
-                                    review="suggested",
-                                )
+    if archetype and library.archetypes:
+        arch = library.archetypes.get(archetype)
+        if arch:
+            for expected_item in arch.expected:
+                exp_cls = expected_item.class_
+                if not has_class_prefix(exp_cls):
+                    s_id = f"S-{counter:03d}"
+                    key = f"ARCH-{archetype}:{exp_cls}"
+                    if key not in rejected and s_id not in rejected:
+                        suggestions.append(
+                            Suggestion(
+                                id=s_id,
+                                cls=exp_cls,
+                                rule=f"ARCH-{archetype.upper()}",
+                                origin="skeleton",
+                                level="ebom",
+                                qty_total=float(expected_item.min_count),
+                                text=f"Add {expected_item.note or exp_cls}?",
+                                review="suggested",
                             )
-                            counter += 1
+                        )
+                        counter += 1
+                        existing_cls.add(exp_cls)
 
     return suggestions
