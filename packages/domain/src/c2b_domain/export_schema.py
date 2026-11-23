@@ -10,11 +10,18 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from c2b_domain.cad import (
+    CadExtractResult,
+    CadNode,
+    CadNotice,
+    ShapeFeatures,
+)
 from c2b_domain.jobs import (
     JobCreate,
     JobCreated,
     JobEvent,
     JobOut,
+    JobUpdate,
     ProblemDetail,
     ProductInfo,
     UploadOut,
@@ -24,14 +31,19 @@ MODELS: list[type[BaseModel]] = [
     ProductInfo,
     JobCreate,
     JobCreated,
+    JobUpdate,
     JobOut,
     UploadOut,
     JobEvent,
     ProblemDetail,
+    CadNode,
+    ShapeFeatures,
+    CadNotice,
+    CadExtractResult,
 ]
 
 
-REQUEST_MODELS: set[type[BaseModel]] = {ProductInfo, JobCreate}
+REQUEST_MODELS: set[type[BaseModel]] = {ProductInfo, JobCreate, JobUpdate}
 
 
 def _repo_root() -> Path:

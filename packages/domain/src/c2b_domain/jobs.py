@@ -28,6 +28,14 @@ class ProductInfo(ApiModel):
 class JobCreate(ProductInfo):
     """Body of POST /jobs."""
 
+    consent_native_conversion: bool = False
+
+
+class JobUpdate(ApiModel):
+    """Body of PATCH /jobs/{job_id}."""
+
+    consent_native_conversion: bool | None = None
+
 
 class JobCreated(ApiModel):
     """Response of POST /jobs. `token` is shown once; only its hash is stored."""
@@ -42,6 +50,7 @@ class JobOut(ApiModel):
     status: JobStatus
     product: ProductInfo
     library_version: str
+    consent_native_conversion: bool = False
     created_at: datetime
     uploads: list["UploadOut"] = Field(default_factory=list)
 
@@ -95,6 +104,7 @@ __all__ = [
     "JobEvent",
     "JobOut",
     "JobStatus",
+    "JobUpdate",
     "ProblemDetail",
     "ProductInfo",
     "UploadKind",
