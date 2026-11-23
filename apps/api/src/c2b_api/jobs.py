@@ -4,12 +4,13 @@ from typing import Annotated, Any
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Header, Query, Request, Response
+from fastapi.responses import FileResponse
 
 from c2b_api import sse, uploads
 from c2b_api.auth import JobRow, hash_token, new_token
 from c2b_api.errors import ProblemError
 from c2b_api.magic import ACCEPTED_EXTENSIONS
-from c2b_domain import JobCreate, JobCreated, JobOut, ProductInfo, UploadOut
+from c2b_domain import JobCreate, JobCreated, JobOut, JobUpdate, ProductInfo, UploadOut
 from c2b_jobs import queue, repo
 from c2b_jobs.repo import Pool
 from c2b_jobs.settings import get_settings
@@ -41,7 +42,12 @@ async def create_job(body: JobCreate, request: Request) -> JobCreated:
     token = new_token()
     product = ProductInfo.model_validate(body.model_dump())
     await repo.create_job(
-        _pool(request), job_id, product, hash_token(token), get_settings().library_version
+        _pool(request),
+        job_id,
+        product,
+        hash_token(token),
+        get_settings().library_version,
+        consent_native_conversion=body.consent_native_conversion,
     )
     await repo.add_event(_pool(request), job_id, "status", "Job created", {"status": "uploading"})
     # The token sits in the URL fragment: it is never sent to servers or written to access logs.
@@ -55,6 +61,7 @@ async def _job_out(pool: Pool, row: dict[str, object]) -> JobOut:
         status=row["status"],  # type: ignore[arg-type]
         product=ProductInfo.model_validate(row["product"]),
         library_version=str(row["library_version"]),
+        consent_native_conversion=bool(row.get("consent_native_conversion", False)),
         created_at=row["created_at"],  # type: ignore[arg-type]
         uploads=await repo.list_uploads(pool, job_id),
     )
@@ -63,6 +70,42 @@ async def _job_out(pool: Pool, row: dict[str, object]) -> JobOut:
 @router.get("/jobs/{job_id}", tags=["jobs"])
 async def get_job(job_id: UUID, job: JobRow, request: Request) -> JobOut:
     return await _job_out(_pool(request), job)
+
+
+@router.patch("/jobs/{job_id}", tags=["jobs"])
+async def update_job(
+    job_id: UUID,
+    job: JobRow,
+    body: JobUpdate,
+    request: Request,
+) -> JobOut:
+    pool = _pool(request)
+    if body.consent_native_conversion is not None:
+        await repo.set_consent_native_conversion(pool, job_id, body.consent_native_conversion)
+    row = await repo.get_job(pool, job_id)
+    assert row is not None
+    return await _job_out(pool, row)
+
+
+@router.get("/jobs/{job_id}/model.glb", tags=["jobs"])
+async def get_model_glb(
+    job_id: UUID,
+    job: JobRow,
+) -> FileResponse:
+    s = get_settings()
+    glb_path = s.data_dir / "jobs" / str(job_id) / "out" / "model.glb"
+    if not glb_path.exists():
+        raise ProblemError(
+            404,
+            "not_found",
+            "Model not found",
+            "No 3D GLB model is available for this job yet.",
+        )
+    return FileResponse(
+        path=glb_path,
+        media_type="model/gltf-binary",
+        filename="model.glb",
+    )
 
 
 @router.get("/jobs/{job_id}/files", tags=["uploads"])

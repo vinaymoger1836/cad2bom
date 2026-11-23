@@ -1,10 +1,9 @@
 """Geometric feature extraction for prototype shapes (docs/03 §3, docs/05 §1)."""
 
+import contextlib
 import hashlib
-import math
 from typing import Any
 
-from c2b_domain.cad import Cyl, ShapeFeatures
 from OCP.Bnd import Bnd_Box, Bnd_OBB
 from OCP.BRepAdaptor import BRepAdaptor_Surface
 from OCP.BRepBndLib import BRepBndLib
@@ -18,6 +17,8 @@ from OCP.GProp import GProp_GProps
 from OCP.TopAbs import TopAbs_FACE, TopAbs_IN, TopAbs_OUT, TopAbs_SOLID
 from OCP.TopExp import TopExp_Explorer
 from OCP.TopoDS import TopoDS, TopoDS_Shape
+
+from c2b_domain.cad import Cyl, ShapeFeatures
 
 
 def compute_shape_features(
@@ -55,9 +56,7 @@ def compute_shape_features(
         BRepBndLib.Add_s(shape, box, True)
         if not box.IsVoid():
             xmin, ymin, zmin, xmax, ymax, zmax = box.Get()
-            dims = sorted(
-                [abs(xmax - xmin), abs(ymax - ymin), abs(zmax - zmin)], reverse=True
-            )
+            dims = sorted([abs(xmax - xmin), abs(ymax - ymin), abs(zmax - zmin)], reverse=True)
             obb_mm = (round(dims[0], 4), round(dims[1], 4), round(dims[2], 4))
         else:
             obb_mm = (0.0, 0.0, 0.0)
@@ -121,7 +120,7 @@ def compute_shape_features(
                 length = round(abs(vmax - vmin), 4)
 
                 is_inner = False
-                try:
+                with contextlib.suppress(Exception):
                     u_mid = (umin + umax) / 2.0
                     v_mid = (vmin + vmax) / 2.0
                     pnt = surf.Value(u_mid, v_mid)
@@ -151,12 +150,8 @@ def compute_shape_features(
                         classifier.Perform(p_out, 1e-4)
                         st_out = classifier.State()
                         is_inner = st_in == TopAbs_OUT and st_out == TopAbs_IN
-                except Exception:
-                    pass
 
-                cylinders.append(
-                    Cyl(radius_mm=r, length_mm=length, axis=axis, is_inner=is_inner)
-                )
+                cylinders.append(Cyl(radius_mm=r, length_mm=length, axis=axis, is_inner=is_inner))
 
             case GeomAbs_SurfaceType.GeomAbs_Cone:
                 area_by_type["cone"] += f_area
@@ -200,9 +195,7 @@ def compute_shape_features(
         dom_axis = cylinders[0].axis
         for p in planar_faces_info:
             norm = p["normal"]
-            dot = abs(
-                norm[0] * dom_axis[0] + norm[1] * dom_axis[1] + norm[2] * dom_axis[2]
-            )
+            dot = abs(norm[0] * dom_axis[0] + norm[1] * dom_axis[1] + norm[2] * dom_axis[2])
             if dot > 0.98:  # perpendicular to cylindrical surface -> circular end cap
                 rev_area += p["area"]
 
@@ -253,7 +246,6 @@ def compute_shape_features(
     exp_solid = TopExp_Explorer(shape, TopAbs_SOLID)
     is_solid = exp_solid.More()
 
-    shells_closed = True
     exp_shell = TopExp_Explorer(shape, TopAbs_FACE)
     has_faces = exp_shell.More()
 

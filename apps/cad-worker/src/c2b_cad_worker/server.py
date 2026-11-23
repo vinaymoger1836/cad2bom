@@ -45,12 +45,15 @@ def _safe_input_path(raw: object) -> Path | None:
 
 
 async def _run_child(path: Path) -> bytes:
+    out_dir = path.parent.parent / "out"
+    out_dir.mkdir(parents=True, exist_ok=True)
     proc = await asyncio.create_subprocess_exec(
         sys.executable,
         "-I",
         "-m",
-        "c2b_cad_worker.extract_stub",
+        "c2b_cad_worker.extract",
         str(path),
+        str(out_dir),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )

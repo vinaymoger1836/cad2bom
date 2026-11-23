@@ -26,6 +26,7 @@ members = [
   "apps/api",
   "apps/worker",
   "apps/cad-worker",
+  "apps/native-adapter",
 ]
 
 [tool.uv.sources]
@@ -37,6 +38,7 @@ c2b-fixtures = { workspace = true }
 c2b-api = { workspace = true }
 c2b-worker = { workspace = true }
 c2b-cad-worker = { workspace = true }
+c2b-native-adapter = { workspace = true }
 
 [tool.ruff]
 line-length = 100

@@ -1,18 +1,16 @@
-"""STEP extraction in cad-worker via OpenCascade XCAF (docs/03 §1–3, docs/05 §1).
+"""STEP extraction in cad-worker via OpenCascade XCAF (docs/03 §1-3, docs/05 §1).
 
 Reads STEP assembly hierarchy, extracts unique shape features, checks quality,
 generates a scaled binary GLB for Three.js, and outputs CadExtractResult JSON.
 """
 
-import json
+import contextlib
 import logging
 import os
 import sys
 from pathlib import Path
 from typing import Any
 
-from c2b_cad_worker.features import compute_shape_features
-from c2b_domain.cad import CadExtractResult, CadNode, CadNotice, ShapeFeatures
 from OCP.BRepMesh import BRepMesh_IncrementalMesh
 from OCP.IFSelect import IFSelect_ReturnStatus
 from OCP.Message import Message_ProgressRange
@@ -26,6 +24,9 @@ from OCP.TDF import TDF_Label, TDF_LabelSequence, TDF_Tool
 from OCP.TDocStd import TDocStd_Document
 from OCP.XCAFApp import XCAFApp_Application
 from OCP.XCAFDoc import XCAFDoc_ColorType, XCAFDoc_DocumentTool
+
+from c2b_cad_worker.features import compute_shape_features
+from c2b_domain.cad import CadExtractResult, CadNode, CadNotice, ShapeFeatures
 
 try:
     import resource
@@ -45,14 +46,14 @@ def _label_name(label: TDF_Label) -> str:
     return ""
 
 
+def _set_label_name(label: TDF_Label, name: str) -> None:
+    TDataStd_Name.Set_s(label, TCollection_ExtendedString(name))
+
+
 def _label_entry(label: TDF_Label) -> str:
     asc = TCollection_AsciiString()
     TDF_Tool.Entry_s(label, asc)
     return str(asc.ToCString())
-
-
-def _set_label_name(label: TDF_Label, name: str) -> None:
-    TDataStd_Name.Set_s(label, TCollection_ExtendedString(name))
 
 
 def _transform_matrix_4x4(comp: TDF_Label, st: Any) -> list[float]:
@@ -100,11 +101,9 @@ def _transform_matrix_4x4(comp: TDF_Label, st: Any) -> list[float]:
         ]
 
 
-def _read_color(
-    label: TDF_Label, ct: Any
-) -> tuple[float, float, float] | None:
+def _read_color(label: TDF_Label, ct: Any) -> tuple[float, float, float] | None:
     """Read RGB color from XCAF ColorTool if assigned."""
-    try:
+    with contextlib.suppress(Exception):
         color = Quantity_ColorRGBA()
         for ctype in (
             XCAFDoc_ColorType.XCAFDoc_ColorGen,
@@ -118,14 +117,10 @@ def _read_color(
                     round(float(c.Green()), 4),
                     round(float(c.Blue()), 4),
                 )
-    except Exception:
-        pass
     return None
 
 
-def extract_step(
-    step_path: Path, out_dir: Path | None = None
-) -> CadExtractResult:
+def extract_step(step_path: Path, out_dir: Path | None = None) -> CadExtractResult:
     """Full extraction pipeline for a STEP file."""
     if not step_path.exists():
         return CadExtractResult(
@@ -141,9 +136,7 @@ def extract_step(
 
     # Initialize XCAF document
     doc = TDocStd_Document(TCollection_ExtendedString("XmlOcaf"))
-    XCAFApp_Application.GetApplication_s().NewDocument(
-        TCollection_ExtendedString("MDTV-XCAF"), doc
-    )
+    XCAFApp_Application.GetApplication_s().NewDocument(TCollection_ExtendedString("MDTV-XCAF"), doc)
 
     reader = STEPCAFControl_Reader()
     reader.SetNameMode(True)
@@ -165,7 +158,8 @@ def extract_step(
                 CadNotice(
                     code="broken_file",
                     message=(
-                        f"The CAD reader could not open '{step_path.name}' (status: {status_name}). "
+                        f"The CAD reader could not open '{step_path.name}' "
+                        f"(status: {status_name}). "
                         "The file may be corrupt or not a valid STEP AP203/AP214/AP242 file."
                     ),
                     severity="error",
@@ -260,15 +254,13 @@ def extract_step(
                     severity="warning",
                 )
             )
-        if features.obb_mm[0] > 10_000.0 or (
-            features.obb_mm[0] < 0.1 and features.obb_mm[0] > 0.0
-        ):
+        if features.obb_mm[0] > 10_000.0 or (features.obb_mm[0] < 0.1 and features.obb_mm[0] > 0.0):
             notices.append(
                 CadNotice(
                     code="unit_mismatch",
                     message=(
-                        f"Shape {sid} dimension {features.obb_mm[0]:.1f} mm may indicate a unit scale mismatch "
-                        "(expected millimetres)."
+                        f"Shape {sid} dimension {features.obb_mm[0]:.1f} mm may indicate "
+                        "a unit scale mismatch (expected millimetres)."
                     ),
                     severity="warning",
                 )
@@ -276,9 +268,7 @@ def extract_step(
 
         return sid
 
-    def traverse(
-        label: TDF_Label, parent_id: str | None = None
-    ) -> str:
+    def traverse(label: TDF_Label, parent_id: str | None = None) -> str:
         nonlocal node_counter, total_leaves
         nid = f"N-{node_counter:04d}"
         node_counter += 1
@@ -325,7 +315,6 @@ def extract_step(
         shape_tool.GetComponents_s(label, comps)
 
         # Group components by referred shape to consolidate instance counts
-        # Key: referred shape entry string -> list of component labels
         grouped: dict[str, list[TDF_Label]] = {}
         for i in range(1, comps.Length() + 1):
             comp_label = comps.Value(i)
@@ -344,7 +333,6 @@ def extract_step(
             node_counter += 1
 
             inst_count = len(comp_list)
-            # Use name of referred shape if available, else first instance label
             child_name = _label_name(ref_label) or _label_name(first_comp) or f"Part_{child_nid}"
             comp_color = _read_color(first_comp, color_tool) or _read_color(ref_label, color_tool)
             transform = _transform_matrix_4x4(first_comp, shape_tool)
@@ -358,7 +346,7 @@ def extract_step(
                         notices.append(
                             CadNotice(
                                 code="duplicate_instance",
-                                message=f"Component '{child_name}' has duplicate overlapping instances.",
+                                message=f"Component '{child_name}' has duplicate instances.",
                                 node_id=child_nid,
                                 severity="info",
                             )
@@ -425,7 +413,6 @@ def extract_step(
                             )
                         )
                     else:
-                        # Further nesting if needed
                         traverse(sc_ref, parent_id=child_nid)
             else:
                 total_leaves += inst_count
@@ -483,7 +470,7 @@ def extract_step(
         glb_path = target_out_dir / "model.glb"
 
         # Tessellate all unique shapes
-        for sid, sfeat in shapes.items():
+        for sid, _sfeat in shapes.items():
             for entry_str, registered_sid in entry_to_shape_id.items():
                 if registered_sid == sid:
                     proto_lbl = TDF_Label()

@@ -67,5 +67,37 @@ async def cad_extract(job_id: str, upload_id: str) -> None:
             db, jid, "cad_stub", "CAD reader answered (placeholder result in this version)", result
         )
         return
-    message = str(result.get("message") or "The CAD reader could not process this file.")
-    await _fail(jid, message, cad_status=result.get("status"))
+    if result.get("status") == "error":
+        notices = result.get("notices") or []
+        first_msg = (
+            notices[0].get("message")
+            if notices
+            else str(result.get("message") or "The CAD reader could not process this file.")
+        )
+        await _fail(jid, first_msg, notices=notices)
+        return
+
+    # Real CAD extraction result
+    leaf_count = int(result.get("leaf_count") or len(result.get("nodes") or []))
+    await repo.save_cad_extract(db, jid, uid, result, leaf_count=leaf_count)
+
+    for notice in result.get("notices") or []:
+        await repo.add_event(db, jid, "notice", notice.get("message", ""), notice)
+
+    node_count = len(result.get("nodes") or [])
+    shape_count = len(result.get("shapes") or [])
+    await repo.add_event(
+        db,
+        jid,
+        "cad_extracted",
+        f"Extracted {node_count} nodes ({leaf_count} leaves, {shape_count} unique shapes)",
+        {
+            "leaf_count": leaf_count,
+            "node_count": node_count,
+            "shape_count": shape_count,
+            "glb_relpath": result.get("glb_relpath"),
+        },
+    )
+    # Move status to building
+    await repo.set_status(db, jid, "building")
+    await repo.add_event(db, jid, "status", "Building BoM", {"status": "building"})

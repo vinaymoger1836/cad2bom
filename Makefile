@@ -48,6 +48,7 @@ lint:
 	cd apps/api && uv run mypy src
 	cd apps/worker && uv run mypy src
 	cd apps/cad-worker && uv run mypy src
+	cd apps/native-adapter && uv run mypy src
 	pnpm gen:types
 	pnpm --filter @c2b/web typecheck
 	pnpm --filter @c2b/web lint

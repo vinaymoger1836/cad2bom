@@ -33,7 +33,8 @@ async def create_job(
 ) -> None:
     async with pool.connection() as conn:
         await conn.execute(
-            "INSERT INTO job (id, token_hash, status, product, library_version, consent_native_conversion)"
+            "INSERT INTO job"
+            " (id, token_hash, status, product, library_version, consent_native_conversion)"
             " VALUES (%s, %s, 'uploading', %s, %s, %s)",
             (
                 job_id,
@@ -193,4 +194,3 @@ async def get_cad_extract(pool: Pool, job_id: UUID) -> dict[str, Any] | None:
         )
         row = await cur.fetchone()
         return None if row is None else dict(row["data"])
-

@@ -1,6 +1,6 @@
 """CAD extraction domain models (docs/05 §1). Pure Pydantic."""
 
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import Field
 
@@ -29,9 +29,7 @@ class ShapeFeatures(ApiModel):
     volume_mm3: float
     area_mm2: float
     obb_mm: tuple[float, float, float]  # sorted dimensions (length >= width >= height)
-    face_hist: dict[str, float] = Field(
-        default_factory=dict
-    )  # surface area fraction per face type
+    face_hist: dict[str, float] = Field(default_factory=dict)  # surface area fraction per face type
     cylinders: list[Cyl] = Field(default_factory=list)
     rot_symmetry: float = 0.0  # 0.0 to 1.0 fraction of revolution-symmetric surface area
     const_thickness_mm: float | None = None
