@@ -48,7 +48,9 @@ def _auto_loc(index: int) -> cq.Location:
     return cq.Location(cq.Vector(45.0 * (index % 8), 45.0 * (index // 8), 0.0))
 
 
-def to_node(spec: Spec, _cache: dict[int, Node] | None = None, _counter: list[int] | None = None) -> Node:
+def to_node(
+    spec: Spec, _cache: dict[int, Node] | None = None, _counter: list[int] | None = None
+) -> Node:
     """Build the XCAF node tree: one prototype per Spec, `qty` placements under its parent."""
     cache = _cache if _cache is not None else {}
     counter = _counter if _counter is not None else [0]

@@ -88,8 +88,14 @@ def o_ring(table: StandardTable, size: str) -> cq.Shape:
 # --- custom parts (B2) ---------------------------------------------------------------------------
 
 
-def bent_u_bracket(length: float = 60.0, width: float = 40.0, height: float = 30.0,
-                   t: float = 2.0, r_outer: float = 4.0, hole_d: float = 4.5) -> cq.Shape:
+def bent_u_bracket(
+    length: float = 60.0,
+    width: float = 40.0,
+    height: float = 30.0,
+    t: float = 2.0,
+    r_outer: float = 4.0,
+    hole_d: float = 4.5,
+) -> cq.Shape:
     """Sheet-metal U bracket: constant thickness t, two bends (inner radius r_outer - t)."""
     ri = r_outer - t
     c = math.sqrt(0.5)
@@ -98,9 +104,7 @@ def bent_u_bracket(length: float = 60.0, width: float = 40.0, height: float = 30
     pts = pts.lineTo(length - r_outer, 0)
     pts = pts.threePointArc((length - r_outer * (1 - c), r_outer * (1 - c)), (length, r_outer))
     pts = pts.lineTo(length, height).lineTo(length - t, height).lineTo(length - t, r_outer)
-    pts = pts.threePointArc(
-        (length - r_outer + ri * c, r_outer - ri * c), (length - r_outer, t)
-    )
+    pts = pts.threePointArc((length - r_outer + ri * c, r_outer - ri * c), (length - r_outer, t))
     pts = pts.lineTo(r_outer, t)
     pts = pts.threePointArc((r_outer - ri * c, r_outer - ri * c), (t, r_outer))
     pts = pts.lineTo(t, height).close()
@@ -119,21 +123,29 @@ def turned_shaft(diameter: float = 12.0, length: float = 80.0) -> cq.Shape:
     shaft = cq.Workplane("XY").circle(diameter / 2).extrude(length)
     shaft = shaft.faces(">Z or <Z").chamfer(1.0)
     groove = (
-        cq.Workplane("XY").workplane(offset=length - 18)
-        .circle(diameter / 2 + 1).circle(diameter / 2 - 1.0).extrude(2)
+        cq.Workplane("XY")
+        .workplane(offset=length - 18)
+        .circle(diameter / 2 + 1)
+        .circle(diameter / 2 - 1.0)
+        .extrude(2)
     )
     return _solid(shaft.cut(groove))
 
 
-def moulded_cover(length: float = 60.0, width: float = 40.0, height: float = 18.0,
-                  wall: float = 2.0) -> cq.Shape:
+def moulded_cover(
+    length: float = 60.0, width: float = 40.0, height: float = 18.0, wall: float = 2.0
+) -> cq.Shape:
     """Open-bottom cover: 2 mm walls, drafted sides, rounded corners and two internal screw bosses."""
     outer = cq.Workplane("XY").rect(length, width).extrude(height, taper=1.5)
     cover = outer.faces("<Z").shell(-wall)
     for x in (-length / 2 + 9, length / 2 - 9):  # bosses hang from the inside of the top wall
         boss = (
-            cq.Workplane("XY").workplane(offset=height - wall - 10)
-            .center(x, 0).circle(3.5).circle(1.5).extrude(10.5)
+            cq.Workplane("XY")
+            .workplane(offset=height - wall - 10)
+            .center(x, 0)
+            .circle(3.5)
+            .circle(1.5)
+            .extrude(10.5)
         )
         cover = cover.union(boss)
     return _solid(cover)
@@ -143,8 +155,11 @@ def aluminium_block(x: float = 40.0, y: float = 30.0, z: float = 25.0) -> cq.Sha
     block = cq.Workplane("XY").box(x, y, z, centered=(True, True, False))
     through = cq.Workplane("XY").circle(5).extrude(z)
     tapped = (
-        cq.Workplane("XY").workplane(offset=z - 15)
-        .pushPoints([(-14, -9), (14, -9), (-14, 9), (14, 9)]).circle(1.65).extrude(15)
+        cq.Workplane("XY")
+        .workplane(offset=z - 15)
+        .pushPoints([(-14, -9), (14, -9), (-14, 9), (14, 9)])
+        .circle(1.65)
+        .extrude(15)
     )
     return _solid(block.cut(through).cut(tapped))
 
@@ -152,7 +167,9 @@ def aluminium_block(x: float = 40.0, y: float = 30.0, z: float = 25.0) -> cq.Sha
 # --- fan stand-in (B3) --------------------------------------------------------------------------
 
 
-def hollow_cylinder(outer_d: float, length: float, wall: float, closed_end: bool = False) -> cq.Shape:
+def hollow_cylinder(
+    outer_d: float, length: float, wall: float, closed_end: bool = False
+) -> cq.Shape:
     wp = cq.Workplane("XY").circle(outer_d / 2).extrude(length)
     inner_len = length - wall if closed_end else length
     return _solid(wp.cut(cq.Workplane("XY").circle(outer_d / 2 - wall).extrude(inner_len)))
@@ -165,10 +182,17 @@ def disc(diameter: float, thickness: float, bore: float = 0.0) -> cq.Shape:
     return _solid(wp.extrude(thickness))
 
 
-def flat_bar(length: float, width: float, thickness: float, holes: list[tuple[float, float]],
-             hole_d: float) -> cq.Shape:
+def flat_bar(
+    length: float, width: float, thickness: float, holes: list[tuple[float, float]], hole_d: float
+) -> cq.Shape:
     bar = cq.Workplane("XY").box(length, width, thickness, centered=(False, True, False))
-    cut = cq.Workplane("XY").workplane(offset=-1).pushPoints(holes).circle(hole_d / 2).extrude(thickness + 2)
+    cut = (
+        cq.Workplane("XY")
+        .workplane(offset=-1)
+        .pushPoints(holes)
+        .circle(hole_d / 2)
+        .extrude(thickness + 2)
+    )
     return _solid(bar.cut(cut))
 
 
@@ -181,7 +205,11 @@ def dome_shell(diameter: float, wall: float) -> cq.Shape:
     """Half-sphere shell, open at the bottom."""
     outer = cq.Workplane("XY").sphere(diameter / 2)
     inner = cq.Workplane("XY").sphere(diameter / 2 - wall)
-    cut_below = cq.Workplane("XY").box(diameter * 2, diameter * 2, diameter, centered=(True, True, False)).translate((0, 0, -diameter))
+    cut_below = (
+        cq.Workplane("XY")
+        .box(diameter * 2, diameter * 2, diameter, centered=(True, True, False))
+        .translate((0, 0, -diameter))
+    )
     return _solid(outer.cut(inner).cut(cut_below))
 
 
@@ -194,10 +222,17 @@ def shell_box(length: float, width: float, height: float, wall: float, open_top:
     return _solid(box.faces(face).shell(-wall))
 
 
-def plate_with_holes(length: float, width: float, thickness: float,
-                     holes: list[tuple[float, float]], hole_d: float) -> cq.Shape:
+def plate_with_holes(
+    length: float, width: float, thickness: float, holes: list[tuple[float, float]], hole_d: float
+) -> cq.Shape:
     plate = cq.Workplane("XY").box(length, width, thickness, centered=(True, True, False))
-    cut = cq.Workplane("XY").workplane(offset=-1).pushPoints(holes).circle(hole_d / 2).extrude(thickness + 2)
+    cut = (
+        cq.Workplane("XY")
+        .workplane(offset=-1)
+        .pushPoints(holes)
+        .circle(hole_d / 2)
+        .extrude(thickness + 2)
+    )
     return _solid(plate.cut(cut))
 
 
@@ -220,9 +255,7 @@ def bent_clip(length: float, width: float, t: float) -> cq.Shape:
 
 
 def rect_ring(outer: tuple[float, float], inner: tuple[float, float], t: float) -> cq.Shape:
-    return _solid(
-        cq.Workplane("XY").rect(*outer).rect(*inner).extrude(t)
-    )
+    return _solid(cq.Workplane("XY").rect(*outer).rect(*inner).extrude(t))
 
 
 def cylinder(diameter: float, length: float) -> cq.Shape:

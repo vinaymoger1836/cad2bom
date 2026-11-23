@@ -7,7 +7,7 @@ import shutil
 import struct
 import zlib
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -35,7 +35,9 @@ _STEP_TIME_RE = re.compile(r"(FILE_NAME\('[^']*',')([^']*)(')")
 
 def _dump(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+    path.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n"
+    )
 
 
 def _write_text(path: Path, text: str) -> None:
@@ -51,7 +53,9 @@ def _write_step(spec: Spec, path: Path) -> None:
     path.write_bytes(data.encode("latin-1"))
 
 
-def _case_yaml(case: str, title: str, lib: Library, inputs: list[str], expected: list[str], **extra: Any) -> dict[str, Any]:
+def _case_yaml(
+    case: str, title: str, lib: Library, inputs: list[str], expected: list[str], **extra: Any
+) -> dict[str, Any]:
     return {
         "id": case,
         "title": title,
@@ -80,7 +84,9 @@ def _stats(ebom: list[dict[str, Any]], spec: Spec) -> dict[str, Any]:
     }
 
 
-def _base(case: str, title: str, lib: Library, ctx: Ctx, spec: Spec, inputs: list[str]) -> dict[str, Any]:
+def _base(
+    case: str, title: str, lib: Library, ctx: Ctx, spec: Spec, inputs: list[str]
+) -> dict[str, Any]:
     ebom, volumes = build_ebom(ctx, spec)
     return {
         "case": case,
@@ -114,16 +120,27 @@ def build_b1(lib: Library, out: Path) -> None:
         "Part volumes match shapes_volume_mm3 within 0.5%.",
     ]
     _dump(out / DIRS["B1"] / "expected" / "bom.json", bom)
-    _write_case_yaml(out, "B1", _case_yaml(
-        "B1", "Fastener zoo", lib, ["input/fastener_zoo.step"], ["expected/bom.json"],
-        stand_in=False, llm_calls=0,
-    ))
+    _write_case_yaml(
+        out,
+        "B1",
+        _case_yaml(
+            "B1",
+            "Fastener zoo",
+            lib,
+            ["input/fastener_zoo.step"],
+            ["expected/bom.json"],
+            stand_in=False,
+            llm_calls=0,
+        ),
+    )
 
 
 # --- B2 ---------------------------------------------------------------------------------------------
 
 
-def _b2_expected(lib: Library, ctx: Ctx, spec: Spec, case: str, title: str, inputs: list[str]) -> dict[str, Any]:
+def _b2_expected(
+    lib: Library, ctx: Ctx, spec: Spec, case: str, title: str, inputs: list[str]
+) -> dict[str, Any]:
     bom = _base(case, title, lib, ctx, spec, inputs)
     bom["mbom"] = build_mbom(ctx, bom["ebom"])
     bom["llm_calls"] = 0
@@ -145,10 +162,19 @@ def build_b2(lib: Library, out: Path) -> Spec:
         "Custom-part descriptions are provisional (description_exact is false): dimensions are exact, wording may change in P6.",
     ]
     _dump(out / DIRS["B2"] / "expected" / "bom.json", bom)
-    _write_case_yaml(out, "B2", _case_yaml(
-        "B2", "Bracket assembly", lib, ["input/bracket_assembly.step"], ["expected/bom.json"],
-        stand_in=False, llm_calls=0,
-    ))
+    _write_case_yaml(
+        out,
+        "B2",
+        _case_yaml(
+            "B2",
+            "Bracket assembly",
+            lib,
+            ["input/bracket_assembly.step"],
+            ["expected/bom.json"],
+            stand_in=False,
+            llm_calls=0,
+        ),
+    )
     return spec
 
 
@@ -167,7 +193,12 @@ def _placeholder_png(path: Path) -> None:
     raw = b"".join(b"\x00" + bytes([150]) * w for _ in range(h))
 
     def chunk(tag: bytes, data: bytes) -> bytes:
-        return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+        return (
+            struct.pack(">I", len(data))
+            + tag
+            + data
+            + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+        )
 
     png = (
         b"\x89PNG\r\n\x1a\n"
@@ -186,7 +217,14 @@ def build_b3(lib: Library, out: Path) -> None:
     _write_step(spec, d / "input" / "fan.step")
     _write_text(d / "input" / "details.txt", B3_DETAILS)
     _placeholder_png(d / "input" / "photo.png")
-    bom = _b2_expected(lib, ctx, spec, "B3", "Ceiling fan (STAND-IN model)", ["input/fan.step", "input/details.txt", "input/photo.png"])
+    bom = _b2_expected(
+        lib,
+        ctx,
+        spec,
+        "B3",
+        "Ceiling fan (STAND-IN model)",
+        ["input/fan.step", "input/details.txt", "input/photo.png"],
+    )
     bom["stand_in"] = True
     bom["stand_in_note"] = (
         "The real '13-solid fan STEP from the S2 demo' is not in the repository. input/fan.step is a "
@@ -217,25 +255,64 @@ def build_b3(lib: Library, out: Path) -> None:
         }
     ]
     suggestions = [
-        {"id": "S-001", "class": "label.rating", "rule": "R-GAP-001", "origin": "gap_rule", "level": "ebom", "qty": 1,
-         "text": "Add a rating label?", "review": "suggested"},
-        {"id": "S-002", "class": "documentation.manual", "rule": "R-GAP-002", "origin": "gap_rule", "level": "ebom", "qty": 1,
-         "text": "Add a user manual?", "review": "suggested"},
-        {"id": "S-003", "class": "packaging.carton", "rule": "R-GAP-003", "origin": "gap_rule", "level": "mbom", "qty": 1,
-         "text": "Add a shipper carton?", "review": "suggested"},
-        {"id": "S-004", "class": "consumable.solder", "rule": "R-GAP-021", "origin": "gap_rule", "level": "mbom",
-         "qty": None, "qty_note": "per_joint_estimate; the engine proposes the number, it is not asserted here",
-         "text": "Add solder? The receiver board is hand soldered (details text).", "review": "suggested"},
+        {
+            "id": "S-001",
+            "class": "label.rating",
+            "rule": "R-GAP-001",
+            "origin": "gap_rule",
+            "level": "ebom",
+            "qty": 1,
+            "text": "Add a rating label?",
+            "review": "suggested",
+        },
+        {
+            "id": "S-002",
+            "class": "documentation.manual",
+            "rule": "R-GAP-002",
+            "origin": "gap_rule",
+            "level": "ebom",
+            "qty": 1,
+            "text": "Add a user manual?",
+            "review": "suggested",
+        },
+        {
+            "id": "S-003",
+            "class": "packaging.carton",
+            "rule": "R-GAP-003",
+            "origin": "gap_rule",
+            "level": "mbom",
+            "qty": 1,
+            "text": "Add a shipper carton?",
+            "review": "suggested",
+        },
+        {
+            "id": "S-004",
+            "class": "consumable.solder",
+            "rule": "R-GAP-021",
+            "origin": "gap_rule",
+            "level": "mbom",
+            "qty": None,
+            "qty_note": "per_joint_estimate; the engine proposes the number, it is not asserted here",
+            "text": "Add solder? The receiver board is hand soldered (details text).",
+            "review": "suggested",
+        },
     ]
     _dump(d / "expected" / "bom.json", bom)
     _dump(d / "expected" / "questions.json", questions)
     _dump(d / "expected" / "suggestions.json", suggestions)
-    _write_case_yaml(out, "B3", _case_yaml(
-        "B3", "Ceiling fan (stand-in model)", lib, ["input/fan.step", "input/details.txt", "input/photo.png"],
-        ["expected/bom.json", "expected/questions.json", "expected/suggestions.json"],
-        stand_in=True,
-        vision_cassette="to be recorded in P5; photo.png is a grey placeholder",
-    ))
+    _write_case_yaml(
+        out,
+        "B3",
+        _case_yaml(
+            "B3",
+            "Ceiling fan (stand-in model)",
+            lib,
+            ["input/fan.step", "input/details.txt", "input/photo.png"],
+            ["expected/bom.json", "expected/questions.json", "expected/suggestions.json"],
+            stand_in=True,
+            vision_cassette="to be recorded in P5; photo.png is a grey placeholder",
+        ),
+    )
 
 
 # --- B4 ---------------------------------------------------------------------------------------------
@@ -264,8 +341,12 @@ def build_b4(lib: Library, out: Path) -> None:
         "columns": {
             "Pos": {"field": "find_no", "by": "rules"},
             "Teilenummer": {"field": "part_number", "by": "rules"},
-            "Item": {"field": "description", "by": "extractor_L3", "confirmed_by_user": True,
-                     "why": "header 'Item' scores for find_no (also claimed by 'Pos'); values are long text"},
+            "Item": {
+                "field": "description",
+                "by": "extractor_L3",
+                "confirmed_by_user": True,
+                "why": "header 'Item' scores for find_no (also claimed by 'Pos'); values are long text",
+            },
             "Menge": {"field": "quantity", "by": "rules"},
             "Unit": {"field": "uom", "by": "rules"},
             "Designator": {"field": "refdes", "by": "rules"},
@@ -312,23 +393,59 @@ def build_b4(lib: Library, out: Path) -> None:
         "lines": lines,
     }
     suggestions = [
-        {"id": "S-001", "class": "documentation.manual", "rule": "R-GAP-002", "origin": "gap_rule", "level": "ebom",
-         "text": "Add a user manual?", "review": "suggested"},
-        {"id": "S-002", "class": "packaging.carton", "rule": "R-GAP-003", "origin": "gap_rule", "level": "mbom",
-         "text": "Add a shipper carton?", "review": "suggested"},
-        {"id": "S-003", "class": "label.transport", "rule": "R-GAP-004", "origin": "gap_rule", "level": "ebom",
-         "text": "Lithium cells are present: add a transport label?", "review": "suggested"},
-        {"id": "S-004", "class": "consumable.solder", "rule": "archetype:power_bank", "origin": "skeleton", "level": "mbom",
-         "text": "Power banks usually need solder for hand or wave soldered joints. Add it?", "review": "suggested"},
+        {
+            "id": "S-001",
+            "class": "documentation.manual",
+            "rule": "R-GAP-002",
+            "origin": "gap_rule",
+            "level": "ebom",
+            "text": "Add a user manual?",
+            "review": "suggested",
+        },
+        {
+            "id": "S-002",
+            "class": "packaging.carton",
+            "rule": "R-GAP-003",
+            "origin": "gap_rule",
+            "level": "mbom",
+            "text": "Add a shipper carton?",
+            "review": "suggested",
+        },
+        {
+            "id": "S-003",
+            "class": "label.transport",
+            "rule": "R-GAP-004",
+            "origin": "gap_rule",
+            "level": "ebom",
+            "text": "Lithium cells are present: add a transport label?",
+            "review": "suggested",
+        },
+        {
+            "id": "S-004",
+            "class": "consumable.solder",
+            "rule": "archetype:power_bank",
+            "origin": "skeleton",
+            "level": "mbom",
+            "text": "Power banks usually need solder for hand or wave soldered joints. Add it?",
+            "review": "suggested",
+        },
     ]
     _dump(d / "expected" / "mapping.json", mapping)
     _dump(d / "expected" / "bom.json", bom)
     _dump(d / "expected" / "suggestions.json", suggestions)
-    _write_case_yaml(out, "B4", _case_yaml(
-        "B4", "Power bank BoM file", lib, ["input/supplier_bom.xlsx"],
-        ["expected/mapping.json", "expected/bom.json", "expected/suggestions.json"],
-        stand_in=False, extractor_cassette="to be recorded in P5 (header mapping for 'Item')",
-    ))
+    _write_case_yaml(
+        out,
+        "B4",
+        _case_yaml(
+            "B4",
+            "Power bank BoM file",
+            lib,
+            ["input/supplier_bom.xlsx"],
+            ["expected/mapping.json", "expected/bom.json", "expected/suggestions.json"],
+            stand_in=False,
+            extractor_cassette="to be recorded in P5 (header mapping for 'Item')",
+        ),
+    )
 
 
 # --- B5 ---------------------------------------------------------------------------------------------
@@ -344,10 +461,16 @@ def build_b5(lib: Library, out: Path, b2_spec: Spec) -> None:
     screw = by_name["Part1"]
     questions = [
         {
-            "id": "Q-001", "kind": "choice", "blocking": True, "line_ids": ["user:SCR-1004", screw["id"]],
+            "id": "Q-001",
+            "kind": "choice",
+            "blocking": True,
+            "line_ids": ["user:SCR-1004", screw["id"]],
             "text": "Screw M4x12 ISO 4762: your BoM says 6, the CAD model shows 4. Which is correct?",
             "options": ["6 (your BoM)", "4 (CAD)"],
-            "evidence": ["bom: row 5 qty 6", f"cad: {screw['cad_name']} qty_total {screw['qty_total']}"],
+            "evidence": [
+                "bom: row 5 qty 6",
+                f"cad: {screw['cad_name']} qty_total {screw['qty_total']}",
+            ],
             "answer": None,
             "note": "The user's value 6 is kept until answered; the line is never rewritten.",
         }
@@ -355,8 +478,12 @@ def build_b5(lib: Library, out: Path, b2_spec: Spec) -> None:
     missing = ["Shaft", "Part2", "Part3"]
     suggestions = [
         {
-            "id": f"S-{i + 1:03d}", "origin": "cad", "review": "suggested", "cad_name": by_name[n]["cad_name"],
-            "class": by_name[n]["class"], "qty_total": by_name[n]["qty_total"],
+            "id": f"S-{i + 1:03d}",
+            "origin": "cad",
+            "review": "suggested",
+            "cad_name": by_name[n]["cad_name"],
+            "class": by_name[n]["class"],
+            "qty_total": by_name[n]["qty_total"],
             "text": f"CAD shows {by_name[n]['description']} ({by_name[n]['qty_total']}x). Add it to the BoM?",
         }
         for i, n in enumerate(missing)
@@ -373,21 +500,36 @@ def build_b5(lib: Library, out: Path, b2_spec: Spec) -> None:
             "User rows are unchanged in `raw`.",
         ],
         "user_rows_raw": raw_rows,
-        "matched_user_rows": {"BRK-1001": "Bracket", "CVR-1002": "Cover", "BLK-1003": "Block", "SCR-1004": "Part1 (ISO 4762 M4x12)"},
+        "matched_user_rows": {
+            "BRK-1001": "Bracket",
+            "CVR-1002": "Cover",
+            "BLK-1003": "Block",
+            "SCR-1004": "Part1 (ISO 4762 M4x12)",
+        },
         "approval_blocked_initially": True,
     }
     _dump(d / "expected" / "expected.json", expected)
     _dump(d / "expected" / "questions.json", questions)
     _dump(d / "expected" / "suggestions.json", suggestions)
-    _write_case_yaml(out, "B5", _case_yaml(
-        "B5", "CAD plus incomplete BoM", lib, ["input/bracket_assembly.step", "input/user_bom.xlsx"],
-        ["expected/expected.json", "expected/questions.json", "expected/suggestions.json"], stand_in=False,
-    ))
+    _write_case_yaml(
+        out,
+        "B5",
+        _case_yaml(
+            "B5",
+            "CAD plus incomplete BoM",
+            lib,
+            ["input/bracket_assembly.step", "input/user_bom.xlsx"],
+            ["expected/expected.json", "expected/questions.json", "expected/suggestions.json"],
+            stand_in=False,
+        ),
+    )
 
 
 # --- B6 ---------------------------------------------------------------------------------------------
 
-B6_DETAILS = "Handheld soil-moisture controller with a rotary knob, one button and a rechargeable cell.\n"
+B6_DETAILS = (
+    "Handheld soil-moisture controller with a rotary knob, one button and a rechargeable cell.\n"
+)
 
 
 def build_b6(lib: Library, out: Path) -> None:
@@ -405,7 +547,9 @@ def build_b6(lib: Library, out: Path) -> None:
                 "qty_total": child.qty,
                 "geometry_note": child.note,
                 "acceptable_classes": child.acceptable_classes,
-                "cad_volume_mm3": round(child.shape.Volume(), 2) if child.shape is not None else None,
+                "cad_volume_mm3": round(child.shape.Volume(), 2)
+                if child.shape is not None
+                else None,
             }
         )
     bom = {
@@ -443,18 +587,30 @@ def build_b6(lib: Library, out: Path) -> None:
     }
     _dump(d / "expected" / "bom.json", bom)
     _dump(d / "expected" / "llm_expectations.json", llm)
-    _write_case_yaml(out, "B6", _case_yaml(
-        "B6", "Unknown product type", lib, ["input/unknown_product.step", "input/details.txt"],
-        ["expected/bom.json", "expected/llm_expectations.json"], stand_in=False,
-        cassette="to be recorded in P5",
-    ))
+    _write_case_yaml(
+        out,
+        "B6",
+        _case_yaml(
+            "B6",
+            "Unknown product type",
+            lib,
+            ["input/unknown_product.step", "input/details.txt"],
+            ["expected/bom.json", "expected/llm_expectations.json"],
+            stand_in=False,
+            cassette="to be recorded in P5",
+        ),
+    )
 
 
 # --- B3b: the owner's real fan.STEP, measured, not classified ------------------------------------------
 
 
 def _tree_json(n: StepNode) -> dict[str, Any]:
-    out: dict[str, Any] = {"name": n.name, "kind": "assembly" if n.is_assembly else "solid", "instances": n.count}
+    out: dict[str, Any] = {
+        "name": n.name,
+        "kind": "assembly" if n.is_assembly else "solid",
+        "instances": n.count,
+    }
     if n.volume_mm3 is not None:
         out["volume_mm3"] = round(n.volume_mm3, 2)
     if n.children:
@@ -474,8 +630,11 @@ def import_real_fan(lib: Library, src: Path, out: Path) -> Path:
     shutil.copyfile(src, dest)
     tree = read_step_tree(dest)
     unique = sorted(
-        ({"name": c.name, "instances": c.count, "volume_mm3": round(c.volume_mm3 or 0.0, 2)} for c in tree.children),
-        key=lambda x: -float(x["volume_mm3"]),
+        (
+            {"name": c.name, "instances": c.count, "volume_mm3": round(c.volume_mm3 or 0.0, 2)}
+            for c in tree.children
+        ),
+        key=lambda x: -cast(float, x["volume_mm3"]),
     )
     data = {
         "case": "B3b",
@@ -522,7 +681,9 @@ def build(lib: Library, out: Path, selected: list[str]) -> list[Path]:
         build_b5(lib, out, b2_spec or cases.case_b2(lib))
     if "B6" in want:
         build_b6(lib, out)
-    return sorted(p for p in out.rglob("*") if p.is_file() and any(DIRS[c] in p.parts for c in want))
+    return sorted(
+        p for p in out.rglob("*") if p.is_file() and any(DIRS[c] in p.parts for c in want)
+    )
 
 
 def write_readme(out: Path, lib: Library) -> None:

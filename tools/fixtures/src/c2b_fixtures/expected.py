@@ -45,7 +45,11 @@ def describe(ctx: Ctx, spec: Spec, cls: ResolvedClass, default: dict[str, Any] |
         or (ctx.materials[default["material"]].display if default else ""),
         "finish": (default or {}).get("finish") or "",
     }
-    parts = [values.get(name, "") for _, name, _, _ in Formatter().parse(cls.description_template) if name]
+    parts = [
+        values.get(name, "")
+        for _, name, _, _ in Formatter().parse(cls.description_template)
+        if name
+    ]
     text = ctx.profile.descriptions.separator.join(p for p in parts if p)
     case = ctx.profile.descriptions.case
     return text.upper() if case == "upper" else text

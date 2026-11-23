@@ -38,8 +38,16 @@ def expected_counts(lib: Library) -> dict[str, int]:
 
 def _counts(conn: psycopg.Connection[Any], version: str) -> dict[str, int]:
     out: dict[str, int] = {}
-    for table in ("library_class", "library_material", "library_standard", "library_synonym", "library_rule"):
-        row = conn.execute(f"SELECT count(*) FROM {table} WHERE version = %s", (version,)).fetchone()  # noqa: S608
+    for table in (
+        "library_class",
+        "library_material",
+        "library_standard",
+        "library_synonym",
+        "library_rule",
+    ):
+        row = conn.execute(
+            f"SELECT count(*) FROM {table} WHERE version = %s", (version,)
+        ).fetchone()  # noqa: S608
         out[table] = int(row[0]) if row else 0
     return out
 
@@ -48,7 +56,9 @@ def store(lib: Library, conn: psycopg.Connection[Any]) -> LoadResult:
     """Write the library as one version in a single transaction. Idempotent for equal content."""
     v = lib.version.version
     with conn.transaction():
-        row = conn.execute("SELECT checksum FROM library_version WHERE version = %s", (v,)).fetchone()
+        row = conn.execute(
+            "SELECT checksum FROM library_version WHERE version = %s", (v,)
+        ).fetchone()
         if row is not None:
             if row[0] == lib.checksum:
                 return LoadResult("unchanged", v, _counts(conn, v))
@@ -69,9 +79,20 @@ def store(lib: Library, conn: psycopg.Connection[Any]) -> LoadResult:
                 "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 [
                     (
-                        v, c.code, c.parent, c.noun, Jsonb(c.modifiers), c.uom, c.make_buy_default,
-                        c.usually_modelled, c.buy_as_assembly, c.description_template,
-                        Jsonb(c.standard_families), c.material_default_profile_key, c.unspsc, c.note,
+                        v,
+                        c.code,
+                        c.parent,
+                        c.noun,
+                        Jsonb(c.modifiers),
+                        c.uom,
+                        c.make_buy_default,
+                        c.usually_modelled,
+                        c.buy_as_assembly,
+                        c.description_template,
+                        Jsonb(c.standard_families),
+                        c.material_default_profile_key,
+                        c.unspsc,
+                        c.note,
                     )
                     for c in lib.taxonomy.resolved()
                 ],
@@ -80,7 +101,15 @@ def store(lib: Library, conn: psycopg.Connection[Any]) -> LoadResult:
                 "INSERT INTO library_material (version, code, family, display, density_g_cm3, "
                 "designations, body) VALUES (%s,%s,%s,%s,%s,%s,%s)",
                 [
-                    (v, m.code, m.family, m.display, m.density_g_cm3, Jsonb(m.designations), Jsonb(_dump(m)))
+                    (
+                        v,
+                        m.code,
+                        m.family,
+                        m.display,
+                        m.density_g_cm3,
+                        Jsonb(m.designations),
+                        Jsonb(_dump(m)),
+                    )
                     for m in lib.materials.materials
                 ],
             )
@@ -97,8 +126,14 @@ def store(lib: Library, conn: psycopg.Connection[Any]) -> LoadResult:
                 "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
                 [
                     (
-                        v, norm_token(tok), e.class_, sf.lang, e.weight, e.kind,
-                        Jsonb(e.context) if e.context else None, rel,
+                        v,
+                        norm_token(tok),
+                        e.class_,
+                        sf.lang,
+                        e.weight,
+                        e.kind,
+                        Jsonb(e.context) if e.context else None,
+                        rel,
                     )
                     for rel, sf in lib.synonyms.items()
                     for e in sf.entries
@@ -125,7 +160,9 @@ def store(lib: Library, conn: psycopg.Connection[Any]) -> LoadResult:
                 if sf.patterns:
                     blobs.append((v, "size_patterns", rel, Jsonb([_dump(p) for p in sf.patterns])))
                 if sf.prefixes:
-                    blobs.append((v, "vendor_prefixes", rel, Jsonb([_dump(p) for p in sf.prefixes])))
+                    blobs.append(
+                        (v, "vendor_prefixes", rel, Jsonb([_dump(p) for p in sf.prefixes]))
+                    )
             cur.executemany(
                 "INSERT INTO library_blob (version, kind, name, body) VALUES (%s,%s,%s,%s)", blobs
             )
@@ -133,7 +170,9 @@ def store(lib: Library, conn: psycopg.Connection[Any]) -> LoadResult:
 
 
 def latest_version(conn: psycopg.Connection[Any]) -> str | None:
-    row = conn.execute("SELECT version FROM library_version ORDER BY loaded_at DESC LIMIT 1").fetchone()
+    row = conn.execute(
+        "SELECT version FROM library_version ORDER BY loaded_at DESC LIMIT 1"
+    ).fetchone()
     return str(row[0]) if row else None
 
 

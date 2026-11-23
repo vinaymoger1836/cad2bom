@@ -193,7 +193,10 @@ def _check_materials_profiles(lib: Library) -> list[Issue]:
             if d.material not in codes:
                 out.append(
                     Issue(
-                        "error", "L-PRO-001", pname, f"defaults.{key}: unknown material {d.material}"
+                        "error",
+                        "L-PRO-001",
+                        pname,
+                        f"defaults.{key}: unknown material {d.material}",
                     )
                 )
         prefixes = p.numbering.prefixes
@@ -210,7 +213,9 @@ def _check_materials_profiles(lib: Library) -> list[Issue]:
         for key in prefixes:
             if key != "default" and key not in roots:
                 out.append(
-                    Issue("error", "L-PRO-003", pname, f"numbering prefix for unknown family {key!r}")
+                    Issue(
+                        "error", "L-PRO-003", pname, f"numbering prefix for unknown family {key!r}"
+                    )
                 )
         if "default" not in prefixes:
             out.append(Issue("error", "L-PRO-004", pname, "numbering.prefixes needs a 'default'"))
@@ -231,7 +236,10 @@ def _check_units(lib: Library) -> list[Issue]:
             if k in seen and seen[k] != u.code:
                 out.append(
                     Issue(
-                        "error", "L-UNI-001", "units.yaml", f"alias {a!r} maps to {seen[k]} and {u.code}"
+                        "error",
+                        "L-UNI-001",
+                        "units.yaml",
+                        f"alias {a!r} maps to {seen[k]} and {u.code}",
                     )
                 )
             seen[k] = u.code
@@ -247,7 +255,9 @@ def _check_standards(lib: Library) -> list[Issue]:
     keys: dict[str, str] = {}
     for rel, t in lib.standards.items():
         if t.key in keys:
-            out.append(Issue("error", "L-STD-001", rel, f"duplicate key {t.key} (also {keys[t.key]})"))
+            out.append(
+                Issue("error", "L-STD-001", rel, f"duplicate key {t.key} (also {keys[t.key]})")
+            )
         keys[t.key] = rel
         if t.class_ not in codes:
             out.append(Issue("error", "L-STD-002", rel, f"class {t.class_} not in taxonomy"))
@@ -279,7 +289,9 @@ def _check_one_table(rel: str, t: StandardTable) -> list[Issue]:
         for d in t.dims:
             v = row.get(d)
             if not isinstance(v, int | float) or isinstance(v, bool):
-                out.append(Issue("error", "L-STD-005", rel, f"{label}: dim {d!r} missing or not numeric"))
+                out.append(
+                    Issue("error", "L-STD-005", rel, f"{label}: dim {d!r} missing or not numeric")
+                )
             elif v <= 0:
                 out.append(Issue("error", "L-STD-005", rel, f"{label}: dim {d!r} must be positive"))
         m = _SIZE_NUM_RE.match(label)
@@ -292,9 +304,7 @@ def _check_one_table(rel: str, t: StandardTable) -> list[Issue]:
                 out.append(Issue("error", "L-STD-007", rel, f"{label}: l_min must be below l_max"))
             elif t.lengths_mm and (lo not in t.lengths_mm or hi not in t.lengths_mm):
                 out.append(
-                    Issue(
-                        "error", "L-STD-007", rel, f"{label}: l_min/l_max are not in lengths_mm"
-                    )
+                    Issue("error", "L-STD-007", rel, f"{label}: l_min/l_max are not in lengths_mm")
                 )
 
     # Monotonic inside each group (the whole table when group_by is unset).
@@ -358,28 +368,39 @@ def _check_synonyms(lib: Library) -> list[Issue]:
     for rel, sf in lib.synonyms.items():
         for e in sf.entries:
             if e.class_ not in codes:
-                out.append(Issue("error", "L-SYN-002", rel, f"{e.tokens}: class {e.class_} unknown"))
+                out.append(
+                    Issue("error", "L-SYN-002", rel, f"{e.tokens}: class {e.class_} unknown")
+                )
         for p in sf.patterns:
             if p.id in pat_ids:
                 out.append(Issue("error", "L-SYN-003", rel, f"duplicate pattern id {p.id}"))
             pat_ids.add(p.id)
             m = re.search(p.regex, p.example)
             if not m:
-                out.append(Issue("error", "L-SYN-004", rel, f"pattern {p.id} does not match its example"))
+                out.append(
+                    Issue("error", "L-SYN-004", rel, f"pattern {p.id} does not match its example")
+                )
             else:
                 for name, idx in p.yields.items():
                     if idx > (m.re.groups or 0):
                         out.append(
-                            Issue("error", "L-SYN-004", rel, f"pattern {p.id}: group {idx} ({name}) absent")
+                            Issue(
+                                "error",
+                                "L-SYN-004",
+                                rel,
+                                f"pattern {p.id}: group {idx} ({name}) absent",
+                            )
                         )
         for v in sf.prefixes:
             if not re.search(v.regex, v.example):
-                out.append(Issue("error", "L-SYN-004", rel, f"prefix {v.vendor} does not match its example"))
+                out.append(
+                    Issue(
+                        "error", "L-SYN-004", rel, f"prefix {v.vendor} does not match its example"
+                    )
+                )
     for tok, rows in synonym_collisions(lib).items():
         where = ", ".join(f"{c} ({f})" for c, f in rows)
-        out.append(
-            Issue("warning", "L-SYN-001", "synonyms", f"collision on {tok!r} -> {where}")
-        )
+        out.append(Issue("warning", "L-SYN-001", "synonyms", f"collision on {tok!r} -> {where}"))
     return out
 
 
@@ -402,12 +423,18 @@ def _check_rules(lib: Library) -> list[Issue]:
                     Issue("error", "L-RUL-002", rel, f"{r.id} does not start with {rf.id_prefix}")
                 )
             if r.stage != rf.stage:
-                out.append(Issue("error", "L-RUL-003", rel, f"{r.id}: stage {r.stage} != file {rf.stage}"))
-            refs = _walk(r.when, {"class_is", "parent_class_is", "product_has_class", "not_has_class"})
+                out.append(
+                    Issue("error", "L-RUL-003", rel, f"{r.id}: stage {r.stage} != file {rf.stage}")
+                )
+            refs = _walk(
+                r.when, {"class_is", "parent_class_is", "product_has_class", "not_has_class"}
+            )
             refs += _walk(r.then, {"class"})
             for ref in refs:
                 if ref not in codes:
-                    out.append(Issue("error", "L-RUL-004", rel, f"{r.id}: class {ref} not in taxonomy"))
+                    out.append(
+                        Issue("error", "L-RUL-004", rel, f"{r.id}: class {ref} not in taxonomy")
+                    )
             for ref in _walk(r.when, {"material_in"}) + _walk(r.then, {"material"}):
                 if ref not in mats:
                     out.append(Issue("error", "L-RUL-005", rel, f"{r.id}: material {ref} unknown"))

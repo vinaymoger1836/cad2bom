@@ -32,7 +32,9 @@ class Node:
     shape: cq.Shape | None = None
     children: list[tuple["Node", str, cq.Location]] = field(default_factory=list)
 
-    def add(self, child: "Node", instance_name: str | None = None, loc: cq.Location | None = None) -> "Node":
+    def add(
+        self, child: "Node", instance_name: str | None = None, loc: cq.Location | None = None
+    ) -> "Node":
         self.children.append((child, instance_name or child.name, loc or cq.Location()))
         return self
 
@@ -130,7 +132,11 @@ def read_step_tree(path: Path) -> StepNode:
             st.GetReferredShape_s(comp, ref)
             key = f"{ref.Tag()}"
             prev = grouped.get(key)
-            grouped[key] = (ref, (prev[1] if prev else 0) + 1, prev[2] if prev else _label_name(comp))
+            grouped[key] = (
+                ref,
+                (prev[1] if prev else 0) + 1,
+                prev[2] if prev else _label_name(comp),
+            )
         for ref, n, _inst in grouped.values():
             node.children.append(walk(ref, n))
         return node

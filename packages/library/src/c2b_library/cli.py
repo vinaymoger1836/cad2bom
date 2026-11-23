@@ -105,7 +105,10 @@ def cmd_load(args: argparse.Namespace) -> int:
         print(f"refused: {exc}", file=sys.stderr)
         return 3
     except psycopg.errors.UndefinedTable:
-        print("error: library tables are missing. Run with --migrate or start the api once.", file=sys.stderr)
+        print(
+            "error: library tables are missing. Run with --migrate or start the api once.",
+            file=sys.stderr,
+        )
         return 2
     print(f"{result.status}: library {result.version} " + json.dumps(result.counts, sort_keys=True))
     return 0
@@ -133,7 +136,9 @@ def cmd_search(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="c2b-library", description="Validate, load and search library/ YAML.")
+    p = argparse.ArgumentParser(
+        prog="c2b-library", description="Validate, load and search library/ YAML."
+    )
     sub = p.add_subparsers(dest="cmd", required=True)
     default_path = _find_default_path()
 
