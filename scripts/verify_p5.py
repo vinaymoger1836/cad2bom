@@ -44,17 +44,13 @@ def test_b1_and_b2_zero_llm_calls(library) -> tuple[int, int]:
     t0 = time.perf_counter()
     b1_step = Path("golden/B1_fastener_zoo/input/fastener_zoo.step")
     b1_cad = extract_step(b1_step)
-    print(f"  [1/4] Extracted B1 in {time.perf_counter() - t0:.2f}s", flush=True)
-    print("  [DEBUG] Calling build_ebom for B1...", flush=True)
     b1_draft = build_ebom(b1_cad, library, "B1")
-    print("  [DEBUG] Finished build_ebom for B1. Calling resolve_draft_with_ladder...", flush=True)
     # Run ladder resolution
     import asyncio
     t1 = time.perf_counter()
     b1_draft = asyncio.run(
         resolve_draft_with_ladder(b1_draft, library, router, b1_cad, product_desc="")
     )
-    print("  [DEBUG] Finished resolve_draft_with_ladder for B1.", flush=True)
     print(f"  [2/4] Resolved B1 ladder in {time.perf_counter() - t1:.2f}s", flush=True)
 
     b1_calls = len(router.call_logs)
