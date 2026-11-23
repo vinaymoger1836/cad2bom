@@ -12,4 +12,4 @@ rules_asserted: false
 rules_note: Rule ids are not asserted until the rules engine exists (P3); values below
   are.
 stand_in: false
-cassette: to be recorded in P5
+cassette: cassettes/b6/

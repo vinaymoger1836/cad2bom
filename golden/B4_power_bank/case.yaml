@@ -12,4 +12,4 @@ rules_asserted: false
 rules_note: Rule ids are not asserted until the rules engine exists (P3); values below
   are.
 stand_in: false
-extractor_cassette: to be recorded in P5 (header mapping for 'Item')
+extractor_cassette: cassettes/b4/6d4aa47bc523b845.json
