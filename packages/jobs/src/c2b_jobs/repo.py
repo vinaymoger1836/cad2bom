@@ -70,6 +70,19 @@ async def claim_start(pool: Pool, job_id: UUID) -> bool:
         return await cur.fetchone() is not None
 
 
+async def seconds_since_last_event(pool: Pool, job_id: UUID) -> float | None:
+    """Seconds since the job last reported anything (None if it never did)."""
+    async with pool.connection() as conn:
+        cur = await conn.execute(
+            "SELECT EXTRACT(EPOCH FROM (now() - max(created_at))) AS idle"
+            " FROM job_event WHERE job_id = %s",
+            (job_id,),
+        )
+        row = await cur.fetchone()
+    idle = row["idle"] if row else None
+    return float(idle) if idle is not None else None
+
+
 async def add_event(
     pool: Pool,
     job_id: UUID,

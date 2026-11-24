@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { Link, useLocation, useParams } from "react-router";
-import type { JobEvent, JobOut } from "@c2b/ts-types";
+import type { BomDraft, JobEvent, JobOut } from "@c2b/ts-types";
 import { Qa, Term, WhatHappens } from "../components/Help";
 import { ProgressPanel, type ProgressItem } from "../components/ProgressPanel";
 import {
   ApiError,
+  getBom,
   getConfig,
   getJob,
   startJob,
@@ -31,6 +32,12 @@ function fmtSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   if (bytes >= 1024) return `${Math.round(bytes / 1024).toString()} KB`;
   return `${bytes.toString()} bytes`;
+}
+
+function fmtDuration(totalSeconds: number): string {
+  const m = Math.floor(totalSeconds / 60);
+  const sec = totalSeconds % 60;
+  return m > 0 ? `${m.toString()} min ${sec.toString()} s` : `${sec.toString()} s`;
 }
 
 function extOf(name: string): string {
@@ -76,6 +83,9 @@ export function JobUpload() {
   const [uploading, setUploading] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [events, setEvents] = useState<ProgressItem[]>([]);
+  const [firstAt, setFirstAt] = useState<number | null>(null);
+  const [lastAt, setLastAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const [copied, setCopied] = useState(false);
   const [dragging, setDragging] = useState(false);
   const nextKey = useRef(1);
@@ -104,6 +114,60 @@ export function JobUpload() {
   }, [id, token]);
 
   const started = job !== null && job.status !== "uploading";
+  const running = job !== null && (job.status === "extracting" || job.status === "building");
+
+  // The live stream can drop or miss an event. While a build is running, also ask for the job's
+  // state every few seconds (the server also stops builds that went silent), and tick a clock.
+  useEffect(() => {
+    if (!token || !running) return;
+    const poll = window.setInterval(() => {
+      getJob(id, token)
+        .then((j) => {
+          setJob((cur) => (cur && cur.status !== j.status ? { ...cur, status: j.status } : cur));
+        })
+        .catch(() => {
+          /* the next tick tries again */
+        });
+    }, 5000);
+    const tick = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => {
+      window.clearInterval(poll);
+      window.clearInterval(tick);
+    };
+  }, [id, token, running]);
+
+  const [draft, setDraft] = useState<BomDraft | null>(null);
+  const [draftError, setDraftError] = useState<string | null>(null);
+  const finished = job?.status === "review" || job?.status === "approved";
+
+  // When the build is done, fetch the draft so this page can say what came out of it.
+  useEffect(() => {
+    if (!token || !finished) return;
+    let cancelled = false;
+    getBom(id, token)
+      .then((d) => {
+        if (!cancelled) setDraft(d);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setDraftError(e instanceof ApiError ? e.message : "Could not load the draft BoM.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, token, finished]);
+
+  function downloadDraft() {
+    if (!draft) return;
+    const blob = new Blob([JSON.stringify(draft, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `draft-bom-${id.slice(0, 8)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   // Follow progress once the build has started (also replays history when you come back).
   useEffect(() => {
@@ -119,6 +183,11 @@ export function JobUpload() {
           setEvents((prev) =>
             prev.some((p) => p.id === ev.id) ? prev : [...prev, { id: ev.id, kind: ev.kind, message: ev.message }],
           );
+          const at = Date.parse(ev.created_at);
+          if (!Number.isNaN(at)) {
+            setFirstAt((f) => (f === null || at < f ? at : f));
+            setLastAt((l) => (l === null || at > l ? at : l));
+          }
           const next = (ev.data as { status?: string }).status;
           if (ev.kind === "status" && typeof next === "string") {
             setJob((j) => (j ? { ...j, status: next as JobOut["status"] } : j));
@@ -230,16 +299,31 @@ export function JobUpload() {
   }
 
   const status = job?.status ?? "uploading";
-  const sawStub = events.some((e) => e.kind === "cad_stub");
   const failed = status === "failed";
-  const fraction = failed ? 0.5 : sawStub ? 1 : status === "extracting" ? 0.5 : started ? 0.2 : 0;
+  const fraction = failed
+    ? 0.5
+    : finished
+      ? 1
+      : status === "building"
+        ? 0.65
+        : status === "extracting"
+          ? 0.3
+          : started
+            ? 0.1
+            : 0;
   const hasUploads = (job?.uploads.length ?? 0) > 0;
+  const failureReason =
+    [...events].reverse().find((e) => e.kind === "notice")?.message ??
+    "The build stopped, but no reason was reported.";
+  const elapsedS = firstAt === null ? 0 : Math.max(0, Math.round((now - firstAt) / 1000));
+  const quietS = lastAt === null ? 0 : Math.max(0, Math.round((now - lastAt) / 1000));
+  const limitMin = cfg ? Math.ceil(cfg.cad_timeout_s / 60) : null;
 
   return (
     <div className="stack">
       <div className="page-head">
         <h1>{job?.product.name ?? "Loading…"}</h1>
-        {job ? <span className={`badge badge-${failed ? "failed" : "info"}`}>Status: {status}</span> : null}
+        {job ? <span className={`badge badge-${failed ? "failed" : finished ? "done" : "info"}`}>Status: {status}</span> : null}
       </div>
 
       <WhatHappens>
@@ -249,8 +333,9 @@ export function JobUpload() {
           and report progress here.
         </p>
         <p className="small muted">
-          In this early version the CAD reader only checks that your file opens. Real parts and
-          structure arrive in a later release.
+          The draft is built by fixed rules from your files. The review screen (edit, accept
+          suggestions, approve, download) arrives in a later release; until then you can download the
+          draft as JSON when it is ready.
         </p>
       </WhatHappens>
 
@@ -400,23 +485,53 @@ export function JobUpload() {
           </>
         ) : (
           <ProgressPanel
-            title="Building your BoM"
+            title={finished ? "Draft BoM ready" : failed ? "Building stopped" : "Building your BoM"}
             items={events}
             fraction={fraction}
-            state={failed ? "failed" : sawStub ? "done" : "running"}
-            note={
-              sawStub
-                ? "The CAD reader opened your file. Reading parts and building the structure comes in a later release."
-                : undefined
-            }
+            state={failed ? "failed" : finished ? "done" : "running"}
           />
         )}
+        {started && running ? (
+          <p className="small muted" role="status">
+            Working for {fmtDuration(elapsedS)}. Last update {fmtDuration(quietS)} ago.
+            {quietS > 45
+              ? ` Large CAD files can take several minutes${limitMin ? ` (up to ${limitMin.toString()} min)` : ""}. If it takes longer, it will stop and tell you why.`
+              : ""}
+          </p>
+        ) : null}
+        {failed ? (
+          <div role="alert" className="alert alert-danger">
+            <strong>The build stopped.</strong>
+            <p>{failureReason}</p>
+            <p className="small">
+              Your files are safe on the server. You can <Link to="/">start a new BoM</Link> and try again
+              {" "}with a different export of the file.
+            </p>
+          </div>
+        ) : null}
         {startError ? (
           <p role="alert" className="alert alert-danger">
             {startError}
           </p>
         ) : null}
       </section>
+
+      {finished ? (
+        <section className="card" aria-labelledby="result-title">
+          <h2 id="result-title">What was built</h2>
+          {draftError ? (
+            <p role="alert" className="alert alert-danger">
+              {draftError}
+            </p>
+          ) : draft ? (
+            <DraftSummary draft={draft} onDownload={downloadDraft} />
+          ) : (
+            <p role="status" className="small muted">
+              Loading the draft…
+            </p>
+          )}
+        </section>
+      ) : null}
 
       <Qa
         items={[
@@ -435,6 +550,62 @@ export function JobUpload() {
         ]}
       />
     </div>
+  );
+}
+
+function DraftSummary({ draft, onDownload }: { draft: BomDraft; onDownload: () => void }) {
+  const ebom = draft.ebom ?? [];
+  const mbom = draft.mbom ?? [];
+  const questions = draft.questions ?? [];
+  const openQuestions = questions.filter((q) => q.answer === null || q.answer === undefined);
+  const suggestions = draft.suggestions ?? [];
+  const openSuggestions = suggestions.filter((x) => x.review === "suggested");
+  const blocking = draft.validation?.blocking_issues ?? [];
+  return (
+    <>
+      <ul className="small">
+        <li>
+          <strong>{ebom.length}</strong> EBOM lines and <strong>{mbom.length}</strong> MBOM lines
+        </li>
+        <li>
+          <strong>{openQuestions.length}</strong> open question{openQuestions.length === 1 ? "" : "s"} for you
+        </li>
+        <li>
+          <strong>{openSuggestions.length}</strong> suggestion{openSuggestions.length === 1 ? "" : "s"} waiting for
+          your accept or reject (nothing is added until you accept)
+        </li>
+      </ul>
+      {openQuestions.length > 0 ? (
+        <>
+          <h3>Questions</h3>
+          <ul className="small">
+            {openQuestions.map((q) => (
+              <li key={q.id}>{q.text}</li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+      {openSuggestions.length > 0 ? (
+        <>
+          <h3>Suggestions</h3>
+          <ul className="small">
+            {openSuggestions.map((x) => (
+              <li key={x.id}>{typeof x.description === "string" ? x.description : (x.text ?? x.id)}</li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+      <p className="small muted">
+        {blocking.length > 0
+          ? `Approval is blocked by ${blocking.length.toString()} open item${blocking.length === 1 ? "" : "s"}. The review screen to resolve them comes in the next release.`
+          : "Nothing blocks approval."}
+      </p>
+      <div className="actions">
+        <button type="button" className="btn" onClick={onDownload}>
+          Download draft (JSON)
+        </button>
+      </div>
+    </>
   );
 }
 

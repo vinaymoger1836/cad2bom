@@ -16,6 +16,8 @@ export interface AppConfig {
   max_files_per_job: number;
   accepted_extensions: string[];
   cad_extensions: string[];
+  /** How long the CAD reader may spend on one file, in seconds. */
+  cad_timeout_s: number;
 }
 
 /** An error whose message is already written for the person using the app. */

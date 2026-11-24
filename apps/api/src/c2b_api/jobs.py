@@ -48,6 +48,7 @@ async def config() -> dict[str, Any]:
         "max_files_per_job": s.max_files_per_job,
         "accepted_extensions": ACCEPTED_EXTENSIONS,
         "cad_extensions": [".step", ".stp"],
+        "cad_timeout_s": s.cad_timeout_s,
     }
 
 
@@ -93,9 +94,31 @@ async def _job_out(pool: Pool, row: dict[str, object]) -> JobOut:
     )
 
 
+async def _fail_if_stalled(pool: Pool, job_id: UUID, row: dict[str, object]) -> dict[str, object]:
+    """Watchdog: a job that reports nothing for longer than the CAD limit plus 5 minutes is
+    stopped with a reason, so nobody waits on a build that will never finish (killed worker,
+    lost task). Runs whenever the job is read; the state change is idempotent."""
+    if row["status"] not in {"extracting", "building"}:
+        return row
+    idle = await repo.seconds_since_last_event(pool, job_id)
+    limit = get_settings().cad_timeout_s + 300
+    if idle is None or idle < limit:
+        return row
+    message = (
+        f"The build stopped responding (no progress for {int(idle // 60)} minutes). "
+        "Your files are safe. Please start a new BoM; if it happens again with the same file, "
+        "try a smaller or simpler export."
+    )
+    await repo.set_status(pool, job_id, "failed")
+    await repo.add_event(pool, job_id, "notice", message, {"error": message, "stalled": True})
+    await repo.add_event(pool, job_id, "status", "Stopped", {"status": "failed"})
+    return {**row, "status": "failed"}
+
+
 @router.get("/jobs/{job_id}", tags=["jobs"])
 async def get_job(job_id: UUID, job: JobRow, request: Request) -> JobOut:
-    return await _job_out(_pool(request), job)
+    pool = _pool(request)
+    return await _job_out(pool, await _fail_if_stalled(pool, job_id, job))
 
 
 @router.patch("/jobs/{job_id}", tags=["jobs"])

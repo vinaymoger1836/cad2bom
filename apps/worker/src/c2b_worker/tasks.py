@@ -201,6 +201,18 @@ async def run_pipeline(job_id: str) -> None:
 
 @app.task(name=TASK_CAD_EXTRACT, queue=QUEUE_CAD)
 async def cad_extract(job_id: str, upload_id: str) -> None:
+    try:
+        await _cad_extract_inner(job_id, upload_id)
+    except Exception:
+        log.exception("CAD extraction failed for job %s", job_id)
+        await _fail(
+            UUID(job_id),
+            "Something went wrong while reading the CAD file. Your file is safe; "
+            "please try again, and report this if it keeps happening.",
+        )
+
+
+async def _cad_extract_inner(job_id: str, upload_id: str) -> None:
     jid, uid = UUID(job_id), UUID(upload_id)
     db = pool()
     settings = get_settings()
@@ -220,7 +232,8 @@ async def cad_extract(job_id: str, upload_id: str) -> None:
             db, jid, "cad_stub", "CAD reader answered (placeholder result in this version)", result
         )
         return
-    if result.get("status") == "error":
+    if result.get("status") != "done":
+        # "error", "timeout" or anything unexpected: stop with the reader's own message.
         notices = result.get("notices") or []
         first_msg = (
             notices[0].get("message")
