@@ -252,6 +252,13 @@ def golden_b3(c: httpx.Client) -> None:
         "[B3] GLB nodes are named with CAD node ids (the viewer links parts to lines by them)",
         sorted(names)[:8],
     )
+    glb_ids = {re.sub(r"_\d+$", "", n) for n in names}  # the glTF loader numbers repeated names
+    line_nodes = {n for ln in bom["ebom"] for n in ln.get("cad_nodes", [])}
+    check(
+        all(ln.get("cad_nodes") for ln in bom["ebom"]) and line_nodes <= glb_ids,
+        "[B3] every EBOM line names its CAD nodes, and each one is a node in the GLB",
+        sorted(line_nodes - glb_ids),
+    )
     r = c.post(f"{jobs}/approve", headers=auth)
     check(
         r.status_code == 409 and r.json()["code"] == "approval_blocked",

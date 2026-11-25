@@ -138,8 +138,11 @@ export class ViewController {
       const chain = new Set<string>();
       let lineId: string | null = null;
       for (let p: THREE.Object3D | null = mesh; p; p = p.parent) {
-        chain.add(p.name);
-        if (lineId === null) lineId = nodeToLine.get(p.name) ?? null;
+        // The glTF loader makes repeated names unique ("N-0008" -> "N-0008_1"): instances of one
+        // part share a CAD node id, so the suffix is removed to recover it.
+        const nodeId = p.name.replace(/_\d+$/, "");
+        chain.add(nodeId);
+        if (lineId === null) lineId = nodeToLine.get(nodeId) ?? null;
       }
       const material = new THREE.MeshStandardMaterial({
         roughness: 0.55,
