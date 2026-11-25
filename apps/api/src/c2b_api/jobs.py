@@ -38,11 +38,36 @@ def _pool(request: Request) -> Pool:
     return pool
 
 
+async def _reopen_if_approved(pool: Pool, job_id: UUID, job: dict[str, object]) -> None:
+    """A change after approval starts a new draft: the frozen versions stay as they are."""
+    if job.get("status") == "approved":
+        await repo.set_status(pool, job_id, "review")
+        await repo.add_event(
+            pool,
+            job_id,
+            "status",
+            "Changed after approval: new draft",
+            {"status": "review"},
+        )
+
+
+@functools.cache
+def _confidence_bands() -> dict[str, float]:
+    """High / medium confidence cut-offs from the library, so the UI colours match the rules."""
+    from c2b_library.loader import load_library
+
+    library, _ = load_library(get_settings().library_dir)
+    if library and library.confidence:
+        return {k: float(v) for k, v in library.confidence.bands.items()}
+    return {"high": 0.85, "medium": 0.6}
+
+
 @router.get("/config", tags=["meta"])
 async def config() -> dict[str, Any]:
     """Limits and accepted types, so the UI can pre-check (the server stays authoritative)."""
     s = get_settings()
     return {
+        "confidence_bands": _confidence_bands(),
         "max_cad_mb": s.max_cad_mb,
         "max_other_mb": s.max_other_mb,
         "max_files_per_job": s.max_files_per_job,
@@ -174,6 +199,18 @@ async def get_job_bom(
     return BomDraft.model_validate(bom_data)
 
 
+@router.get("/jobs/{job_id}/excluded", tags=["jobs"])
+async def get_excluded_nodes(
+    job_id: UUID,
+    job: JobRow,
+    request: Request,
+) -> list[dict[str, Any]]:
+    """CAD nodes the rules left out of the BoM (reference geometry, hidden bodies), with the reason."""
+    extract = await repo.get_cad_extract(_pool(request), job_id)
+    nodes = (extract or {}).get("nodes", [])
+    return [n for n in nodes if isinstance(n, dict) and n.get("excluded")]
+
+
 class QuestionAnswerRequest(BaseModel):
     answer: Any
 
@@ -300,6 +337,21 @@ async def confirm_mapping(
     }
 
 
+EDITABLE_FIELDS = frozenset(
+    [
+        "description",
+        "material",
+        "finish",
+        "qty",
+        "qty_per_parent",
+        "class",
+        "part_number",
+        "make_buy",
+        "uom",
+    ]
+)
+
+
 class LineEditRequest(BaseModel):
     field: str
     value: Any
@@ -326,12 +378,26 @@ async def answer_question_endpoint(
 
     library, _ = load_library(get_settings().library_dir)
     draft = BomDraft.model_validate(bom_data)
+    asked = next((q for q in draft.questions if q.id == question_id), None)
+    before_answer = asked.answer if asked else None
+    affected = list(asked.line_ids) if asked else []
     try:
         draft = apply_question_answer(draft, question_id, body.answer, library)
     except ValueError as exc:
         raise ProblemError(404, "not_found", "Not found", str(exc)) from exc
 
+    await _reopen_if_approved(pool, job_id, job)
     await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True, mode="json"))
+    await repo.add_edit_log(
+        pool,
+        job_id,
+        "answer",
+        f"answer to {question_id}",
+        before_answer,
+        body.answer,
+        line_ids=affected,
+        ref=question_id,
+    )
     await repo.add_event(
         pool,
         job_id,
@@ -363,12 +429,26 @@ async def review_suggestion_endpoint(
 
     library, _ = load_library(get_settings().library_dir)
     draft = BomDraft.model_validate(bom_data)
+    proposal = next((s for s in draft.suggestions if s.id == suggestion_id), None)
+    before_review = proposal.review if proposal else None
+    affected_line = [proposal.line_id] if proposal and proposal.line_id else []
     try:
         draft = apply_suggestion_review(draft, suggestion_id, body.review, library)
     except ValueError as exc:
         raise ProblemError(404, "not_found", "Not found", str(exc)) from exc
 
+    await _reopen_if_approved(pool, job_id, job)
     await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True, mode="json"))
+    await repo.add_edit_log(
+        pool,
+        job_id,
+        "suggestion",
+        f"suggestion {suggestion_id}",
+        before_review,
+        body.review,
+        line_ids=affected_line,
+        ref=suggestion_id,
+    )
     await repo.add_event(
         pool,
         job_id,
@@ -396,18 +476,56 @@ async def edit_line_endpoint(
 
     from c2b_domain.bom import BomDraft
     from c2b_library.loader import load_library
-    from c2b_rules.dependency import apply_user_line_edit
+    from c2b_rules.dependency import apply_user_line_edit, get_line_field
 
+    if body.field not in EDITABLE_FIELDS:
+        raise ProblemError(
+            422,
+            "invalid_field",
+            "This field cannot be edited",
+            f"Editable fields: {', '.join(sorted(EDITABLE_FIELDS))}.",
+        )
     library, _ = load_library(get_settings().library_dir)
     draft = BomDraft.model_validate(bom_data)
+    edited = next((ln for ln in draft.ebom if ln.id == line_id), None)
+    before_value = get_line_field(edited, body.field) if edited else None
     try:
         draft = apply_user_line_edit(draft, line_id, body.field, body.value, library)
-    except ValueError as exc:
+    except (ValueError, TypeError) as exc:
         raise ProblemError(404, "not_found", "Not found", str(exc)) from exc
 
+    await _reopen_if_approved(pool, job_id, job)
     await repo.save_bom(pool, job_id, draft.model_dump(by_alias=True, mode="json"))
+    await repo.add_edit_log(
+        pool, job_id, "edit", body.field, before_value, body.value, line_ids=[line_id]
+    )
     await repo.add_event(pool, job_id, "user_edit", f"Edited {line_id}.{body.field}")
     return {"status": "ok", "line_id": line_id, "field": body.field, "value": body.value}
+
+
+@router.get("/jobs/{job_id}/lines/{line_id}/history", tags=["jobs"])
+async def line_history_endpoint(
+    job_id: UUID,
+    job: JobRow,
+    line_id: str,
+    request: Request,
+) -> list[dict[str, Any]]:
+    """Who changed what on this line, newest first (before and after values)."""
+    rows = await repo.list_edit_log(_pool(request), job_id, line_id)
+    return [
+        {
+            "id": r["id"],
+            "line_id": r["line_id"],
+            "field": r["field"],
+            "before": r["before"],
+            "after": r["after"],
+            "actor": r["actor"],
+            "kind": r["kind"],
+            "ref": r["ref"],
+            "at": r["created_at"].isoformat(),
+        }
+        for r in rows
+    ]
 
 
 @router.post("/jobs/{job_id}/approve", tags=["jobs"])
@@ -442,31 +560,55 @@ async def approve_bom_endpoint(
         )
 
     # Freeze an immutable version: the BomVersion plus what the reviewer decided (audit trail).
+    import json
     from datetime import UTC, datetime
 
     from c2b_domain.bom import BomVersion
+    from c2b_domain.cad import CadNode
+
+    excluded: list[CadNode] = []
+    extract = await repo.get_cad_extract(pool, job_id)
+    for raw_node in (extract or {}).get("nodes", []):
+        if isinstance(raw_node, dict) and raw_node.get("excluded"):
+            excluded.append(CadNode.model_validate(raw_node))
 
     frozen = BomVersion(
         job_id=str(job_id),
+        product=ProductInfo.model_validate(job["product"]),
         ebom=draft.ebom,
         mbom=draft.mbom,
         open_items=draft.open_items,
+        excluded=excluded,
+        questions=draft.questions,
+        suggestions=draft.suggestions,
+        validation=report,
         stats=draft.stats,
         library_version=draft.library_version,
         llm_calls=len(await repo.list_llm_calls(pool, job_id)),
         created_at=datetime.now(UTC).isoformat(),
     ).model_dump(by_alias=True, mode="json")
-    frozen["validation"] = report.model_dump(mode="json")
-    frozen["questions"] = [q.model_dump(mode="json") for q in draft.questions]
-    frozen["suggestions"] = [x.model_dump(mode="json", by_alias=True) for x in draft.suggestions]
-    version_num = await repo.freeze_bom_version(pool, job_id, frozen)
-    await repo.set_status(pool, job_id, "approved")
-    await repo.add_event(pool, job_id, "bom_approved", f"Approved BoM version {version_num}")
-    await repo.add_event(pool, job_id, "status", "Approved", {"status": "approved"})
+
+    # Approving twice without a change must not mint a new version.
+    def _content(v: dict[str, Any]) -> str:
+        skip = {"created_at", "version"}
+        return json.dumps({k: x for k, x in v.items() if k not in skip}, sort_keys=True)
+
+    existing = await repo.list_bom_versions(pool, job_id)
+    if existing and _content(existing[-1]["data"]) == _content(frozen):
+        version_num = int(existing[-1]["version"])
+        unchanged = True
+    else:
+        version_num = await repo.freeze_bom_version(pool, job_id, frozen)
+        unchanged = False
+        await repo.add_event(pool, job_id, "bom_approved", f"Approved BoM version {version_num}")
+    if job.get("status") != "approved":
+        await repo.set_status(pool, job_id, "approved")
+        await repo.add_event(pool, job_id, "status", "Approved", {"status": "approved"})
     return {
         "status": "approved",
         "version": version_num,
         "job_id": str(job_id),
+        "unchanged": unchanged,
     }
 
 
@@ -476,8 +618,20 @@ async def list_versions_endpoint(
     job: JobRow,
     request: Request,
 ) -> list[dict[str, Any]]:
+    """One light row per frozen version; the full JSON is at /versions/{n}."""
     pool = _pool(request)
-    return await repo.list_bom_versions(pool, job_id)
+    rows = await repo.list_bom_versions(pool, job_id)
+    return [
+        {
+            "version": r["version"],
+            "created_at": r["created_at"].isoformat(),
+            "ebom_lines": len(r["data"].get("ebom", [])),
+            "mbom_lines": len(r["data"].get("mbom", [])),
+            "open_items": len(r["data"].get("open_items", [])),
+            "library_version": r["data"].get("library_version"),
+        }
+        for r in rows
+    ]
 
 
 @router.get("/jobs/{job_id}/versions/{version}", tags=["jobs"])
@@ -494,6 +648,88 @@ async def get_version_endpoint(
             404, "not_found", "Version not found", f"Version {version} does not exist."
         )
     return v_data
+
+
+_EXPORT_TYPES = {
+    "xlsx": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"),
+    "csv": ("text/csv; charset=utf-8", "csv"),
+    "json": ("application/json", "json"),
+    "schema": ("application/schema+json", "schema.json"),
+    "pdf": ("application/pdf", "pdf"),
+}
+
+
+def _export_columns() -> Any:
+    """Column order from the organisation profile (docs/05 §3); defaults when it has none."""
+    from c2b_exports import ExportColumns
+    from c2b_library.loader import load_library
+
+    library, _ = load_library(get_settings().library_dir)
+    profile = next(iter(library.profiles.values()), None) if library else None
+    export = profile.export if profile else {}
+    defaults = ExportColumns()
+    return ExportColumns(
+        ebom=list(export.get("ebom_columns", defaults.ebom)),
+        mbom=list(export.get("mbom_columns", defaults.mbom)),
+        csv=list(export.get("csv_columns", defaults.csv)),
+    )
+
+
+def _safe_name(text: str) -> str:
+    return re.sub(r"[^A-Za-z0-9._-]+", "_", text).strip("_")[:60] or "bom"
+
+
+@router.get("/jobs/{job_id}/versions/{version}/export", tags=["jobs"])
+async def export_version_endpoint(
+    job_id: UUID,
+    job: JobRow,
+    version: int,
+    request: Request,
+    fmt: Annotated[Literal["xlsx", "csv", "json", "schema", "pdf"], Query()] = "xlsx",
+    part: Annotated[Literal["ebom", "mbom"], Query()] = "ebom",
+) -> Response:
+    """Export a frozen version: XLSX workbook, CSV (EBOM or MBOM), JSON, its schema, PDF."""
+    import asyncio
+
+    import c2b_exports
+    from c2b_domain.bom import BomVersion
+
+    data = await repo.get_bom_version(_pool(request), job_id, version)
+    if not data:
+        raise ProblemError(
+            404, "not_found", "Version not found", f"Version {version} does not exist."
+        )
+    ver = BomVersion.model_validate(data)
+    media, ext = _EXPORT_TYPES[fmt]
+    product = ver.product.name if ver.product else "bom"
+    stem = f"{_safe_name(product)}_v{version}"
+    if fmt == "csv":
+        stem += f"_{part}"
+    body: bytes
+    if fmt == "xlsx":
+        body = await asyncio.to_thread(c2b_exports.build_xlsx, ver, _export_columns())
+    elif fmt == "csv":
+        body = c2b_exports.build_csv(ver, part, _export_columns())
+    elif fmt == "json":
+        body = c2b_exports.build_json(data)
+    elif fmt == "schema":
+        body = c2b_exports.build_schema()
+        stem = "bom_version"
+    else:
+        try:
+            body = await asyncio.to_thread(c2b_exports.build_pdf, ver)
+        except OSError as exc:  # pango missing in a non-container run
+            raise ProblemError(
+                503,
+                "pdf_unavailable",
+                "PDF export is not available",
+                "The PDF engine (WeasyPrint with pango) is not installed on this server.",
+            ) from exc
+    return Response(
+        content=body,
+        media_type=media,
+        headers={"Content-Disposition": f'attachment; filename="{stem}.{ext}"'},
+    )
 
 
 @router.post("/jobs/{job_id}/chat", tags=["jobs"])

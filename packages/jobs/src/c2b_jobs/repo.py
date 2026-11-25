@@ -335,6 +335,50 @@ async def list_llm_calls(
         return list(rows)
 
 
+async def add_edit_log(
+    pool: Pool,
+    job_id: UUID,
+    kind: str,
+    field: str,
+    before: Any,
+    after: Any,
+    line_ids: list[str] | None = None,
+    ref: str | None = None,
+    actor: str = "user",
+) -> None:
+    """Record one user decision with before and after values (one row per affected line)."""
+    targets: list[str | None] = list(line_ids) if line_ids else [None]
+    async with pool.connection() as conn:
+        for line_id in targets:
+            await conn.execute(
+                "INSERT INTO edit_log (job_id, line_id, field, before, after, actor, kind, ref)"
+                " VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                (job_id, line_id, field, Jsonb(before), Jsonb(after), actor, kind, ref),
+            )
+
+
+async def list_edit_log(
+    pool: Pool,
+    job_id: UUID,
+    line_id: str | None = None,
+) -> list[dict[str, Any]]:
+    """History for one line (or the whole job), newest first."""
+    async with pool.connection() as conn:
+        if line_id is None:
+            cur = await conn.execute(
+                "SELECT id, line_id, field, before, after, actor, kind, ref, created_at"
+                " FROM edit_log WHERE job_id = %s ORDER BY id DESC",
+                (job_id,),
+            )
+        else:
+            cur = await conn.execute(
+                "SELECT id, line_id, field, before, after, actor, kind, ref, created_at"
+                " FROM edit_log WHERE job_id = %s AND line_id = %s ORDER BY id DESC",
+                (job_id, line_id),
+            )
+        return list(await cur.fetchall())
+
+
 async def freeze_bom_version(
     pool: Pool,
     job_id: UUID,

@@ -92,7 +92,7 @@ export function MappingConfirm() {
           <p>{error || "No mapping available"}</p>
         </div>
         <p>
-          <Link to={`/j/${id || ""}`} className="button secondary">
+          <Link to={`/j/${id || ""}`} className="btn btn-secondary">
             Back to Upload
           </Link>
         </p>
@@ -206,7 +206,7 @@ export function MappingConfirm() {
         >
           {saving ? "Confirming..." : "Confirm Mapping & Continue"}
         </button>
-        <Link to={`/j/${id || ""}`} className="button secondary">
+        <Link to={`/j/${id || ""}`} className="btn btn-secondary">
           Cancel
         </Link>
       </div>

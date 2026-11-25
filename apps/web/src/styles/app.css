@@ -342,10 +342,8 @@ main:focus {
   cursor: help;
 }
 .term-tip {
-  position: absolute;
-  left: 0;
-  bottom: calc(100% + 6px);
-  z-index: 30;
+  position: fixed;
+  z-index: 200;
   width: max-content;
   max-width: 18rem;
   padding: var(--sp-2) var(--sp-3);
@@ -359,6 +357,9 @@ main:focus {
   visibility: hidden;
   transition: opacity var(--dur-fast) var(--ease);
   pointer-events: none;
+}
+.term-tip-above {
+  transform: translateY(-100%);
 }
 .term-wrap:hover .term-tip,
 .term:focus-visible + .term-tip {

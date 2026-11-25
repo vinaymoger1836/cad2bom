@@ -9,6 +9,7 @@ dependencies = [
   "c2b-library",
   "c2b-rules",
   "c2b-agents",
+  "c2b-exports",
   "fastapi>=0.115",
   "uvicorn[standard]>=0.32",
 ]

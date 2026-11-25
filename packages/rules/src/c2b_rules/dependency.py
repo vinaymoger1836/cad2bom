@@ -57,13 +57,21 @@ def apply_user_line_edit(
                 vol_cm3 = target_line.cad_volume_mm3 / 1000.0
                 target_line.mass_g = round(vol_cm3 * density, 4)
     elif field in ("qty", "qty_per_parent"):
-        target_line.qty_per_parent = float(new_value)
+        target_line.qty_per_parent = Prov(
+            value=float(new_value),
+            source="user",
+            confidence=1.0,
+            rules=["R-USR-EDIT"],
+            note="Explicit user edit",
+        )
     elif field == "class":
         target_line.cls = user_prov
         if library:
             target_line.make_buy = recommend_make_buy(target_line, library)
     elif field == "part_number":
         target_line.part_number = user_prov
+    elif field == "finish":
+        target_line.finish = user_prov
     elif field == "make_buy":
         target_line.make_buy = user_prov
     elif field == "uom":
@@ -72,6 +80,17 @@ def apply_user_line_edit(
     # Re-roll quantities and MBOM
     recalculate_draft(draft, library)
     return draft
+
+
+def get_line_field(line: BomLine, field: str) -> Any:
+    """Plain value of an editable line field, unwrapping provenance (for the edit log)."""
+    key = {"qty": "qty_per_parent", "class": "cls"}.get(field, field)
+    raw = getattr(line, key, None)
+    if isinstance(raw, Prov):
+        return raw.value
+    if isinstance(raw, dict):
+        return raw.get("value", raw)
+    return raw
 
 
 def apply_mapping_confirmation(draft: BomDraft, column: str, field: str) -> None:
@@ -121,12 +140,21 @@ def apply_question_answer(
         line = next((ln for ln in draft.ebom if ln.id == lid), None)
         if line and match:
             num_val = float(match.group(1))
+            answered: Prov[float] = Prov(
+                value=num_val,
+                source="user",
+                confidence=1.0,
+                rules=["R-USR-ANS"],
+                ref=f"question:{question_id}",
+                note="Answered by the user",
+            )
             if line.parent:
                 parent_line = next((ln for ln in draft.ebom if ln.id == line.parent), None)
                 if parent_line:
-                    parent_line.qty_per_parent = num_val
+                    parent_line.qty_per_parent = answered
                     parent_line.qty_total = num_val
-            line.qty_per_parent = num_val if not line.parent else line.qty_per_parent
+            else:
+                line.qty_per_parent = answered
 
     recalculate_draft(draft, library)
     return draft
@@ -152,6 +180,24 @@ def apply_suggestion_review(
         key = f"{sug.rule}:{sug.cls}"
         draft.rejected_suggestion_keys.add(key)
         draft.rejected_suggestion_keys.add(sug.id)
+    elif decision == "accepted" and sug.action == "modify":
+        # Chat / ladder proposal to change one closed-list field of an existing line. The user's
+        # click is the acceptance; the value keeps its AI provenance and capped confidence.
+        target = next((ln for ln in draft.ebom if ln.id == sug.line_id), None)
+        if target is not None and sug.value is not None and sug.field in ("material", "make_buy"):
+            proposed: Prov[Any] = Prov(
+                value=sug.value,
+                source="llm",
+                confidence=min(sug.confidence, 0.70),
+                rules=sug.rule_ids or ["R-AGT-CHAT"],
+                ref=f"suggestion:{sug.id}",
+                note=f"Accepted by the user: {sug.reason or sug.text}".strip(),
+            )
+            if sug.field == "material":
+                target.material = proposed
+            else:
+                target.make_buy = proposed
+            target.review = "accepted"
     elif decision == "accepted" and getattr(sug, "action", "add") == "add" and sug.level == "ebom":
         # If suggestion is an addition to EBOM, add as a new line
         new_id = f"L-{len(draft.ebom) + 1:04d}"

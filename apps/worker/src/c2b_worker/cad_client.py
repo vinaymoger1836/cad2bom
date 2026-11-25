@@ -15,11 +15,16 @@ class CadWorkerError(Exception):
     """The cad-worker could not be reached or gave an unusable answer."""
 
 
+# A large assembly's node tree is one JSON line; asyncio's default 64 KiB line limit is far too
+# small. The cad-worker is our own sandboxed process, so this only bounds memory, not trust.
+_MAX_RESPONSE_BYTES = 256 * 1024 * 1024
+
+
 async def extract(socket_path: Path, file_path: str, timeout_s: float) -> dict[str, Any]:
     # The cad-worker enforces its own per-file limit; we wait a little longer than that.
     try:
         reader, writer = await asyncio.wait_for(
-            asyncio.open_unix_connection(str(socket_path)), timeout=10
+            asyncio.open_unix_connection(str(socket_path), limit=_MAX_RESPONSE_BYTES), timeout=10
         )
     except (FileNotFoundError, ConnectionRefusedError, TimeoutError) as exc:
         raise CadWorkerError(

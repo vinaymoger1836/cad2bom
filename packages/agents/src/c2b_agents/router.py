@@ -6,6 +6,7 @@ import os
 
 os.environ.setdefault("LITELLM_LOCAL_MODEL_COST_MAP", "True")
 
+import asyncio
 import json
 import logging
 import time
@@ -216,7 +217,7 @@ class LlmRouter:
         limiter = self.rate_limiters.get(role)
         if limiter and not limiter.check_and_record():
             log.warning("Rate limit bucket full for role %s; backing off", role)
-            time.sleep(self.config.retry_backoff_s)
+            await asyncio.sleep(self.config.retry_backoff_s)
 
         # 4. Invoke Provider via litellm with fallback
         primary_model = self.get_model_for_role(role)
@@ -252,7 +253,11 @@ class LlmRouter:
                 total_tokens=result.total_tokens,
                 latency_ms=result.latency_ms,
             )
-            self.cassettes.save(new_cassette)
+            try:
+                self.cassettes.save(new_cassette)
+            except OSError as exc:
+                # The answer is good; a read-only cassette folder (the containers) must not discard it.
+                log.warning("Could not record cassette %s (%s); continuing", cassette_key, exc)
 
         # 6. Update budget and log
         self.budget_tracker.add_tokens(job_id, result.total_tokens)
@@ -311,7 +316,7 @@ class LlmRouter:
                         "model": model,
                         "messages": messages,
                         "temperature": 0.0,
-                        "timeout": 10,
+                        "timeout": self.config.request_timeout_s,
                     }
 
                     if schema:
@@ -355,7 +360,7 @@ class LlmRouter:
                             attempt + 1,
                             wait,
                         )
-                        time.sleep(wait)
+                        await asyncio.sleep(wait)
                     else:
                         log.warning("Model %s failed on attempt %d: %s", model, attempt + 1, exc)
                         break  # Non-retryable error, try next model

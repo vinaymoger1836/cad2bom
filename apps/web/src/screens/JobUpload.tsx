@@ -447,9 +447,9 @@ export function JobUpload() {
                 style={{
                   marginTop: "1rem",
                   padding: "0.75rem",
-                  border: "1px solid var(--accent, #3b82f6)",
+                  border: "1px solid var(--c-accent)",
                   borderRadius: "var(--radius, 6px)",
-                  background: "var(--accent-soft, rgba(59,130,246,0.08))",
+                  background: "var(--c-accent-soft)",
                 }}
               >
                 <p className="small" style={{ margin: 0 }}>
@@ -524,7 +524,7 @@ export function JobUpload() {
               {draftError}
             </p>
           ) : draft ? (
-            <DraftSummary draft={draft} onDownload={downloadDraft} />
+            <DraftSummary draft={draft} onDownload={downloadDraft} reviewHref={`/j/${id}/review`} />
           ) : (
             <p role="status" className="small muted">
               Loading the draft…
@@ -553,7 +553,15 @@ export function JobUpload() {
   );
 }
 
-function DraftSummary({ draft, onDownload }: { draft: BomDraft; onDownload: () => void }) {
+function DraftSummary({
+  draft,
+  onDownload,
+  reviewHref,
+}: {
+  draft: BomDraft;
+  onDownload: () => void;
+  reviewHref: string;
+}) {
   const ebom = draft.ebom ?? [];
   const mbom = draft.mbom ?? [];
   const questions = draft.questions ?? [];
@@ -597,11 +605,14 @@ function DraftSummary({ draft, onDownload }: { draft: BomDraft; onDownload: () =
       ) : null}
       <p className="small muted">
         {blocking.length > 0
-          ? `Approval is blocked by ${blocking.length.toString()} open item${blocking.length === 1 ? "" : "s"}. The review screen to resolve them comes in the next release.`
+          ? `Approval is blocked by ${blocking.length.toString()} open item${blocking.length === 1 ? "" : "s"}. Open the review screen to resolve them.`
           : "Nothing blocks approval."}
       </p>
       <div className="actions">
-        <button type="button" className="btn" onClick={onDownload}>
+        <Link to={reviewHref} className="btn btn-primary">
+          Open the review screen
+        </Link>
+        <button type="button" className="btn btn-secondary" onClick={onDownload}>
           Download draft (JSON)
         </button>
       </div>

@@ -22,6 +22,11 @@ FROM python:3.12-slim-bookworm
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
+# WeasyPrint (PDF parts list) needs pango and a font; both are dynamically linked system libraries.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=build /opt/venv /opt/venv
 WORKDIR /app
 # The knowledge library is data, read at run time (C2B_LIBRARY_DIR, default ./library).

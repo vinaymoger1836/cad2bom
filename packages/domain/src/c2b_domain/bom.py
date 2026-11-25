@@ -5,6 +5,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
+from c2b_domain.cad import CadNode
+from c2b_domain.jobs import ProductInfo
 from c2b_domain.prov import Prov, Source
 
 MakeBuyType = Literal["make", "buy", "supplier_made"]
@@ -309,9 +311,14 @@ class BomVersion(BaseModel):
 
     job_id: str
     version: int = 1
+    product: ProductInfo | None = None
     ebom: list[BomLine] = Field(default_factory=list)
     mbom: list[MbomLine] = Field(default_factory=list)
     open_items: list[str] = Field(default_factory=list)
+    excluded: list[CadNode] = Field(default_factory=list)
+    questions: list[Question] = Field(default_factory=list)
+    suggestions: list[Suggestion] = Field(default_factory=list)
+    validation: ValidationReport | None = None
     stats: dict[str, Any] = Field(default_factory=dict)
     library_version: str
     llm_calls: int = 0

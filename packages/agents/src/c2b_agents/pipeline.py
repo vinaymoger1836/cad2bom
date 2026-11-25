@@ -87,8 +87,33 @@ async def resolve_draft_with_ladder(
                     line_id=line.id,
                 )
 
+                rules_classified = cls_val != "unclassified"
+
                 if isinstance(l1_res, Question):
-                    draft.questions.append(l1_res)
+                    if rules_classified:
+                        # ADR-016: rules already named a class, so a missing L1 answer is only a
+                        # note. A blocking question is reserved for lines nothing could classify.
+                        line.open_items.append(
+                            "Low-confidence class: the rules chose it and the AI check was not "
+                            "available. Please check it."
+                        )
+                        line.explanation = explain_line(line)
+                    else:
+                        draft.questions.append(l1_res)
+                elif rules_classified:
+                    # ADR-016 / docs/04 §9: L1 is evidence only (weight 0.5). It never replaces a
+                    # rule-made class, description, origin or confidence.
+                    chosen_cls, _l1_conf, l1_reason, _fallback_reason = l1_res
+                    if chosen_cls == cls_val:
+                        line.open_items.append(
+                            f"AI check agrees with the rules on class {chosen_cls} (evidence only)."
+                        )
+                    else:
+                        line.open_items.append(
+                            f"AI check suggests class {chosen_cls} instead of {cls_val} "
+                            f"(evidence only, weight 0.5): {l1_reason}"
+                        )
+                    line.explanation = explain_line(line)
                 else:
                     chosen_cls, l1_conf, l1_reason, _fallback_reason = l1_res
                     # Update line with LLM class provenance (capped at 0.70)

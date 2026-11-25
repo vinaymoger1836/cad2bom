@@ -42,6 +42,8 @@
   --c-viewer-grid: light-dark(#c3cbd6, #2a3441);
   --c-viewer-highlight: light-dark(#1f5fd1, #7aa7ff);
   --c-viewer-dim: light-dark(#b9c1cc, #3a4452);
+  --c-viewer-part: light-dark(#8a96a8, #7c8aa0);
+  --c-viewer-excluded: light-dark(#d9a441, #b8862f);
 
   /* Type */
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
