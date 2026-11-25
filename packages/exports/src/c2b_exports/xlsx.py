@@ -1,4 +1,4 @@
-"""XLSX workbook (docs/05 §3): EBOM, MBOM, Purchased items, Open items, Excluded, Explanations, About."""
+"""XLSX workbook (docs/05 §3): one sheet each for EBOM, MBOM, purchased items and more."""
 
 from __future__ import annotations
 

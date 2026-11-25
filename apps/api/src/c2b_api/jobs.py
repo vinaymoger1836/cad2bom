@@ -205,7 +205,7 @@ async def get_excluded_nodes(
     job: JobRow,
     request: Request,
 ) -> list[dict[str, Any]]:
-    """CAD nodes the rules left out of the BoM (reference geometry, hidden bodies), with the reason."""
+    """CAD nodes the rules left out of the BoM (reference geometry, hidden bodies) and why."""
     extract = await repo.get_cad_extract(_pool(request), job_id)
     nodes = (extract or {}).get("nodes", [])
     return [n for n in nodes if isinstance(n, dict) and n.get("excluded")]

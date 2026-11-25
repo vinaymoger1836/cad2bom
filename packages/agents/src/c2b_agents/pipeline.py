@@ -87,7 +87,10 @@ async def resolve_draft_with_ladder(
                     line_id=line.id,
                 )
 
-                rules_classified = cls_val != "unclassified"
+                # ADR-016: a class found from names, metadata, standards or the user's file (C1-C4)
+                # is real evidence; L1 only adds to it. A geometry-only guess (C5, the bottom of
+                # the ladder) or no class at all is what L1 exists to settle.
+                rules_classified = cls_val != "unclassified" and line.source != "cad_geom"
 
                 if isinstance(l1_res, Question):
                     if rules_classified:

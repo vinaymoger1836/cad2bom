@@ -234,6 +234,7 @@ export function TreeGrid<T>({
         }}
         className="rv-grid-scroll"
         role="treegrid"
+        tabIndex={-1}
         aria-label={label}
         aria-describedby={helpId}
         aria-rowcount={rowCount + 1}
@@ -266,6 +267,8 @@ export function TreeGrid<T>({
                 const isOpen = canExpand && !collapsed.has(id);
                 const selected = id === selectedId;
                 return (
+                  // Keyboard: the treegrid's onKeyDown selects with Space and Enter.
+                  // eslint-disable-next-line jsx-a11y/click-events-have-key-events
                   <div
                     key={id}
                     role="row"
@@ -273,6 +276,7 @@ export function TreeGrid<T>({
                     aria-level={row.depth + 1}
                     aria-selected={selected}
                     aria-expanded={canExpand ? isOpen : undefined}
+                    tabIndex={-1}
                     className={selected ? "rv-row rv-row-selected" : "rv-row"}
                     style={{
                       gridTemplateColumns: template,
@@ -287,6 +291,7 @@ export function TreeGrid<T>({
                       const isActive = vi.index === activeRow && ci === activeCol;
                       const isEditing = editing?.rowId === id && editing.colId === c.id;
                       return (
+                        // eslint-disable-next-line jsx-a11y/click-events-have-key-events
                         <div
                           key={c.id}
                           role="gridcell"
@@ -361,11 +366,12 @@ function CellEditor<T>({
 }) {
   const initial = edit.value(row);
   const [draft, setDraft] = useState(initial);
-  const ref = useRef<HTMLInputElement | HTMLSelectElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const selectRef = useRef<HTMLSelectElement>(null);
   useEffect(() => {
-    const el = ref.current;
+    const el = inputRef.current ?? selectRef.current;
     el?.focus();
-    if (el instanceof HTMLInputElement) el.select();
+    inputRef.current?.select();
   }, []);
 
   function commit() {
@@ -387,7 +393,7 @@ function CellEditor<T>({
   if (edit.kind === "select") {
     return (
       <select
-        ref={ref}
+        ref={selectRef}
         className="rv-edit"
         aria-label={edit.label}
         value={draft}
@@ -407,7 +413,7 @@ function CellEditor<T>({
   }
   return (
     <input
-      ref={ref}
+      ref={inputRef}
       className="rv-edit"
       type={edit.kind === "number" ? "number" : "text"}
       step={edit.kind === "number" ? "any" : undefined}

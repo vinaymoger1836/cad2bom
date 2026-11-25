@@ -18,9 +18,13 @@ Brings the real stack up with Docker Compose, then drives it through the public 
 Set KEEP_UP=1 to leave the stack running afterwards. Exit code is non-zero on any failure.
 """
 
+import csv
 import hashlib
+import io
 import json
 import os
+import re
+import struct
 import subprocess
 import sys
 import time
@@ -230,11 +234,23 @@ def golden_b3(c: httpx.Client) -> None:
         "[B3] blade-count conflict (CAD 3 vs text 4) is a question",
         [q["text"] for q in bom["questions"]],
     )
+    open_blocking = [q for q in bom["questions"] if q.get("blocking") and q.get("answer") is None]
+    check(
+        [q["id"] for q in open_blocking] == [blade_q[0]["id"]],
+        "[B3] the blade question is the only blocking question (L1 is evidence only)",
+        [q["id"] for q in open_blocking],
+    )
     r = c.get(f"{jobs}/model.glb", headers=auth)
     check(
         r.status_code == 200 and r.content[:4] == b"glTF",
         "[B3] GLB model is served",
         r.status_code,
+    )
+    names = glb_node_names(r.content)
+    check(
+        any(re.fullmatch(r"N-\d{4}", n) for n in names),
+        "[B3] GLB nodes are named with CAD node ids (the viewer links parts to lines by them)",
+        sorted(names)[:8],
     )
     r = c.post(f"{jobs}/approve", headers=auth)
     check(
@@ -248,6 +264,158 @@ def golden_b3(c: httpx.Client) -> None:
         len(v.get("ebom", [])) >= 10 and v.get("library_version") == bom["library_version"],
         "[B3] frozen version carries the library version and the lines",
         (len(v.get("ebom", [])), v.get("library_version")),
+    )
+    b3_exports(c, jobs, auth, v)
+    b3_reopen_and_history(c, jobs, auth, v)
+
+
+def glb_node_names(data: bytes) -> list[str]:
+    """Names of the glTF nodes, read from the GLB's JSON chunk."""
+    length, kind = struct.unpack_from("<II", data, 12)
+    if kind != 0x4E4F534A:  # "JSON"
+        return []
+    doc = json.loads(data[20 : 20 + length])
+    return [str(n.get("name", "")) for n in doc.get("nodes", [])]
+
+
+def pv(x: object) -> object:
+    """The plain value of a Prov dict or a plain value."""
+    return x["value"] if isinstance(x, dict) and "value" in x else x
+
+
+def b3_exports(c: httpx.Client, jobs: str, auth: dict[str, str], v: dict) -> None:
+    """Every export format downloads and reconciles with the frozen BomVersion JSON."""
+    from openpyxl import load_workbook
+
+    def get(fmt: str, **extra: str) -> httpx.Response:
+        r = c.get(f"{jobs}/versions/1/export", params={"fmt": fmt, **extra}, headers=auth)
+        check(r.status_code == 200, f"[B3] export {fmt} {extra or ''} downloads", r.text[:200])
+        return r
+
+    check(get("json").json() == v, "[B3] JSON export equals GET /versions/1")
+    schema = get("schema").json()
+    check(
+        set(v) <= set(schema["properties"]) and "ebom" in schema["properties"],
+        "[B3] the JSON schema describes every key of the JSON export",
+        sorted(set(v) - set(schema["properties"])),
+    )
+
+    r = get("xlsx")
+    disposition = r.headers["content-disposition"]
+    check(
+        "attachment" in disposition and ".xlsx" in disposition,
+        "[B3] XLSX is sent as a named download",
+        disposition,
+    )
+    wb = load_workbook(io.BytesIO(r.content), data_only=True)
+    want = [
+        "EBOM",
+        "MBOM",
+        "Purchased items",
+        "Open items",
+        "Excluded from BoM",
+        "Explanations",
+        "About",
+    ]
+    check(wb.sheetnames == want, "[B3] XLSX has the sheets of docs/05 §3", wb.sheetnames)
+    ws = wb["EBOM"]
+    head = [str(x) for x in next(ws.iter_rows(max_row=1, values_only=True))]
+    rows = list(ws.iter_rows(min_row=2, values_only=True))
+    check(
+        len(rows) == len(v["ebom"]),
+        "[B3] XLSX EBOM has one row per line",
+        (len(rows), len(v["ebom"])),
+    )
+    pn, qty = head.index("Part number"), head.index("Qty")
+    got = sorted((str(r[pn] or ""), float(r[qty] or 0)) for r in rows)
+    exp = sorted(
+        (str(pv(ln.get("part_number")) or ""), float(pv(ln["qty_per_parent"]))) for ln in v["ebom"]
+    )
+    check(got == exp, "[B3] XLSX part numbers and quantities equal the version JSON")
+    check(
+        len(list(wb["MBOM"].iter_rows(min_row=2, values_only=True))) == len(v["mbom"]),
+        "[B3] XLSX MBOM has one row per MBOM line",
+    )
+    buy_total = sum(m["qty_total"] for m in v["mbom"] if m["make_buy"] == "buy")
+    pur = wb["Purchased items"]
+    ph = [str(x) for x in next(pur.iter_rows(max_row=1, values_only=True))]
+    got_buy = sum(
+        float(r[ph.index("Qty per build")] or 0) for r in pur.iter_rows(min_row=2, values_only=True)
+    )
+    check(
+        abs(got_buy - buy_total) < 1e-6,
+        "[B3] purchased items add up to the bought MBOM quantity",
+        (got_buy, buy_total),
+    )
+
+    for part in ("ebom", "mbom"):
+        text = get("csv", part=part).content.decode("utf-8-sig")
+        table = list(csv.reader(io.StringIO(text)))
+        check(
+            len(table) - 1 == len(v[part]) and "Level" in table[0] and "Parent" in table[0],
+            f"[B3] CSV {part.upper()} has one row per line, with level and parent",
+            (len(table) - 1, len(v[part])),
+        )
+
+    r = get("pdf")
+    check(r.content[:5] == b"%PDF-", "[B3] PDF export is a PDF")
+    import pdfplumber
+
+    with pdfplumber.open(io.BytesIO(r.content)) as pdf:
+        pdf_text = " ".join((p.extract_text() or "") for p in pdf.pages)
+    check(
+        "Generated BoM" in pdf_text and "review before release" in pdf_text,
+        "[B3] PDF carries the 'Generated BoM - review before release' label",
+    )
+    check(
+        all(str(pv(ln.get("part_number")) or "") in pdf_text for ln in v["ebom"]),
+        "[B3] every part number of the version is in the PDF",
+    )
+
+
+def b3_reopen_and_history(c: httpx.Client, jobs: str, auth: dict[str, str], v: dict) -> None:
+    r = c.post(f"{jobs}/approve", headers=auth)
+    check(
+        r.status_code == 200 and r.json()["version"] == 1 and r.json()["unchanged"] is True,
+        "[B3] approving again without a change returns version 1, not a new one",
+        r.text,
+    )
+    line = v["ebom"][0]
+    before = str(pv(line["description"]))
+    r = c.patch(
+        f"{jobs}/lines/{line['id']}",
+        json={"field": "description", "value": "B3 edited by e2e"},
+        headers=auth,
+    )
+    check(r.status_code == 200, "[B3] a line edit after approval is accepted", r.text)
+    check(
+        c.get(jobs, headers=auth).json()["status"] == "review",
+        "[B3] an edit after approval starts a new draft (status back to `review`)",
+    )
+    h = c.get(f"{jobs}/lines/{line['id']}/history", headers=auth).json()
+    check(
+        len(h) >= 1 and h[0]["before"] == before and h[0]["after"] == "B3 edited by e2e",
+        "[B3] line history records before and after",
+        h[:1],
+    )
+    ebom = c.get(f"{jobs}/bom", headers=auth).json()["ebom"]
+    p = next(ln for ln in ebom if ln["id"] == line["id"])["description"]
+    check(
+        isinstance(p, dict) and p["source"] == "user" and p["confidence"] == 1.0,
+        "[B3] the edit is source=user with confidence 1.0",
+        p,
+    )
+    r = c.post(f"{jobs}/approve", headers=auth)
+    check(
+        r.status_code == 200 and r.json()["version"] == 2 and r.json()["unchanged"] is False,
+        "[B3] approving the changed draft makes version 2",
+        r.text,
+    )
+    vs = c.get(f"{jobs}/versions", headers=auth).json()
+    check([x["version"] for x in vs] == [1, 2], "[B3] the version list shows both versions", vs)
+    check(
+        c.get(f"{jobs}/versions/1", headers=auth).json() == v,
+        "[B3] version 1 is unchanged after version 2",
     )
 
 

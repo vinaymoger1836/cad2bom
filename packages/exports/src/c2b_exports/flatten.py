@@ -133,9 +133,7 @@ def num(value: Any) -> int | float | None:
     return int(f) if f == int(f) else round(f, 4)
 
 
-def _depth_order(
-    ids: list[str], parents: dict[str, str | None]
-) -> list[tuple[str, int]]:
+def _depth_order(ids: list[str], parents: dict[str, str | None]) -> list[tuple[str, int]]:
     """Depth-first order that keeps the list order among siblings. Orphans become roots."""
     known = set(ids)
     children: dict[str | None, list[str]] = {}
@@ -282,9 +280,7 @@ def open_item_rows(version: BomVersion) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for item in version.open_items:
         ref, sep, text = item.partition(": ")
-        rows.append(
-            {"kind": "Open item", "ref": ref if sep else "", "text": text if sep else item}
-        )
+        rows.append({"kind": "Open item", "ref": ref if sep else "", "text": text if sep else item})
     if version.validation:
         for w in version.validation.warnings:
             rows.append(

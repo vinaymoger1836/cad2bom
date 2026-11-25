@@ -45,6 +45,7 @@ lint:
 	cd packages/jobs && uv run mypy src
 	cd packages/library && uv run mypy src
 	cd packages/agents && uv run mypy src
+	cd packages/exports && uv run mypy src
 	cd tools/fixtures && uv run mypy src
 	cd apps/api && uv run mypy src
 	cd apps/worker && uv run mypy src

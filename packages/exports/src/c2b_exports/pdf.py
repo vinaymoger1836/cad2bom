@@ -17,7 +17,7 @@ _CSS = """
   size: A4 landscape;
   margin: 14mm 12mm 18mm 12mm;
   @bottom-left {
-    content: "%(label)s";
+    content: "__LABEL__";
     font: 600 8pt "DejaVu Sans", sans-serif;
     color: #b42318;
   }
@@ -30,21 +30,32 @@ _CSS = """
 html { font: 8.5pt/1.35 "DejaVu Sans", sans-serif; color: #101828; }
 h1 { font-size: 16pt; margin: 0 0 2mm; }
 h2 { font-size: 11pt; margin: 6mm 0 2mm; }
-.title-block { border: 0.4mm solid #101828; border-collapse: collapse; width: 100%%; margin-bottom: 4mm; }
+.title-block {
+  border: 0.4mm solid #101828;
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 4mm;
+}
 .title-block td { border: 0.2mm solid #98a2b3; padding: 1.2mm 2mm; vertical-align: top; }
 .title-block .k { font-size: 7pt; color: #475467; text-transform: uppercase; }
 .title-block .v { font-size: 10pt; font-weight: 600; }
-table.parts { width: 100%%; border-collapse: collapse; }
+table.parts { width: 100%; border-collapse: collapse; }
 table.parts thead { display: table-header-group; }
-table.parts th { background: #1f3a5f; color: #fff; text-align: left; padding: 1.2mm 1.5mm; font-size: 8pt; }
+table.parts th {
+  background: #1f3a5f;
+  color: #fff;
+  text-align: left;
+  padding: 1.2mm 1.5mm;
+  font-size: 8pt;
+}
 table.parts td { border-bottom: 0.2mm solid #d0d5dd; padding: 1mm 1.5mm; vertical-align: top; }
 table.parts tr { break-inside: avoid; }
 td.num, th.num { text-align: right; }
 .sub { color: #475467; }
 .appendix { break-before: page; }
 .items td { border-bottom: 0.2mm solid #d0d5dd; padding: 1mm 1.5mm; vertical-align: top; }
-.items { width: 100%%; border-collapse: collapse; }
-""" % {"label": LABEL}
+.items { width: 100%; border-collapse: collapse; }
+""".replace("__LABEL__", LABEL)
 
 
 def _fmt(value: Any) -> str:

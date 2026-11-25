@@ -108,8 +108,8 @@ export function BomTable({
   const [view, setView] = useState<View>("ebom");
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const headId = useId();
-  const ebom = draft.ebom ?? [];
-  const mbom = draft.mbom ?? [];
+  const ebom = useMemo(() => draft.ebom ?? [], [draft.ebom]);
+  const mbom = useMemo(() => draft.mbom ?? [], [draft.mbom]);
 
   const suggestedLines = useMemo(
     () =>
@@ -472,7 +472,7 @@ export function BomTable({
       header: "Instances",
       width: "6rem",
       align: "end",
-      cell: ({ item: n }) => <span>{n.instance_count ?? 1}</span>,
+      cell: ({ item: n }) => <span>{n.instance_count}</span>,
     },
   ];
 
