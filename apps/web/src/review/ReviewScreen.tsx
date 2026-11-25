@@ -3,7 +3,7 @@ import { Link, useLocation, useParams } from "react-router";
 import * as Dialog from "@radix-ui/react-dialog";
 import type { ValidationIssue } from "@c2b/ts-types";
 import { Qa, WhatHappens } from "../components/Help";
-import { loadToken, saveToken } from "../lib/storage";
+import { loadToken, readLocal, saveToken, writeLocal } from "../lib/storage";
 import { ApproveDialog } from "./ApproveDialog";
 import { BomTable, type Selection } from "./BomTable";
 import { ChatDrawer } from "./ChatDrawer";
@@ -248,7 +248,13 @@ export function ReviewScreen() {
         </p>
       ) : null}
 
-      <details className="rv-help" open>
+      <details
+        className="rv-help"
+        open={readLocal("c2b.review.help") !== "closed"}
+        onToggle={(e) => {
+          writeLocal("c2b.review.help", e.currentTarget.open ? "open" : "closed");
+        }}
+      >
         <summary>What happens here</summary>
         <WhatHappens>
           <p>

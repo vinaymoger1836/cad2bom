@@ -221,6 +221,11 @@
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
+.rv-choice input[type="radio"] {
+  width: auto;
+  flex: none;
+  margin: 0;
+}
 .rv-choice:hover {
   background: var(--c-table-row-hover);
 }
