@@ -190,16 +190,18 @@ export function ReviewScreen() {
         <div className="rv-top-actions">
           <button
             type="button"
-            className="btn btn-primary"
+            className={approved ? "btn btn-secondary" : "btn btn-primary"}
             aria-describedby="rv-approve-state"
             onClick={() => {
               setApproveOpen(true);
             }}
           >
-            Approve
+            {approved ? `Approved · v${latest.version.toString()}` : "Approve"}
           </button>
           <span id="rv-approve-state" className="small muted">
-            {blocking.length > 0
+            {approved
+              ? "Frozen. Any change starts a new draft"
+              : blocking.length > 0
               ? `${blocking.length.toString()} thing${blocking.length === 1 ? "" : "s"} to resolve first`
               : openCount > 0
                 ? `${openCount.toString()} optional item${openCount === 1 ? "" : "s"} open`
