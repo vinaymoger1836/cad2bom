@@ -200,6 +200,7 @@ def build_ebom_lines(
                 level=current_level,
                 find_no=fn_val,
                 cad_name=cnode.name,
+                cad_nodes=[cnode.id],
                 noun=noun,
                 modifiers=modifiers,
                 cls=cls_res.cls,
