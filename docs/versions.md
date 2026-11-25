@@ -30,6 +30,7 @@ Updated in P0 (2026-11-20). Exact Python versions are locked in `uv.lock`, web v
 | pdfplumber | 0.11.4 | MIT | PDF datasheet text and table extraction |
 | litellm | 1.63.0 | MIT | LLM router across Groq and Gemini free tiers |
 | langgraph | 0.3.0 | MIT | Conversational chat agent graph |
+| weasyprint | 70.0 | BSD-3-Clause | PDF parts list (P7). Needs pango, harfbuzz and a font as **system** libraries in the API image: `libpango-1.0-0`, `libpangoft2-1.0-0`, `libharfbuzz0b` (LGPL-2.1, dynamically linked, unmodified; flagged for the owner like psycopg) and `fonts-dejavu-core` (Bitstream Vera / public domain). Pulls pydyf, tinycss2, tinyhtml5, cssselect2, pyphen, brotli, zopfli (all BSD/MIT/MPL) |
 | hatchling | latest at build | MIT | build backend |
 | ruff / mypy / httpx | 0.17.6 / 2.4.1 / 0.28.1 | MIT / MIT / BSD-3-Clause | dev only |
 
@@ -40,6 +41,11 @@ Updated in P0 (2026-11-20). Exact Python versions are locked in `uv.lock`, web v
 | react / react-dom | 19.3.1 | MIT |
 | react-router | 8.5.2 | MIT |
 | @radix-ui/react-dropdown-menu | 2.2.1 | MIT |
+| @radix-ui/react-dialog / @radix-ui/react-tabs | 1.3.1 / 1.2.1 | MIT |
+| @tanstack/react-table | 8.21.x (**not 9**: v9 changes the API; v8 supports React 19) | MIT |
+| @tanstack/react-virtual | 3.14.x | MIT |
+| three / @types/three | 0.187.x | MIT |
+| @react-three/fiber | 9.8.x (React 19) | MIT |
 | vite / @vitejs/plugin-react | 8.3.8 / 6.3.0 | MIT |
 | typescript | 6.0.x (**not 7**: typescript-eslint does not support TS 7 yet) | Apache-2.0 |
 | eslint / typescript-eslint / eslint-plugin-jsx-a11y / eslint-plugin-react-hooks | 10.15.0 / 8.73.0 / 6.10.2 / 7.1.1 | MIT |

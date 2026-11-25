@@ -165,15 +165,17 @@ Export columns and their order are configurable per organisation profile; the de
 | Method | Path | Purpose |
 |---|---|---|
 | POST | `/jobs` | Create job (product info) → link |
-| POST | `/jobs/{id}/uploads` | Upload files (multipart), type-checked |
-| POST | `/jobs/{id}/run` | Start or re-run the pipeline |
+| POST | `/jobs/{id}/files` | Upload a file (raw body, `?filename=`), type-checked (built as `/files`, not `/uploads`) |
+| POST | `/jobs/{id}/start` | Start the pipeline (built as `/start`, not `/run`; there is no re-run yet, ADR-017) |
 | GET | `/jobs/{id}/events` | SSE progress |
 | GET | `/jobs/{id}/bom` | Current draft with questions and suggestions |
 | PATCH | `/jobs/{id}/lines/{line}` | User edit (becomes `source=user`) |
 | POST | `/jobs/{id}/questions/{q}/answer` | Answer → partial re-run |
 | POST | `/jobs/{id}/suggestions/{s}` | Accept or reject |
 | POST | `/jobs/{id}/approve` | Validate and freeze a version |
-| GET | `/jobs/{id}/versions/{v}/export?fmt=xlsx|csv|json|pdf` | Exports |
+| GET | `/jobs/{id}/versions/{v}/export?fmt=xlsx\|csv\|json\|schema\|pdf&part=ebom\|mbom` | Exports (`part` only for CSV) |
+| GET | `/jobs/{id}/lines/{line}/history` | Edits, answers and decisions on a line, before and after |
+| GET | `/jobs/{id}/excluded` | CAD bodies left out of the BoM, with the reason |
 | POST | `/jobs/{id}/chat` | Agent chat (grounded in job data; proposals come back as edit suggestions) |
 | GET | `/jobs/{id}/model.glb` | Viewer model |
 | `/admin/library/*` | Browse, validate, publish library versions (protected) |
