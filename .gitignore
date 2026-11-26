@@ -28,6 +28,17 @@ credentials*.json
 cassettes/**/user-*
 cassettes-private/
 
+# --- Backups, native-conversion output and live APS recordings (P8) ---
+/backups/
+*.sql.gz
+*.tar.gz
+/data/library/
+/data/converted/
+# Recordings made against real Autodesk (C2B_APS_MODE=record) may carry real object names/URNs.
+# The scripted B7 fixtures in golden/B7_native/aps/ are committed on purpose.
+/aps-live/
+cassettes/aps-live/
+
 # --- Python ---
 .venv/
 __pycache__/

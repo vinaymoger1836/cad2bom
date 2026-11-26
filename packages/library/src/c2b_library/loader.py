@@ -13,6 +13,7 @@ from pydantic import BaseModel, ValidationError
 
 from c2b_library.schemas import (
     Archetype,
+    CadPropsFile,
     ConfidenceFile,
     HeadersFile,
     MaterialsFile,
@@ -50,6 +51,7 @@ class Library:
     units: UnitsFile
     headers: HeadersFile
     confidence: ConfidenceFile
+    cad_props: CadPropsFile
     profiles: dict[str, Profile]
     synonyms: dict[str, SynonymFile]  # keyed by relative path
     standards: dict[str, StandardTable]
@@ -132,6 +134,12 @@ def load_library(root: Path) -> tuple[Library | None, list[Issue]]:
     units = ld.parse(root / "units.yaml", UnitsFile)
     headers = ld.parse(root / "headers.yaml", HeadersFile)
     confidence = ld.parse(root / "confidence.yaml", ConfidenceFile)
+    # Optional: library versions made before native conversion have no cad_props.yaml.
+    cad_props = (
+        ld.parse(root / "cad_props.yaml", CadPropsFile)
+        if (root / "cad_props.yaml").is_file()
+        else CadPropsFile()
+    )
     profiles = ld.parse_dir("profiles", Profile)
     synonyms = ld.parse_dir("synonyms", SynonymFile)
     standards = ld.parse_dir("standards", StandardTable)
@@ -145,6 +153,7 @@ def load_library(root: Path) -> tuple[Library | None, list[Issue]]:
         or units is None
         or headers is None
         or confidence is None
+        or cad_props is None
     ):
         return None, ld.issues
     checksum, count = library_checksum(root)
@@ -156,6 +165,7 @@ def load_library(root: Path) -> tuple[Library | None, list[Issue]]:
         units=units,
         headers=headers,
         confidence=confidence,
+        cad_props=cad_props,
         profiles=profiles,
         synonyms=synonyms,
         standards=standards,

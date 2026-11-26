@@ -1,0 +1,14 @@
+{
+  "key": "POST /oss/v2/buckets",
+  "responses": [
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "json": {
+        "bucketKey": "c2b-7e13af1920ce1426",
+        "policyKey": "transient",
+        "permissions": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "key": "GET /modelderivative/v2/designdata/dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZDE1M2FhY2RkODkwZTI5Zjc0ZjgyMGNiLnNsZHBydA/metadata/11111111-2222-3333-4444-555555555555/properties",
+  "responses": [
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "json": {
+        "data": {
+          "type": "properties",
+          "collection": [
+            {
+              "objectid": 1,
+              "name": "Bracket Assembly",
+              "properties": {
+                "General": {
+                  "Name": "Bracket Assembly"
+                }
+              }
+            },
+            {
+              "objectid": 2,
+              "name": "Mounting Plate<1>",
+              "properties": {
+                "General": {
+                  "Name": "Mounting Plate<1>",
+                  "Layer": "Default"
+                },
+                "Custom Properties": {
+                  "Part Number": "MP-0001",
+                  "Material": "1.4301",
+                  "Supplier": "ACME Fixtures"
+                }
+              }
+            },
+            {
+              "objectid": 3,
+              "name": "Drive Shaft<1>",
+              "properties": {
+                "General": {
+                  "Name": "Drive Shaft<1>",
+                  "Layer": "Default"
+                },
+                "Custom Properties": {
+                  "Part Number": "DS-0002",
+                  "Material": "ASTM B221 6061-T6",
+                  "Supplier": "ACME Fixtures"
+                }
+              }
+            },
+            {
+              "objectid": 4,
+              "name": "Cover<1>",
+              "properties": {
+                "General": {
+                  "Name": "Cover<1>",
+                  "Layer": "Default"
+                },
+                "Custom Properties": {
+                  "Part Number": "-",
+                  "Material": "Special Alloy X",
+                  "Supplier": "ACME Fixtures"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

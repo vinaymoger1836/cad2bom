@@ -1,7 +1,7 @@
 {
   "case": "B4",
   "title": "Power bank BoM file",
-  "library_version": "2026.11.0",
+  "library_version": "2026.11.1",
   "inputs": [
     "input/supplier_bom.xlsx"
   ],

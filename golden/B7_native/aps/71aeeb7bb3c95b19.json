@@ -1,0 +1,56 @@
+{
+  "key": "GET /modelderivative/v2/designdata/dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZmJhNGI2MjkxMzZhNGQ4ZTY1MzZmYzJiLmYzZA/manifest",
+  "responses": [
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "json": {
+        "type": "manifest",
+        "hasThumbnail": "false",
+        "status": "inprogress",
+        "progress": "1% complete",
+        "region": "US",
+        "urn": "dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZmJhNGI2MjkxMzZhNGQ4ZTY1MzZmYzJiLmYzZA",
+        "derivatives": [
+          {
+            "name": "fixture",
+            "hasThumbnail": "false",
+            "status": "inprogress",
+            "progress": "10% complete",
+            "outputType": "step"
+          }
+        ]
+      }
+    },
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "json": {
+        "type": "manifest",
+        "hasThumbnail": "false",
+        "status": "success",
+        "progress": "complete",
+        "region": "US",
+        "urn": "dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZmJhNGI2MjkxMzZhNGQ4ZTY1MzZmYzJiLmYzZA",
+        "derivatives": [
+          {
+            "name": "fixture",
+            "hasThumbnail": "false",
+            "status": "success",
+            "progress": "complete",
+            "outputType": "step",
+            "children": [
+              {
+                "guid": "2d368dcf1f17d6d46770a24b7377d857",
+                "type": "resource",
+                "role": "graphics",
+                "urn": "urn:adsk.viewing:fs.file:dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZmJhNGI2MjkxMzZhNGQ4ZTY1MzZmYzJiLmYzZA/output/bracket.step",
+                "status": "success"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

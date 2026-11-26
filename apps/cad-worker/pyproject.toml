@@ -7,6 +7,7 @@ dependencies = [
   "c2b-domain",
   "cadquery>=2.5",
   "cadquery-ocp>=7.7",
+  "numpy>=1.26",
 ]
 
 [build-system]

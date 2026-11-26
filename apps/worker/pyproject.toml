@@ -9,6 +9,7 @@ dependencies = [
   "c2b-library",
   "c2b-rules",
   "c2b-agents",
+  "c2b-native-adapter",
 ]
 
 [build-system]

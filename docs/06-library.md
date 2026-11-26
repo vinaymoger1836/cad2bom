@@ -2,6 +2,8 @@
 
 The library is the app's knowledge. It is YAML in `library/`, loaded into Postgres with a version (`YYYY.MM.patch`), validated by tests, and editable through the admin page. Jobs pin the version they ran with.
 
+**Versions and pinning (P8, ADR-019).** The running server keeps its library in `data/library/`: `versions/<v>/` are immutable snapshots, `drafts/<id>/` are editable copies, and `active` names the version new jobs are pinned to. The image's `library/` is seeded as the first version at start-up. A job always reads the version it was created with; publishing a new version in the admin page never changes an existing job. `c2b-library diff A B` compares two directories.
+
 ## 1. Layout
 
 ```
@@ -17,7 +19,8 @@ library/
   headers.yaml           # BoM file header synonyms and value patterns
   units.yaml             # unit aliases → canonical units
   profiles/default.yaml  # numbering scheme, description style, default grades, export columns
-  confidence.yaml        # source base confidences, thresholds, weights
+  confidence.yaml        # source base confidences, thresholds, weights, mesh factor
+  cad_props.yaml         # property names in native CAD files -> part_number, description, material, class
 ```
 
 ## 2. Taxonomy (`taxonomy.yaml`)

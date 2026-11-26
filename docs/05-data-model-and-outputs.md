@@ -178,4 +178,15 @@ Export columns and their order are configurable per organisation profile; the de
 | GET | `/jobs/{id}/excluded` | CAD bodies left out of the BoM, with the reason |
 | POST | `/jobs/{id}/chat` | Agent chat (grounded in job data; proposals come back as edit suggestions) |
 | GET | `/jobs/{id}/model.glb` | Viewer model |
-| `/admin/library/*` | Browse, validate, publish library versions (protected) |
+| DELETE | `/jobs/{id}` | Delete the job and all its files now (job token; refused while it runs) |
+| PATCH | `/jobs/{id}` | Record or withdraw consent to send native CAD files to Autodesk (before the build) |
+| GET | `/config` | Limits, accepted types, whether native conversion is on (with its consent wording and usage), retention days |
+| POST | `/admin/login` | Passcode → short-lived session token (`X-Admin-Token`); the page and API also sit behind Caddy basic auth |
+| GET | `/admin/library/versions` | Published versions, active one, drafts, next version number |
+| GET | `/admin/library/versions/{v}/files`, `/file?path=` | Browse a published version |
+| POST | `/admin/library/drafts` | Start a draft from a version |
+| GET/PUT | `/admin/library/drafts/{id}/file?path=` | Read or save one YAML file of a draft (YAML is checked on save) |
+| POST | `/admin/library/drafts/{id}/validate` | Same checks as `c2b-library validate` |
+| POST | `/admin/library/drafts/{id}/publish` | Needs a changelog and a clean validation; freezes the next `YYYY.MM.n` and makes it active |
+| GET | `/admin/library/diff?a=&b=` | Per-file diff between versions or a version and `draft:<id>` |
+| GET | `/admin/metrics` | Prometheus text (admin session or `X-Metrics-Token`) |

@@ -103,7 +103,11 @@ def resolve_material_and_mass(
         mass_val = shape.volume_mm3 * (density / 1000.0)
         mass_g = round(mass_val, 4)
         rule_ids.append("R-MSS-VOL")
+        if shape.mesh_based:
+            rule_ids.append("R-MSS-MESH")
+            open_items.append("mass from a mesh volume; check against an exact STEP export")
 
+    mesh = shape is not None and shape.mesh_based
     return MaterialMassResult(
         material_code=mat_code,
         material_source=mat_source,
@@ -114,7 +118,11 @@ def resolve_material_and_mass(
         grade_label=grade_label,
         mass_g=mass_g,
         mass_source="engine",
-        mass_confidence=0.9 if mass_g is not None else 0.0,
+        mass_confidence=(
+            0.9 * (float(library.confidence.mesh.get("features_factor", 1.0)) if mesh else 1.0)
+            if mass_g is not None
+            else 0.0
+        ),
         rule_ids=rule_ids,
         open_items=open_items,
     )

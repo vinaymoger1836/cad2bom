@@ -61,3 +61,8 @@ scoring:
   contribution: "weight * source_base"
   cap: strongest_source_base
   line_confidence: min_over_required_fields
+
+# Shapes measured from meshes (SolidWorks files converted by APS, docs/03 §2). Triangles give
+# volume and boxes but not exact surfaces, so geometry evidence and mass confidence are scaled down.
+mesh:
+  features_factor: 0.6

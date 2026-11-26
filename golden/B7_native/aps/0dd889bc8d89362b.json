@@ -1,0 +1,10 @@
+{
+  "key": "GET /modelderivative/v2/designdata/dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZmJhNGI2MjkxMzZhNGQ4ZTY1MzZmYzJiLmYzZA/manifest/urn%3Aadsk.viewing%3Afs.file%3AdXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZmJhNGI2MjkxMzZhNGQ4ZTY1MzZmYzJiLmYzZA%2Foutput%2Fbracket.step",
+  "responses": [
+    {
+      "status": 200,
+      "content_type": "application/step",
+      "file": "converted/bracket.step"
+    }
+  ]
+}

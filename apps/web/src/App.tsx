@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Link, Route, Routes, useLocation } from "react-router";
 import { TopMenu } from "./components/TopMenu";
+import { Admin } from "./screens/Admin";
 import { JobUpload } from "./screens/JobUpload";
 import { MappingConfirm } from "./screens/MappingConfirm";
 import { NewBom } from "./screens/NewBom";
@@ -49,6 +50,7 @@ export function App() {
           <Route path="/j/:id" element={<JobUpload />} />
           <Route path="/j/:id/mapping" element={<MappingConfirm />} />
           <Route path="/j/:id/review" element={<ReviewScreen />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </FocusOnNavigate>

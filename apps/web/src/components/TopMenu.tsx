@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router";
+import { getConfig } from "../lib/api";
 import { lastJobId } from "../lib/storage";
 import { ThemeMenu } from "./ThemeMenu";
 
@@ -7,6 +9,17 @@ export function TopMenu() {
   // Re-read on navigation so "Upload files" appears right after a job is created.
   useLocation();
   const job = lastJobId();
+  // The admin page is linked only when the server has it turned on.
+  const [adminOn, setAdminOn] = useState(false);
+  useEffect(() => {
+    getConfig()
+      .then((c) => {
+        setAdminOn(c.admin_enabled === true);
+      })
+      .catch(() => {
+        setAdminOn(false);
+      });
+  }, []);
   return (
     <header className="topbar">
       <div className="topbar-inner">
@@ -25,6 +38,13 @@ export function TopMenu() {
               <li>
                 <NavLink to={`/j/${job}`} className="nav-link">
                   Upload files
+                </NavLink>
+              </li>
+            ) : null}
+            {adminOn ? (
+              <li>
+                <NavLink to="/admin" className="nav-link">
+                  Library admin
                 </NavLink>
               </li>
             ) : null}

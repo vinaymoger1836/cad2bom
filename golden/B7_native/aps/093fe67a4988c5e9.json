@@ -1,0 +1,139 @@
+{
+  "key": "GET /modelderivative/v2/designdata/dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZDE1M2FhY2RkODkwZTI5Zjc0ZjgyMGNiLnNsZHBydA/manifest",
+  "responses": [
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "json": {
+        "type": "manifest",
+        "hasThumbnail": "false",
+        "status": "inprogress",
+        "progress": "1% complete",
+        "region": "US",
+        "urn": "dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZDE1M2FhY2RkODkwZTI5Zjc0ZjgyMGNiLnNsZHBydA",
+        "derivatives": [
+          {
+            "name": "fixture",
+            "hasThumbnail": "false",
+            "status": "inprogress",
+            "progress": "10% complete",
+            "outputType": "svf2"
+          }
+        ]
+      }
+    },
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "json": {
+        "type": "manifest",
+        "hasThumbnail": "false",
+        "status": "success",
+        "progress": "complete",
+        "region": "US",
+        "urn": "dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZDE1M2FhY2RkODkwZTI5Zjc0ZjgyMGNiLnNsZHBydA",
+        "derivatives": [
+          {
+            "name": "fixture",
+            "hasThumbnail": "false",
+            "status": "success",
+            "progress": "complete",
+            "outputType": "svf2",
+            "children": [
+              {
+                "guid": "7772663c1ade7e8c555bd2c05c30b1eb",
+                "type": "resource",
+                "role": "graphics",
+                "urn": "urn:adsk.viewing:fs.file:dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZDE1M2FhY2RkODkwZTI5Zjc0ZjgyMGNiLnNsZHBydA/output/bracket.svf2",
+                "status": "success"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "json": {
+        "type": "manifest",
+        "hasThumbnail": "false",
+        "status": "inprogress",
+        "progress": "1% complete",
+        "region": "US",
+        "urn": "dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZDE1M2FhY2RkODkwZTI5Zjc0ZjgyMGNiLnNsZHBydA",
+        "derivatives": [
+          {
+            "name": "fixture",
+            "hasThumbnail": "false",
+            "status": "success",
+            "progress": "complete",
+            "outputType": "svf2",
+            "children": [
+              {
+                "guid": "7772663c1ade7e8c555bd2c05c30b1eb",
+                "type": "resource",
+                "role": "graphics",
+                "urn": "urn:adsk.viewing:fs.file:dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZDE1M2FhY2RkODkwZTI5Zjc0ZjgyMGNiLnNsZHBydA/output/bracket.svf2",
+                "status": "success"
+              }
+            ]
+          },
+          {
+            "name": "fixture",
+            "hasThumbnail": "false",
+            "status": "inprogress",
+            "progress": "10% complete",
+            "outputType": "obj"
+          }
+        ]
+      }
+    },
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "json": {
+        "type": "manifest",
+        "hasThumbnail": "false",
+        "status": "success",
+        "progress": "complete",
+        "region": "US",
+        "urn": "dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZDE1M2FhY2RkODkwZTI5Zjc0ZjgyMGNiLnNsZHBydA",
+        "derivatives": [
+          {
+            "name": "fixture",
+            "hasThumbnail": "false",
+            "status": "success",
+            "progress": "complete",
+            "outputType": "svf2",
+            "children": [
+              {
+                "guid": "7772663c1ade7e8c555bd2c05c30b1eb",
+                "type": "resource",
+                "role": "graphics",
+                "urn": "urn:adsk.viewing:fs.file:dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZDE1M2FhY2RkODkwZTI5Zjc0ZjgyMGNiLnNsZHBydA/output/bracket.svf2",
+                "status": "success"
+              }
+            ]
+          },
+          {
+            "name": "fixture",
+            "hasThumbnail": "false",
+            "status": "success",
+            "progress": "complete",
+            "outputType": "obj",
+            "children": [
+              {
+                "guid": "4b152323cae00f8996dc021207ff4acd",
+                "type": "resource",
+                "role": "graphics",
+                "urn": "urn:adsk.viewing:fs.file:dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZDE1M2FhY2RkODkwZTI5Zjc0ZjgyMGNiLnNsZHBydA/output/assembly.obj",
+                "status": "success"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

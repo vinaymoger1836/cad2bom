@@ -1,0 +1,14 @@
+{
+  "key": "POST /oss/v2/buckets/c2b-7e13af1920ce1426/objects/fba4b629136a4d8e6536fc2b.f3d/signeds3upload",
+  "responses": [
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "json": {
+        "bucketKey": "c2b-7e13af1920ce1426",
+        "objectKey": "fba4b629136a4d8e6536fc2b.f3d",
+        "size": 190
+      }
+    }
+  ]
+}

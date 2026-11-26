@@ -1,0 +1,34 @@
+{
+  "key": "GET /modelderivative/v2/designdata/dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZDE1M2FhY2RkODkwZTI5Zjc0ZjgyMGNiLnNsZHBydA/metadata/11111111-2222-3333-4444-555555555555",
+  "responses": [
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "json": {
+        "data": {
+          "type": "objects",
+          "objects": [
+            {
+              "objectid": 1,
+              "name": "Bracket Assembly",
+              "objects": [
+                {
+                  "objectid": 2,
+                  "name": "Mounting Plate<1>"
+                },
+                {
+                  "objectid": 3,
+                  "name": "Drive Shaft<1>"
+                },
+                {
+                  "objectid": 4,
+                  "name": "Cover<1>"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

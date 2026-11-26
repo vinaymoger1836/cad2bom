@@ -1,0 +1,21 @@
+{
+  "key": "GET /modelderivative/v2/designdata/dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZDE1M2FhY2RkODkwZTI5Zjc0ZjgyMGNiLnNsZHBydA/metadata",
+  "responses": [
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "json": {
+        "data": {
+          "type": "metadata",
+          "metadata": [
+            {
+              "name": "assembly",
+              "role": "3d",
+              "guid": "11111111-2222-3333-4444-555555555555"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

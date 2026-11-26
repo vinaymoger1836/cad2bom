@@ -1,10 +1,11 @@
 [project]
 name = "c2b-fixtures"
 version = "0.0.0"
-description = "Synthetic CAD and BoM fixtures generated from the library tables (golden cases B1-B6)"
+description = "Synthetic CAD and BoM fixtures generated from the library tables (golden cases B1-B7)"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "c2b-library",
+  "c2b-native-adapter",
   "cadquery>=2.5",
   "cadquery-ocp>=7.7",
   "openpyxl>=3.1",

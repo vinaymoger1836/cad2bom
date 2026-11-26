@@ -1,0 +1,9 @@
+{
+  "key": "DELETE /oss/v2/buckets/c2b-7e13af1920ce1426/objects/d153aacdd890e29f74f820cb.sldprt",
+  "responses": [
+    {
+      "status": 200,
+      "text": ""
+    }
+  ]
+}

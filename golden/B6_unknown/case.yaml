@@ -1,6 +1,6 @@
 id: B6
 title: Unknown product type
-library_version: 2026.11.0
+library_version: 2026.11.1
 generated_by: c2b-fixtures build
 inputs:
 - input/unknown_product.step

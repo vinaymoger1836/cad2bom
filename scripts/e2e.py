@@ -1,4 +1,4 @@
-"""End-to-end check (`make e2e`): P0 foundations plus the golden cases B3 and B5 (P1-P6).
+"""End-to-end check (`make e2e`): P0 foundations, golden cases B3-B5 (P1-P6) and P7/P8 checks.
 
 Brings the real stack up with Docker Compose, then drives it through the public front door
 (Caddy -> API -> Postgres/procrastinate -> worker -> cad-worker) and checks:
@@ -14,6 +14,15 @@ Brings the real stack up with Docker Compose, then drives it through the public 
   * both procrastinate queues (`pipeline`, `cad`) ran a job
   * the cad-worker really is sandboxed (no network, read-only root and input, 2 CPU / 3 GB)
   * git ignores .env, data/, caches and generated types
+  * P8, stage 1 (Autodesk NOT configured): a native upload gets a clear message while STEP still works;
+    the admin page is locked behind the reverse-proxy login and the passcode; failed logins are
+    rate limited; delete-now removes a job everywhere; the library store is seeded
+  * P8, stage 2 (the stack is recreated with Autodesk in replay mode): golden B7 - consent is
+    required before any native upload, F3D -> STEP follows the B2 rules, SolidWorks properties
+    and mesh features reach the BoM, the usage counter counts, the cap stops the next conversion;
+    a job past its retention date is deleted by the sweep at start-up
+  * P8, acceptance: a library edit published in the admin page changes a new job's result but not
+    an existing job's pinned version
 
 Set KEEP_UP=1 to leave the stack running afterwards. Exit code is non-zero on any failure.
 """
@@ -44,6 +53,11 @@ COMPOSE = [
     "-f",
     "infra/docker-compose.e2e.yml",
 ]
+# Stage 2 adds the Autodesk replay overlay (same project, so `up -d api worker` recreates them).
+COMPOSE_APS = [*COMPOSE, "-f", "infra/docker-compose.e2e-aps.yml"]
+BASIC = ("admin", "e2e-basic-pass")  # reverse-proxy login set in the e2e overlay (throwaway)
+ADMIN_PASSCODE = "e2e-passcode"
+METRICS_TOKEN = "e2e-metrics-token"  # noqa: S105  (throwaway test credential)
 STEP_OK = (
     b"ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION(('e2e fixture'),'2;1');\n"
     b"FILE_NAME('e2e.step','2026-01-01T00:00:00',(''),(''),'','','');\n"
@@ -509,6 +523,493 @@ def golden_b5(c: httpx.Client) -> None:
     resolve_everything(c, jobs, auth, {})
 
 
+# --- P8 -----------------------------------------------------------------------------------------
+
+
+def basic_get(c: httpx.Client, path: str, **kw: object) -> httpx.Response:
+    return c.get(path, auth=BASIC, **kw)  # type: ignore[arg-type]
+
+
+def admin_call(
+    c: httpx.Client, method: str, path: str, token: str | None = None, **kw: object
+) -> httpx.Response:
+    """A call to /api/admin/*: the reverse-proxy login plus (when given) the session token."""
+    headers = {"X-Admin-Token": token} if token else {}
+    return c.request(method, f"/api/admin{path}", auth=BASIC, headers=headers, **kw)  # type: ignore[arg-type]
+
+
+def native_unconfigured(c: httpx.Client) -> None:
+    """With Autodesk unconfigured the STEP path works and native files get a clear answer."""
+    r = c.post("/api/jobs", json={"name": "P8 native refusal"})
+    job = r.json()
+    auth = {"Authorization": f"Bearer {job['token']}"}
+    jobs = f"/api/jobs/{job['id']}"
+    r = c.patch(jobs, json={"consent_native_conversion": True}, headers=auth)
+    check(
+        r.status_code == 415 and r.json()["code"] == "native_not_configured",
+        "[P8] consent to a conversion that is not set up is refused with a clear message",
+        r.text,
+    )
+    r = c.post(
+        f"{jobs}/files",
+        params={"filename": "part.f3d"},
+        content=b"PK\x03\x04" + b"\x00" * 64,
+        headers={**auth, "Content-Type": "application/octet-stream"},
+    )
+    check(
+        r.status_code == 415 and "isn't set up" in r.json()["detail"],
+        "[P8] a .f3d is refused the same way",
+        r.text,
+    )
+    r = c.post(
+        f"{jobs}/files",
+        params={"filename": "ok.step"},
+        content=STEP_OK,
+        headers={**auth, "Content-Type": "application/octet-stream"},
+    )
+    check(r.status_code == 201, "[P8] the STEP path still works next to the refusal", r.text)
+    store = ROOT / "data" / "library"
+    check(
+        (store / "active").read_text(encoding="utf-8").strip() == "2026.11.1"
+        and (store / "versions" / "2026.11.1" / "VERSION.yaml").is_file(),
+        "[P8] the image's library was seeded as version 2026.11.1 in the store",
+    )
+    ready = c.get("/api/readyz").json()
+    check("data_free_mb" in ready, "[P8] /readyz reports the data volume", ready)
+
+
+def delete_now(c: httpx.Client) -> None:
+    r = c.post("/api/jobs", json={"name": "P8 delete now"})
+    job = r.json()
+    jid = job["id"]
+    auth = {"Authorization": f"Bearer {job['token']}"}
+    jobs = f"/api/jobs/{jid}"
+    c.post(
+        f"{jobs}/files",
+        params={"filename": "ok.step"},
+        content=STEP_OK,
+        headers={**auth, "Content-Type": "application/octet-stream"},
+    )
+    check((ROOT / "data" / "jobs" / jid).is_dir(), "[P8] the job has files on disk")
+    r = c.delete(jobs)
+    check(r.status_code == 401, "[P8] delete needs the job token", r.status_code)
+    r = c.delete(jobs, headers=auth)
+    check(
+        r.status_code == 200 and r.json()["status"] == "deleted", "[P8] delete-now succeeds", r.text
+    )
+    check(not (ROOT / "data" / "jobs" / jid).exists(), "[P8] the job's files are gone")
+    n = psql(f"SELECT count(*) FROM job WHERE id = '{jid}'")
+    check(n == "0", "[P8] the job row (and its dependants) are gone", n)
+    check(
+        c.get(jobs, headers=auth).status_code == 401, "[P8] the old link no longer opens anything"
+    )
+
+
+def admin_checks(c: httpx.Client) -> str:
+    """Two layers of protection, the session token, rate limiting, metrics. Returns a session token."""
+    for path in ("/admin", "/api/admin/status", "/api/admin/library/versions"):
+        r = c.get(path)
+        check(r.status_code == 401, f"[P8] {path} needs the reverse-proxy login", r.status_code)
+    r = basic_get(c, "/admin")
+    check(
+        r.status_code == 200 and 'id="root"' in r.text,
+        "[P8] with the login the admin page is served",
+    )
+    r = admin_call(c, "GET", "/status")
+    check(
+        r.status_code == 401 and r.json()["code"] == "unauthorized",
+        "[P8] the passcode is the second layer",
+        r.text,
+    )
+    r = c.get("/api/admin/status", auth=("admin", "wrong"))
+    check(r.status_code == 401, "[P8] a wrong web login is refused")
+
+    r = c.post("/api/admin/login", auth=BASIC, json={"passcode": "nope"})
+    check(r.status_code == 401, "[P8] a wrong passcode is refused", r.text)
+    r = c.post("/api/admin/login", auth=BASIC, json={"passcode": ADMIN_PASSCODE})
+    check(
+        r.status_code == 200 and r.json()["token"],
+        "[P8] the right passcode gives a session token",
+        r.text,
+    )
+    token = r.json()["token"]
+
+    r = admin_call(c, "GET", "/status", token)
+    check(
+        r.status_code == 200 and r.json()["library_active"] == "2026.11.1",
+        "[P8] admin status shows the active library",
+        r.text,
+    )
+    r = admin_call(c, "GET", "/library/versions", token)
+    body = r.json()
+    check(
+        body["active"] == "2026.11.1" and [v["version"] for v in body["versions"]] == ["2026.11.1"],
+        "[P8] one version is listed and active",
+        body,
+    )
+    r = admin_call(
+        c, "GET", "/library/versions/2026.11.1/file", token, params={"path": "../etc/passwd"}
+    )
+    check(r.status_code == 422, "[P8] a path outside the library is refused", r.status_code)
+    r = admin_call(c, "GET", "/metrics", token)
+    check(
+        r.status_code == 200
+        and 'c2b_jobs{status="review"}' in r.text
+        and "c2b_aps_jobs_cap" in r.text,
+        "[P8] metrics are served in Prometheus text",
+        r.text[:200],
+    )
+    r = c.get("/api/admin/metrics", auth=BASIC, headers={"X-Metrics-Token": METRICS_TOKEN})
+    check(r.status_code == 200, "[P8] a scraper can use the metrics token", r.status_code)
+
+    # Rate limit last, so it cannot disturb the calls above: the login bucket allows 5 a minute.
+    codes = [
+        c.post("/api/admin/login", auth=BASIC, json={"passcode": "guess"}).status_code
+        for _ in range(8)
+    ]
+    check(429 in codes, "[P8] repeated failed logins are rate limited (429)", codes)
+    r = c.post("/api/admin/login", auth=BASIC, json={"passcode": "guess"})
+    check(
+        r.status_code == 429 and "Retry-After" in r.headers and r.json()["code"] == "rate_limited",
+        "[P8] a 429 carries Retry-After and a clear message",
+        r.text,
+    )
+    return token
+
+
+def make_expired_job(c: httpx.Client) -> str:
+    """A job whose retention date has passed; the sweep at the next api start deletes it."""
+    r = c.post("/api/jobs", json={"name": "P8 expired"})
+    job = r.json()
+    auth = {"Authorization": f"Bearer {job['token']}"}
+    c.post(
+        f"/api/jobs/{job['id']}/files",
+        params={"filename": "ok.step"},
+        content=STEP_OK,
+        headers={**auth, "Content-Type": "application/octet-stream"},
+    )
+    psql(f"UPDATE job SET expires_at = now() - interval '1 day' WHERE id = '{job['id']}'")
+    check((ROOT / "data" / "jobs" / job["id"]).is_dir(), "[P8] the expired job still has files")
+    return str(job["id"])
+
+
+def wait_ready(base: str, timeout: float = 180) -> None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            if httpx.get(f"{base}/api/readyz", timeout=5).status_code == 200:
+                return
+        except httpx.HTTPError:
+            pass
+        time.sleep(2)
+    raise Failed("the api did not become ready after the restart")
+
+
+def switch_to_aps(c: httpx.Client) -> None:
+    say("recreating api + worker with Autodesk in replay mode (cap 3)")
+    r = subprocess.run(
+        [*COMPOSE_APS, "up", "-d", "--no-deps", "--force-recreate", "--wait", "api", "worker"],
+        cwd=ROOT,
+        check=False,
+    )
+    check(r.returncode == 0, "[P8] api and worker restarted with the replay overlay")
+    wait_ready(str(c.base_url))
+    cfg = c.get("/api/config").json()
+    check(
+        cfg["native_enabled"] is True
+        and cfg["native_usage"] == {"used": 0, "cap": 3}
+        and ".f3d" in cfg["accepted_extensions"]
+        and "Autodesk" in cfg["native_consent_text"],
+        "[P8] /config now offers native files, usage 0 of 3, with the consent wording",
+        cfg,
+    )
+
+
+def check_expired_deleted(job_id: str) -> None:
+    deadline = time.monotonic() + 60
+    n = "1"
+    while time.monotonic() < deadline:
+        n = psql(f"SELECT count(*) FROM job WHERE id = '{job_id}'")
+        if n == "0":
+            break
+        time.sleep(2)
+    check(n == "0", "[P8] the retention sweep deleted the expired job", n)
+    check(not (ROOT / "data" / "jobs" / job_id).exists(), "[P8] ... and its files")
+
+
+def native_job(
+    c: httpx.Client, name: str, filename: str, body: bytes
+) -> tuple[str, dict[str, str], str]:
+    """Create a job, check consent is required, give consent, upload, start. Returns id/auth/url."""
+    r = c.post("/api/jobs", json={"name": name})
+    job = r.json()
+    auth = {"Authorization": f"Bearer {job['token']}"}
+    jobs = f"/api/jobs/{job['id']}"
+    headers = {**auth, "Content-Type": "application/octet-stream"}
+    r = c.post(f"{jobs}/files", params={"filename": filename}, content=body, headers=headers)
+    check(
+        r.status_code == 409 and r.json()["code"] == "consent_required",
+        f"[B7] {filename}: nothing native is stored before consent (409 consent_required)",
+        r.text,
+    )
+    check(
+        not (ROOT / "data" / "jobs" / job["id"] / "in").exists()
+        or not any((ROOT / "data" / "jobs" / job["id"] / "in").iterdir()),
+        f"[B7] {filename}: nothing was written to disk",
+    )
+    r = c.patch(jobs, json={"consent_native_conversion": True}, headers=auth)
+    check(
+        r.status_code == 200 and r.json()["consent_native_conversion"] is True,
+        "[B7] consent recorded",
+        r.text,
+    )
+    row = psql(
+        "SELECT consent_native_conversion::text || '|' || (consent_native_at IS NOT NULL)::text || '|' "
+        f"|| coalesce(consent_native_text_ver, '') FROM job WHERE id = '{job['id']}'"
+    )
+    check(row == "true|true|1", "[B7] consent is stored with a time and the wording version", row)
+    r = c.post(f"{jobs}/files", params={"filename": filename}, content=body, headers=headers)
+    check(r.status_code == 201, f"[B7] {filename}: accepted after consent", r.text)
+    check(r.json()["kind"] == "cad", f"[B7] {filename} is stored as a CAD upload", r.json())
+    r = c.post(f"{jobs}/start", headers=auth)
+    check(r.status_code == 202, f"[B7] {filename}: start accepted", r.text)
+    return job["id"], auth, jobs
+
+
+def usage_used(c: httpx.Client) -> int:
+    return int(c.get("/api/config").json()["native_usage"]["used"])
+
+
+def golden_b7(c: httpx.Client) -> None:
+    g = ROOT / "golden" / "B7_native"
+    exp = json.loads((g / "expected" / "b7.json").read_text(encoding="utf-8"))
+
+    # --- B7: Fusion F3D -> STEP -> the B2 rules
+    jid, auth, jobs = native_job(
+        c, "B7 Fusion", "bracket.f3d", (g / "input" / "bracket.f3d").read_bytes()
+    )
+    status = wait_status(c, jobs, auth, {"review", "failed"}, 240)
+    check(status == "review", "[B7] the Fusion job reaches `review`", status)
+    n = psql(
+        f"SELECT count(*) FROM job_event WHERE job_id = '{jid}' AND kind = 'status' "
+        "AND data->>'status' = 'converting'"
+    )
+    check(int(n) >= 1, "[B7] the job passed through `converting`", n)
+    files = c.get(f"{jobs}/files", headers=auth).json()
+    conv = [f for f in files if f["origin"] == "converted"]
+    check(
+        len(conv) == 1
+        and conv[0]["detected_type"] == "step"
+        and "converted" in conv[0]["filename"],
+        "[B7] the converted STEP is listed as a converted upload",
+        files,
+    )
+    check(
+        any((ROOT / "data" / "converted" / jid).glob("*.step")),
+        "[B7] the converted STEP is stored under data/converted/<job>/",
+    )
+    bom = c.get(f"{jobs}/bom", headers=auth).json()
+    want = exp["f3d"]["downstream"]
+    check(
+        (len(bom["ebom"]), len(bom["mbom"])) == (want["ebom_lines"], want["mbom_lines"]),
+        "[B7] the converted STEP follows the B2 rules (same EBOM and MBOM line counts)",
+        (len(bom["ebom"]), len(bom["mbom"])),
+    )
+    check(usage_used(c) == 1, "[B7] the usage counter went from 0 to 1", usage_used(c))
+    used = psql("SELECT jobs FROM aps_usage ORDER BY month DESC LIMIT 1")
+    check(used == "1", "[B7] the counter is stored in the database", used)
+    q = psql(
+        "SELECT queue_name || ':' || status FROM procrastinate_jobs WHERE queue_name = 'native'"
+    )
+    check("native:succeeded" in q.splitlines(), "[B7] the `native` queue ran the conversion", q)
+
+    # --- B7b: SolidWorks -> properties + meshes
+    jid, auth, jobs = native_job(
+        c, "B7 SolidWorks", "assembly.sldprt", (g / "input" / "assembly.sldprt").read_bytes()
+    )
+    status = wait_status(c, jobs, auth, {"review", "failed"}, 240)
+    check(status == "review", "[B7] the SolidWorks job reaches `review`", status)
+    check(usage_used(c) == 3, "[B7] a SolidWorks file counts 2 more (total 3)", usage_used(c))
+    bom = c.get(f"{jobs}/bom", headers=auth).json()
+    lines = {ln["cad_name"]: ln for ln in bom["ebom"] if ln.get("cad_name")}
+    for part in exp["solidworks"]["parts"]:
+        ln = lines.get(part["cad_name"])
+        check(ln is not None, f"[B7] {part['cad_name']}: a BoM line exists", sorted(lines))
+        assert ln is not None
+        pn = ln.get("part_number")
+        if part["part_number_from_cad"]:
+            check(
+                isinstance(pn, dict)
+                and pn["value"] == part["part_number_from_cad"]
+                and pn["source"] == "cad_meta"
+                and "R-NUM-CAD" in pn["rules"],
+                f"[B7] {part['cad_name']}: the part number comes from the CAD properties",
+                pn,
+            )
+        if part["mass_g"] is not None:
+            mass = ln["mass_g"]
+            check(
+                isinstance(mass, dict) and abs(mass["value"] - part["mass_g"]) < 1e-3,
+                f"[B7] {part['cad_name']}: mass = mesh volume x library density ({part['mass_g']} g)",
+                mass,
+            )
+            check(
+                abs(mass["confidence"] - 0.9 * float(exp["solidworks"]["mesh_confidence_factor"]))
+                < 1e-6
+                and "R-MSS-MESH" in mass["rules"],
+                f"[B7] {part['cad_name']}: mesh-based mass has lowered confidence",
+                mass,
+            )
+    notice_events = psql(
+        f"SELECT string_agg(data->>'code', ',') FROM job_event WHERE job_id = '{jid}' AND kind = 'notice'"
+    )
+    for code in exp["solidworks"]["notices"]:
+        check(code in notice_events, f"[B7] the review shows the `{code}` notice", notice_events)
+    r = c.get(f"{jobs}/model.glb", headers=auth)
+    check(
+        r.status_code == 200 and r.content[:4] == b"glTF",
+        "[B7] the 3D model is served for the mesh parts",
+    )
+    check(
+        any(re.fullmatch(r"N-\d{4}", nm) for nm in glb_node_names(r.content)),
+        "[B7] GLB nodes carry CAD node ids",
+    )
+
+    # --- the cap: 3 of 3 used, so the next conversion is stopped with a clear message
+    jid, auth, jobs = native_job(
+        c, "B7 over the cap", "bracket.f3d", (g / "input" / "bracket.f3d").read_bytes()
+    )
+    status = wait_status(c, jobs, auth, {"review", "failed"}, 120)
+    check(status == "failed", "[B7] past the monthly cap the job stops", status)
+    reason = psql(
+        f"SELECT message FROM job_event WHERE job_id = '{jid}' AND kind = 'notice' ORDER BY id DESC LIMIT 1"
+    )
+    check("monthly limit" in reason and "STEP" in reason, "[B7] the cap message is clear", reason)
+    check(usage_used(c) == 3, "[B7] a refused conversion counts nothing", usage_used(c))
+
+
+def total_mass(bom: dict) -> float:
+    return round(
+        sum(
+            float(pv(ln["mass_g"]) or 0) * ln["qty_total"]
+            for ln in bom["ebom"]
+            if ln.get("cad_volume_mm3") is not None
+        ),
+        3,
+    )
+
+
+def library_acceptance(c: httpx.Client, token: str) -> None:
+    """A library edit published in admin changes a new job's result, not an existing job's version."""
+    step = ROOT / "golden" / "B2_bracket" / "input" / "bracket_assembly.step"
+    _, old_auth, old_jobs = new_job(c, "P8 library before", [step])
+    check(
+        wait_status(c, old_jobs, old_auth, {"review", "failed"}, 240) == "review",
+        "[P8] job before reaches review",
+    )
+    old_bom = c.get(f"{old_jobs}/bom", headers=old_auth).json()
+    old_version = c.get(old_jobs, headers=old_auth).json()["library_version"]
+    check(old_version == "2026.11.1", "[P8] the first job is pinned to 2026.11.1", old_version)
+
+    # draft -> edit -> validate -> publish -> diff
+    r = admin_call(c, "POST", "/library/drafts", token, json={"from_version": old_version})
+    check(r.status_code == 201, "[P8] a draft is started from the active version", r.text)
+    draft = r.json()["id"]
+    r = admin_call(
+        c, "GET", f"/library/drafts/{draft}/file", token, params={"path": "materials.yaml"}
+    )
+    text = r.json()["content"]
+    new_text = re.sub(r"(code: steel_crca,[^\n]*density_g_cm3: )7\.85", r"\g<1>7.90", text, count=1)
+    check(new_text != text, "[P8] the draft edit applies (steel_crca density 7.85 -> 7.90)")
+    r = admin_call(
+        c,
+        "PUT",
+        f"/library/drafts/{draft}/file",
+        token,
+        params={"path": "materials.yaml"},
+        json={"content": "a: [broken"},
+    )
+    check(r.status_code == 422, "[P8] invalid YAML is refused when saving", r.text)
+    r = admin_call(
+        c,
+        "PUT",
+        f"/library/drafts/{draft}/file",
+        token,
+        params={"path": "materials.yaml"},
+        json={"content": new_text},
+    )
+    check(r.status_code == 200, "[P8] the edited file is saved to the draft", r.text)
+    r = admin_call(c, "POST", f"/library/drafts/{draft}/validate", token)
+    check(r.status_code == 200 and r.json()["ok"] is True, "[P8] the draft validates", r.text)
+    r = admin_call(
+        c, "GET", "/library/diff", token, params={"a": old_version, "b": f"draft:{draft}"}
+    )
+    d = r.json()
+    check(
+        d["files_changed"] == 1 and d["changes"][0]["file"] == "materials.yaml",
+        "[P8] the diff shows the one changed file",
+        d["changes"][:1],
+    )
+    r = admin_call(c, "POST", f"/library/drafts/{draft}/publish", token, json={"changelog": []})
+    check(r.status_code == 422, "[P8] publishing needs a changelog", r.text)
+    r = admin_call(
+        c,
+        "POST",
+        f"/library/drafts/{draft}/publish",
+        token,
+        json={"changelog": ["steel_crca density 7.90 (e2e)"]},
+    )
+    check(
+        r.status_code == 200 and r.json()["version"] == "2026.11.2",
+        "[P8] published as 2026.11.2",
+        r.text,
+    )
+    r = admin_call(c, "GET", "/library/versions", token)
+    check(
+        r.json()["active"] == "2026.11.2" and len(r.json()["versions"]) == 2,
+        "[P8] 2026.11.2 is now active",
+    )
+    check(
+        "2026.11.2" in psql("SELECT version FROM library_version").splitlines(),
+        "[P8] the new version was also recorded in the database",
+        psql("SELECT version FROM library_version ORDER BY version"),
+    )
+
+    # the existing job keeps its version; a new job gets the new one
+    check(
+        c.get(old_jobs, headers=old_auth).json()["library_version"] == old_version,
+        "[P8] the existing job is still pinned to 2026.11.1",
+    )
+    _, new_auth, new_jobs = new_job(c, "P8 library after", [step])
+    check(
+        wait_status(c, new_jobs, new_auth, {"review", "failed"}, 240) == "review",
+        "[P8] job after reaches review",
+    )
+    new_bom = c.get(f"{new_jobs}/bom", headers=new_auth).json()
+    check(
+        c.get(new_jobs, headers=new_auth).json()["library_version"] == "2026.11.2"
+        and new_bom["library_version"] == "2026.11.2",
+        "[P8] the new job is pinned to 2026.11.2",
+    )
+    m_old, m_new = total_mass(old_bom), total_mass(new_bom)
+    check(m_new > m_old, "[P8] the new job's result changed (total mass is higher)", (m_old, m_new))
+
+    # working on the old job afterwards still uses its pinned version
+    lines = [ln for ln in old_bom["ebom"] if ln.get("cad_volume_mm3") is not None]
+    r = c.patch(
+        f"{old_jobs}/lines/{lines[0]['id']}",
+        json={"field": "description", "value": "edited"},
+        headers=old_auth,
+    )
+    check(r.status_code == 200, "[P8] editing the old job works", r.text)
+    after = c.get(f"{old_jobs}/bom", headers=old_auth).json()
+    check(
+        after["library_version"] == old_version and total_mass(after) == m_old,
+        "[P8] ... and the old job's result and version are unchanged",
+        (after["library_version"], total_mass(after), m_old),
+    )
+
+
 def run_checks(base: str) -> None:
     with httpx.Client(base_url=base, timeout=30) as c:
         # --- front door and web build
@@ -600,9 +1101,16 @@ def run_checks(base: str) -> None:
 
         r = upload("model.sldprt", b"\xd0\xcf\x11\xe0" + b"\x00" * 100)
         check(
-            r.status_code == 415 and "export it as STEP" in r.json()["detail"],
-            "native CAD gets a helpful refusal",
+            r.status_code == 415
+            and r.json()["code"] == "native_not_configured"
+            and "export it as STEP" in r.json()["detail"]
+            and "isn't set up" in r.json()["detail"],
+            "native CAD with Autodesk unconfigured gets a clear message (415 native_not_configured)",
             r.text,
+        )
+        check(
+            c.get("/api/config").json()["native_enabled"] is False,
+            "/config says native conversion is off",
         )
         r = upload("setup.exe", b"MZ" + b"\x00" * 100)
         check(
@@ -653,6 +1161,18 @@ def run_checks(base: str) -> None:
         golden_b4(c)
         golden_b5(c)
 
+        # --- P8 stage 1: Autodesk not configured, admin, delete-now, library store
+        native_unconfigured(c)
+        delete_now(c)
+        admin_token = admin_checks(c)
+        expired_job = make_expired_job(c)
+
+        # --- P8 stage 2: recreate api + worker with Autodesk in replay mode
+        switch_to_aps(c)
+        check_expired_deleted(expired_job)
+        golden_b7(c)
+        library_acceptance(c, admin_token)
+
         # --- demo stream
         ticks = [e for e, _ in sse_events(c, "/api/demo/stream", {}, timeout=20)]
         check(
@@ -700,6 +1220,10 @@ def run_checks(base: str) -> None:
         ".venv/x",
         "apps/web/dist/index.html",
         "x/__pycache__/y.pyc",
+        "backups/20260101T000000Z/db.sql.gz",
+        "data/library/active",
+        "data/converted/x/part.step",
+        "aps-live/x.json",
         ".mypy_cache/x",
         ".ruff_cache/x",
         "server.log",

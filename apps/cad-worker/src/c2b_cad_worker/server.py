@@ -20,7 +20,7 @@ DATA_ROOT = Path(os.environ.get("C2B_DATA_DIR", "/data")).resolve()
 # Results go to a separate writable tree so the input mount can stay read-only: <out>/<job id>/.
 OUT_ROOT = Path(os.environ.get("C2B_CAD_OUT_DIR", str(DATA_ROOT / "out")))
 TIMEOUT_S = int(os.environ.get("C2B_CAD_TIMEOUT_S", "120"))
-MAX_REQUEST_BYTES = 64 * 1024
+MAX_REQUEST_BYTES = 256 * 1024
 
 _one_at_a_time = asyncio.Semaphore(1)
 
@@ -30,7 +30,8 @@ def _reply(status: str, message: str, **extra: object) -> bytes:
 
 
 def _safe_input_path(raw: object) -> Path | None:
-    """Only files under <data>/jobs/<id>/in/ are readable; anything else is refused."""
+    """Only files under <data>/jobs/<id>/in/ (uploads) or <data>/converted/<id>/ (files the
+    native adapter made from an upload) are readable; anything else is refused."""
     if not isinstance(raw, str):
         return None
     try:
@@ -41,21 +42,30 @@ def _safe_input_path(raw: object) -> Path | None:
         rel = path.relative_to(DATA_ROOT)
     except ValueError:
         return None
-    if len(rel.parts) < 4 or rel.parts[0] != "jobs" or rel.parts[2] != "in":
+    uploads = len(rel.parts) >= 4 and rel.parts[0] == "jobs" and rel.parts[2] == "in"
+    converted = len(rel.parts) >= 3 and rel.parts[0] == "converted"
+    if not (uploads or converted):
         return None
     return path
 
 
-async def _run_child(path: Path) -> bytes:
-    out_dir = OUT_ROOT / path.parent.parent.name
+def _job_id(path: Path) -> str:
+    return path.relative_to(DATA_ROOT).parts[1]
+
+
+async def _run_child(path: Path, extra_paths: list[Path] | None = None, name: str = "") -> bytes:
+    """Read one STEP file (`extract`) or a set of OBJ meshes (`mesh_extract`) in a child process."""
+    out_dir = OUT_ROOT / _job_id(path)
     out_dir.mkdir(parents=True, exist_ok=True)
+    if extra_paths is None:
+        argv = ["c2b_cad_worker.extract", str(path), str(out_dir)]
+    else:
+        argv = ["c2b_cad_worker.mesh", str(out_dir), name or path.stem, *map(str, extra_paths)]
     proc = await asyncio.create_subprocess_exec(
         sys.executable,
         "-I",
         "-m",
-        "c2b_cad_worker.extract",
-        str(path),
-        str(out_dir),
+        *argv,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
@@ -93,15 +103,29 @@ async def _handle(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) ->
         except json.JSONDecodeError:
             writer.write(_reply("error", "Bad request."))
             return
-        if not isinstance(req, dict) or req.get("op") != "extract":
+        op = req.get("op") if isinstance(req, dict) else None
+        if op not in {"extract", "mesh_extract"}:
             writer.write(_reply("error", "Unknown operation."))
             return
-        path = _safe_input_path(req.get("path"))
-        if path is None:
+        if op == "extract":
+            path = _safe_input_path(req.get("path"))
+            if path is None:
+                writer.write(_reply("error", "That file is not available to the CAD reader."))
+                return
+            async with _one_at_a_time:
+                writer.write(await _run_child(path))
+            return
+        raw_paths = req.get("paths")
+        if not isinstance(raw_paths, list) or not 0 < len(raw_paths) <= 64:
             writer.write(_reply("error", "That file is not available to the CAD reader."))
             return
+        safe = [_safe_input_path(p) for p in raw_paths]
+        if any(p is None for p in safe) or len({_job_id(p) for p in safe if p}) != 1:
+            writer.write(_reply("error", "That file is not available to the CAD reader."))
+            return
+        meshes = [p for p in safe if p is not None]
         async with _one_at_a_time:
-            writer.write(await _run_child(path))
+            writer.write(await _run_child(meshes[0], meshes, str(req.get("name") or "")[:120]))
     except Exception:
         log.exception("request failed")
         with contextlib.suppress(Exception):

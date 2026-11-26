@@ -21,6 +21,20 @@ _MAX_RESPONSE_BYTES = 256 * 1024 * 1024
 
 
 async def extract(socket_path: Path, file_path: str, timeout_s: float) -> dict[str, Any]:
+    """Read one STEP file."""
+    return await _ask(socket_path, {"op": "extract", "path": file_path}, timeout_s)
+
+
+async def mesh_extract(
+    socket_path: Path, obj_paths: list[str], name: str, timeout_s: float
+) -> dict[str, Any]:
+    """Read the OBJ meshes the native adapter downloaded (SolidWorks)."""
+    return await _ask(
+        socket_path, {"op": "mesh_extract", "paths": obj_paths, "name": name}, timeout_s
+    )
+
+
+async def _ask(socket_path: Path, request: dict[str, Any], timeout_s: float) -> dict[str, Any]:
     # The cad-worker enforces its own per-file limit; we wait a little longer than that.
     try:
         reader, writer = await asyncio.wait_for(
@@ -31,7 +45,7 @@ async def extract(socket_path: Path, file_path: str, timeout_s: float) -> dict[s
             "The CAD reader is not running right now. It will be retried when you start again."
         ) from exc
     try:
-        writer.write(json.dumps({"op": "extract", "path": file_path}).encode() + b"\n")
+        writer.write(json.dumps(request).encode() + b"\n")
         await writer.drain()
         line = await asyncio.wait_for(reader.readline(), timeout=timeout_s + 30)
     except TimeoutError as exc:

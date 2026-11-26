@@ -1,4 +1,4 @@
-"""Worker entrypoint: one process serving the `pipeline` and `cad` queues."""
+"""Worker entrypoint: one process serving the `pipeline`, `cad` and `native` queues."""
 
 import asyncio
 import logging
@@ -6,9 +6,9 @@ import socket
 
 from c2b_jobs import repo
 from c2b_jobs.migrate import run_migrations
-from c2b_jobs.queue import QUEUE_CAD, QUEUE_PIPELINE, app
+from c2b_jobs.queue import QUEUE_CAD, QUEUE_NATIVE, QUEUE_PIPELINE, app
 from c2b_jobs.settings import get_settings
-from c2b_worker import tasks  # noqa: F401  (registers the tasks)
+from c2b_worker import native_tasks, tasks  # noqa: F401  (registers the tasks)
 from c2b_worker.context import set_pool
 
 
@@ -21,7 +21,7 @@ async def _run() -> None:
     set_pool(pool)
     async with app.open_async():
         await app.run_worker_async(
-            queues=[QUEUE_PIPELINE, QUEUE_CAD],
+            queues=[QUEUE_PIPELINE, QUEUE_CAD, QUEUE_NATIVE],
             name=f"worker-{socket.gethostname()}",
             concurrency=4,
             wait=True,

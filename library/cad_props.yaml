@@ -1,0 +1,46 @@
+# Property names in native CAD files (SolidWorks custom properties, Fusion/Inventor properties) and
+# what they mean for the BoM (docs/03 §2). The worker reads this to merge the properties Autodesk
+# returns into CAD nodes; the engine holds no such names (CLAUDE.md rule 6).
+#
+# Names are compared after lower-casing and dropping spaces, dots, dashes and underscores, and a
+# `Group.Name` property is matched on its last part. First match wins, so list the clearest first.
+canonical:
+  part_number:
+    - part number
+    - partnumber
+    - part no
+    - part nr
+    - p/n
+    - pn
+    - item number
+    - item no
+    - article number
+    - artikelnummer
+    - teilenummer
+    - sachnummer
+    - drawing number
+  description:
+    - description
+    - beschreibung
+    - bezeichnung
+    - title
+  material:
+    - material
+    - werkstoff
+  class:
+    - class
+    - category
+    - kategorie
+
+# Values that mean "nothing was entered".
+ignore_values:
+  - ""
+  - "-"
+  - "--"
+  - n/a
+  - na
+  - none
+  - tbd
+  - default
+  - "<not specified>"
+  - "<none>"

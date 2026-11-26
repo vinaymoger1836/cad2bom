@@ -12,6 +12,7 @@ from typing import Any, cast
 import yaml
 
 from c2b_fixtures import cases, xlsx
+from c2b_fixtures.b7 import build_b7 as build_b7_files
 from c2b_fixtures.expected import Ctx, build_ebom, build_mbom, mass_rollup_g
 from c2b_fixtures.model import Spec, to_node
 from c2b_fixtures.xcaf import StepNode, count_solids, read_step_tree, write_step
@@ -27,8 +28,9 @@ DIRS = {
     "B4": "B4_power_bank",
     "B5": "B5_cad_plus_bom",
     "B6": "B6_unknown",
+    "B7": "B7_native",
 }
-ALL_CASES = ["B1", "B2", "B3", "B4", "B5", "B6"]
+ALL_CASES = ["B1", "B2", "B3", "B4", "B5", "B6", "B7"]
 
 _STEP_TIME_RE = re.compile(r"(FILE_NAME\('[^']*',')([^']*)(')")
 
@@ -601,6 +603,39 @@ def build_b6(lib: Library, out: Path) -> None:
     )
 
 
+# --- B7: native CAD through Autodesk (scripted APS responses) ---------------------------------------
+
+
+def build_b7_case(lib: Library, out: Path, b2_spec: Spec) -> None:
+    """B7 reuses B2's bracket assembly as the STEP that the scripted APS conversion returns."""
+    ctx = Ctx(lib)
+    b2_expected = _b2_expected(lib, ctx, b2_spec, "B2", "Bracket assembly", [])
+    d = out / DIRS["B7"]
+    d.mkdir(parents=True, exist_ok=True)
+    step = d / "aps" / "_b2.step"
+    step.parent.mkdir(parents=True, exist_ok=True)
+    _write_step(b2_spec, step)
+    try:
+        build_b7_files(lib, d, step, b2_expected)
+    finally:
+        step.unlink(missing_ok=True)
+    _write_case_yaml(
+        out,
+        "B7",
+        _case_yaml(
+            "B7",
+            "Native CAD through Autodesk (scripted APS responses)",
+            lib,
+            ["input/bracket.f3d", "input/assembly.sldprt"],
+            ["expected/b7.json"],
+            stand_in=True,
+            stand_in_note="placeholder native files; APS responses are scripted, not recorded",
+            llm_calls=0,
+            aps_fixtures="aps/",
+        ),
+    )
+
+
 # --- B3b: the owner's real fan.STEP, measured, not classified ------------------------------------------
 
 
@@ -680,6 +715,8 @@ def build(lib: Library, out: Path, selected: list[str]) -> list[Path]:
         build_b5(lib, out, b2_spec or cases.case_b2(lib))
     if "B6" in want:
         build_b6(lib, out)
+    if "B7" in want:
+        build_b7_case(lib, out, b2_spec or cases.case_b2(lib))
     return sorted(
         p for p in out.rglob("*") if p.is_file() and any(DIRS[c] in p.parts for c in want)
     )
@@ -704,6 +741,7 @@ Changing an expected value needs an explanation in the phase report (CLAUDE.md r
 | B4 Power bank BoM file | `B4_power_bank/` | messy supplier XLSX | Mapping, normalisation and suggestions; classes are acceptable sets |
 | B5 CAD + incomplete BoM | `B5_cad_plus_bom/` | B2 STEP + user XLSX | 3 suggestions, 1 question |
 | B6 Unknown product | `B6_unknown/` | STEP, details text | Acceptable class sets; LLM constraints; cassette in P5 |
+| B7 Native CAD (Autodesk) | `B7_native/` | placeholder `.f3d` and `.sldprt`, **scripted** APS responses in `aps/` | Consent, usage counter, converted STEP follows B2, SolidWorks properties and mesh features |
 
 ## B3 is a stand-in
 
@@ -714,6 +752,12 @@ Replace it with the real file and regenerate `expected/` when it is available.
 `B3_fan/input/fan_real.step` is a fan model the owner had in their Downloads folder (`c2b-fixtures import-fan`).
 It is not confirmed to be the S2 demo fan (15 solid instances, 9 unique shapes, not 13). Only measured facts are in
 `expected/fan_real_provisional.json`; the owner has not classified its parts.
+
+## B7 is scripted
+
+`B7_native/aps/` holds the Autodesk responses as JSON, one file per request (`INDEX.txt` lists them). They were scripted
+from the documented API shapes, **not recorded against a live account**; the native input files are placeholders. Set
+`C2B_APS_MODE=record` with real credentials to replace them with real recordings (git-ignored under `aps-live/`).
 
 ## Conventions
 

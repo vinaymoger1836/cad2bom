@@ -1,6 +1,17 @@
 # Overlay used by `make e2e`: a 1 MB CAD limit so the over-limit refusal can be tested with a
-# ~2 MB payload instead of a 200 MB one. Nothing else changes.
+# ~2 MB payload instead of a 200 MB one, plus the admin page switched on with throwaway test
+# credentials (never use these anywhere else). Nothing else changes.
+#   admin web login: admin / e2e-basic-pass     admin passcode: e2e-passcode
 services:
   api:
     environment:
       C2B_MAX_CAD_MB: "1"
+      C2B_ADMIN_PASSCODE: e2e-passcode
+      C2B_ADMIN_SECRET: e2e-admin-secret-not-for-real-use
+      C2B_METRICS_TOKEN: e2e-metrics-token
+      C2B_RETENTION_SWEEP_S: "60"
+  caddy:
+    environment:
+      - C2B_ADMIN_BASIC_USER=admin
+      # bcrypt of "e2e-basic-pass" ($ doubled for compose)
+      - C2B_ADMIN_BASIC_HASH=$$2b$$10$$FYWZPBJClTn1elIS3z/Db.c632mIbeWiItf5CJ0dQTPoW6lkU6CtK

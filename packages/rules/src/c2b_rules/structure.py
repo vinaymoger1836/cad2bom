@@ -12,6 +12,7 @@ from typing import Any
 
 from c2b_domain.bom import BomLine, Designation, MakeBuyType
 from c2b_domain.cad import CadNode, ShapeFeatures
+from c2b_domain.prov import Prov
 from c2b_library.loader import Library
 from c2b_rules.classifier import classify_node
 from c2b_rules.descriptions import build_description
@@ -194,11 +195,25 @@ def build_ebom_lines(
             c_cls_def = class_map.get(cls_res.cls)
             uom_val = c_cls_def.uom if c_cls_def else "EA"
 
+            # A part number the CAD file itself carries (SolidWorks custom property) is kept as
+            # authored; numbering.py only numbers lines that have none (docs/03 §2).
+            cad_pn = cnode.props.get("part_number", "").strip()
             line = BomLine(
                 id=line_id,
                 parent=parent_line_id,
                 level=current_level,
                 find_no=fn_val,
+                part_number=(
+                    Prov[str](
+                        value=cad_pn,
+                        source="cad_meta",
+                        confidence=float(library.confidence.source_base.get("cad_meta", 0.9)),
+                        rules=["R-NUM-CAD"],
+                        note="Part number from the CAD file's own properties",
+                    )
+                    if cad_pn
+                    else None
+                ),
                 cad_name=cnode.name,
                 cad_nodes=[cnode.id],
                 noun=noun,
@@ -212,7 +227,18 @@ def build_ebom_lines(
                 description_exact=is_exact,
                 material=mat_dict,
                 finish=finish_dict,
-                mass_g=mat_res.mass_g,
+                mass_g=(
+                    Prov[float](
+                        value=mat_res.mass_g,
+                        unit="g",
+                        source="engine",
+                        confidence=mat_res.mass_confidence,
+                        rules=[r for r in mat_res.rule_ids if r.startswith("R-MSS")],
+                        note="Volume measured from a mesh (converted SolidWorks file) x density",
+                    )
+                    if mat_res.mass_g is not None and shape is not None and shape.mesh_based
+                    else mat_res.mass_g
+                ),
                 make_buy=make_buy,
                 origin=origin,
                 review="derived",

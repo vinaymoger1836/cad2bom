@@ -6,7 +6,7 @@ COMPOSE      = docker compose --env-file .env -f infra/docker-compose.yml
 COMPOSE_E2E  = $(COMPOSE) -f infra/docker-compose.e2e.yml
 BAKE         = docker buildx bake -f infra/docker-bake.hcl
 
-.PHONY: help env up down logs build build-multiarch lint e2e clean
+.PHONY: help env up down logs build build-multiarch lint e2e clean backup restore health
 
 help:
 	@echo "make env              create .env with random local secrets (git-ignored)"
@@ -18,6 +18,9 @@ help:
 	@echo "make lint             ruff, mypy, eslint, tsc"
 	@echo "make e2e              full end-to-end check (brings the stack up, tears it down)"
 	@echo "make clean            stop the stack and delete its volumes (database!)"
+	@echo "make backup           database dump + job files + library store into backups/ (rotated)"
+	@echo "make restore B=<dir>  restore a backup made by make backup (stops the stack first)"
+	@echo "make health           check the running stack (exit 1 on failure; alerts if configured)"
 
 env:
 	uv run python scripts/init_env.py
@@ -60,3 +63,12 @@ e2e:
 
 clean:
 	$(COMPOSE) down -v
+
+backup:
+	sh scripts/backup.sh
+
+restore:
+	sh scripts/restore.sh $(B)
+
+health:
+	sh scripts/healthcheck.sh

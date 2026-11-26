@@ -2,7 +2,7 @@
   "case": "B3b",
   "title": "Fan model supplied by the owner (provisional)",
   "provisional": true,
-  "library_version": "2026.11.0",
+  "library_version": "2026.11.1",
   "input": "input/fan_real.step",
   "source_note": "Copied from the owner's Downloads folder (fan.STEP). It is not confirmed to be the S2 demo fan: it has 15 solid instances (9 unique shapes), not 13.",
   "sha256": "07a03e663b783864f6e04654e7f5d17e96c40749b2c2856a144abf9e6613d6b0",

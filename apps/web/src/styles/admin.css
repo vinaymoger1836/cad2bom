@@ -1,0 +1,251 @@
+/* Admin page, consent and delete dialogs (P8). Colours come from tokens.css only, so both themes
+   work; nothing here relies on colour alone (diff lines carry + / - signs, issues carry a level word). */
+
+.btn-danger {
+  background: var(--c-danger);
+  color: var(--c-accent-contrast);
+}
+.btn-danger:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  font-weight: 500;
+}
+.check-row input {
+  margin-top: 0.2rem;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.admin-narrow {
+  max-width: 32rem;
+}
+.admin-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.admin-notice {
+  min-height: 1.2em;
+}
+.admin-tablist {
+  display: flex;
+  gap: var(--sp-1);
+  border-bottom: 1px solid var(--c-border);
+  margin-bottom: var(--sp-4);
+}
+.admin-tab {
+  font: inherit;
+  font-weight: 600;
+  padding: var(--sp-2) var(--sp-4);
+  background: transparent;
+  color: var(--c-text-muted);
+  border: 0;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+}
+.admin-tab:hover {
+  color: var(--c-text);
+}
+.admin-tab[data-state="active"] {
+  color: var(--c-accent);
+  border-bottom-color: var(--c-accent);
+}
+.admin-tab:focus-visible,
+.admin-file:focus-visible,
+.admin-textarea:focus-visible,
+.admin-diff-body:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+.admin-panel:focus-visible {
+  outline: none;
+}
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.admin-table th,
+.admin-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: var(--sp-3);
+  border-bottom: 1px solid var(--c-border);
+}
+.admin-changelog {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: var(--fs-sm);
+}
+.admin-drafts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.admin-drafts li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+}
+
+.admin-editor {
+  display: grid;
+  grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: start;
+}
+@media (max-width: 760px) {
+  .admin-editor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.admin-files {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  max-height: 32rem;
+  overflow: auto;
+}
+.admin-files ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.admin-file {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  padding: var(--sp-1) var(--sp-2);
+  background: transparent;
+  color: var(--c-text);
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.admin-file:hover:not(:disabled) {
+  background: var(--c-surface-2);
+}
+.admin-file[aria-current="true"] {
+  background: var(--c-accent-soft);
+  border-left-color: var(--c-accent);
+  font-weight: 600;
+}
+.admin-file:disabled {
+  color: var(--c-text-muted);
+  cursor: not-allowed;
+}
+.admin-edit-pane {
+  min-width: 0;
+}
+.admin-file-name {
+  font-family: var(--font-mono);
+}
+.admin-textarea {
+  width: 100%;
+  min-height: 26rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
+  resize: vertical;
+  padding: var(--sp-3);
+  background: var(--c-surface);
+  color: var(--c-text);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-sm);
+}
+.admin-issues {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  font-size: var(--fs-sm);
+  max-height: 16rem;
+  overflow: auto;
+}
+.admin-issues li {
+  padding: var(--sp-2) var(--sp-3);
+  border-left: 4px solid var(--c-border-strong);
+  background: var(--c-surface-2);
+  border-radius: var(--radius-sm);
+}
+.admin-issues .issue-error {
+  border-left-color: var(--c-danger);
+}
+.admin-issues .issue-warning {
+  border-left-color: var(--c-warning);
+}
+.alert-success {
+  background: var(--c-success-soft);
+  border: 1px solid var(--c-success);
+  color: var(--c-text);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-sm);
+}
+.admin-compare-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sp-4);
+}
+.admin-diff {
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+}
+.admin-diff summary {
+  padding: var(--sp-2) var(--sp-3);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+.admin-diff-body {
+  margin: 0;
+  padding: var(--sp-2) 0;
+  overflow: auto;
+  max-height: 24rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  border-top: 1px solid var(--c-border);
+}
+.admin-diff-body span {
+  display: block;
+  padding: 0 var(--sp-3);
+  white-space: pre;
+}
+.admin-diff-body .diff-add {
+  background: var(--c-success-soft);
+}
+.admin-diff-body .diff-del {
+  background: var(--c-danger-soft);
+}
+.admin-diff-body .diff-hunk {
+  color: var(--c-text-muted);
+}

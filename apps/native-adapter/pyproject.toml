@@ -1,10 +1,11 @@
 [project]
 name = "c2b-native-adapter"
 version = "0.0.0"
-description = "Native CAD adapter interface and stubs (ADR-003, ADR-004)"
+description = "Native CAD adapter: interface, APS converter, record/replay transport (ADR-004, ADR-018)"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "c2b-domain",
+  "httpx>=0.27",
 ]
 
 [build-system]

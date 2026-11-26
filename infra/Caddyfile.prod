@@ -1,0 +1,53 @@
+# Production front door (ADR-022). Used by infra/docker-compose.prod.yml, which mounts it over
+# /etc/caddy/Caddyfile. Caddy gets and renews the HTTPS certificate by itself; the domain must
+# already point at this machine, and ports 80 and 443 must be open.
+#
+# C2B_DOMAIN comes from .env (set by scripts/deploy.sh).
+{
+	admin off
+	email {$C2B_ACME_EMAIL:}
+}
+
+{$C2B_DOMAIN} {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+		-Server
+	}
+
+	# Reverse-proxy auth for the admin page and API (ADR-020). Both values are required in
+	# production: scripts/deploy.sh creates them.
+	@admin path /admin /admin/* /api/admin /api/admin/*
+	basic_auth @admin {
+		{$C2B_ADMIN_BASIC_USER} {$C2B_ADMIN_BASIC_HASH}
+	}
+
+	log {
+		output stdout
+		format json
+	}
+
+	handle_path /api/* {
+		request_body {
+			max_size 300MB
+		}
+		reverse_proxy api:8000 {
+			flush_interval -1
+			transport http {
+				read_timeout 20m
+				write_timeout 20m
+			}
+		}
+	}
+
+	handle {
+		encode zstd gzip
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

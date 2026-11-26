@@ -1,7 +1,7 @@
 {
   "case": "B2",
   "title": "Bracket assembly",
-  "library_version": "2026.11.0",
+  "library_version": "2026.11.1",
   "profile": "default",
   "inputs": [
     "input/bracket_assembly.step"

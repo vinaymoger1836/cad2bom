@@ -1,6 +1,6 @@
 id: B5
 title: CAD plus incomplete BoM
-library_version: 2026.11.0
+library_version: 2026.11.1
 generated_by: c2b-fixtures build
 inputs:
 - input/bracket_assembly.step

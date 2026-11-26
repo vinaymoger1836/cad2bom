@@ -32,7 +32,9 @@ Updated in P0 (2026-11-20). Exact Python versions are locked in `uv.lock`, web v
 | langgraph | 0.3.0 | MIT | Conversational chat agent graph |
 | weasyprint | 70.0 | BSD-3-Clause | PDF parts list (P7). Needs pango, harfbuzz and a font as **system** libraries in the API image: `libpango-1.0-0`, `libpangoft2-1.0-0`, `libharfbuzz0b` (LGPL-2.1, dynamically linked, unmodified; flagged for the owner like psycopg) and `fonts-dejavu-core` (Bitstream Vera / public domain). Pulls pydyf, tinycss2, tinyhtml5, cssselect2, pyphen, brotli, zopfli (all BSD/MIT/MPL) |
 | hatchling | latest at build | MIT | build backend |
-| ruff / mypy / httpx | 0.17.6 / 2.4.1 / 0.28.1 | MIT / MIT / BSD-3-Clause | dev only |
+| httpx | 0.28.1 | BSD-3-Clause | Autodesk client and record/replay transport in `native-adapter` (P8); a runtime dependency of the worker since P8, dev-only before |
+| numpy | pulled in by cadquery | BSD-3-Clause | mesh features in the cad-worker (P8); now declared explicitly |
+| ruff / mypy | 0.17.6 / 2.4.1 | MIT / MIT | dev only |
 
 ## Web packages
 
@@ -50,3 +52,10 @@ Updated in P0 (2026-11-20). Exact Python versions are locked in `uv.lock`, web v
 | typescript | 6.0.x (**not 7**: typescript-eslint does not support TS 7 yet) | Apache-2.0 |
 | eslint / typescript-eslint / eslint-plugin-jsx-a11y / eslint-plugin-react-hooks | 10.15.0 / 8.73.0 / 6.10.2 / 7.1.1 | MIT |
 | json-schema-to-typescript | 16.x | MIT |
+
+## Not a dependency, but used by the deploy script (P8)
+
+| Tool | Where | Licence | Notes |
+|---|---|---|---|
+| Caddy 2.10 (`caddy hash-password`) | `scripts/deploy.sh` runs it from the official image to hash the admin web password | Apache-2.0 | already the front door image |
+| Docker Engine + Compose plugin | installed by `scripts/deploy.sh` from get.docker.com when missing | Apache-2.0 | read that script before running it on a server |

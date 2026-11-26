@@ -1,0 +1,15 @@
+# Second stage of `make e2e`: native conversion switched on in REPLAY mode, so the B7 golden case
+# runs against the scripted Autodesk responses in golden/B7_native/aps (no credentials, no network).
+# The monthly cap is 3 translation jobs: one F3D (1) + one SolidWorks (2) use it up, and the next
+# conversion must be stopped with a clear message.
+services:
+  api:
+    environment:
+      C2B_APS_MODE: replay
+      C2B_APS_MONTHLY_CAP: "3"
+  worker:
+    environment:
+      C2B_APS_MODE: replay
+      C2B_APS_MONTHLY_CAP: "3"
+    volumes:
+      - ../golden/B7_native/aps:/app/aps-fixtures:ro

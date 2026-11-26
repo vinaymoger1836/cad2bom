@@ -16,6 +16,21 @@
 		-Server
 	}
 
+	# Admin (ADR-020): reverse-proxy auth in front of the admin page and its API. The user and the
+	# bcrypt hash come from C2B_ADMIN_BASIC_USER / C2B_ADMIN_BASIC_HASH (`make env` or deploy.sh
+	# set them). With no hash configured the default below is the hash of a random password that
+	# was thrown away, so the paths stay locked. The API then asks for the admin passcode as well.
+	@admin path /admin /admin/* /api/admin /api/admin/*
+	basic_auth @admin {
+		{$C2B_ADMIN_BASIC_USER:admin} {$C2B_ADMIN_BASIC_HASH:$2b$10$PmeyC6wJP6J27pw2BOhteelq8coIWTQTZ9cFUuIr.5BQAL1.3xoFm}
+	}
+
+	# Access log to stdout (`make logs`). Caddy redacts the Authorization header.
+	log {
+		output stdout
+		format json
+	}
+
 	# API: no response compression here so event streams are never buffered.
 	handle_path /api/* {
 		request_body {

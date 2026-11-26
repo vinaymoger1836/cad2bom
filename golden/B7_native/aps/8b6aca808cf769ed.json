@@ -1,0 +1,16 @@
+{
+  "key": "POST /modelderivative/v2/designdata/job #step",
+  "responses": [
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "json": {
+        "result": "success",
+        "urn": "dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZmJhNGI2MjkxMzZhNGQ4ZTY1MzZmYzJiLmYzZA",
+        "acceptedJobs": {
+          "output": {}
+        }
+      }
+    }
+  ]
+}

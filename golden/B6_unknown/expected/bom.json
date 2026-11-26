@@ -1,7 +1,7 @@
 {
   "case": "B6",
   "title": "Unknown product type",
-  "library_version": "2026.11.0",
+  "library_version": "2026.11.1",
   "inputs": [
     "input/unknown_product.step",
     "input/details.txt"

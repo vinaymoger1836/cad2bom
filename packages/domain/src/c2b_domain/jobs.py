@@ -6,7 +6,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-JobStatus = Literal["uploading", "extracting", "building", "review", "approved", "failed"]
+JobStatus = Literal[
+    "uploading", "converting", "extracting", "building", "review", "approved", "failed"
+]
 
 UploadKind = Literal["cad", "photo", "bom_file", "datasheet"]
 
@@ -51,6 +53,7 @@ class JobOut(ApiModel):
     product: ProductInfo
     library_version: str
     consent_native_conversion: bool = False
+    expires_at: datetime | None = None
     created_at: datetime
     uploads: list["UploadOut"] = Field(default_factory=list)
 
@@ -62,6 +65,7 @@ class UploadOut(ApiModel):
     detected_type: str
     size_bytes: int
     sha256: str
+    origin: Literal["user", "converted"] = "user"
     created_at: datetime
 
 
@@ -93,6 +97,10 @@ class ProblemDetail(ApiModel):
         "invalid_request",
         "wrong_state",
         "not_ready",
+        "native_not_configured",
+        "consent_required",
+        "rate_limited",
+        "forbidden",
     ]
 
 

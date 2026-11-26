@@ -110,7 +110,7 @@ export function NewBom() {
           },
           {
             q: "Which files can I add next?",
-            a: "STEP files for the 3D model, photos (JPEG, PNG, WebP), parts lists (Excel or CSV) and PDF datasheets. SolidWorks and Fusion files are not supported yet; export them as STEP first.",
+            a: "STEP files for the 3D model, photos (JPEG, PNG, WebP), parts lists (Excel or CSV) and PDF datasheets. SolidWorks (.sldprt, .sldasm) and Fusion (.f3d) files can be converted by Autodesk when this server has that set up and you agree for the job; otherwise export them as STEP first (AP242 gives the best result).",
           },
         ]}
       />

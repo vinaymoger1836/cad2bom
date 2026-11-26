@@ -1,19 +1,22 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import { Link, useLocation, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import type { BomDraft, JobEvent, JobOut } from "@c2b/ts-types";
+import { DeleteJobDialog } from "../components/DeleteJobDialog";
 import { Qa, Term, WhatHappens } from "../components/Help";
+import { NativeConsentDialog } from "../components/NativeConsentDialog";
 import { ProgressPanel, type ProgressItem } from "../components/ProgressPanel";
 import {
   ApiError,
   getBom,
   getConfig,
   getJob,
+  setNativeConsent,
   startJob,
   uploadFile,
   type AppConfig,
 } from "../lib/api";
 import { followJob, readSse } from "../lib/sse";
-import { loadToken, saveToken } from "../lib/storage";
+import { forgetToken, loadToken, saveToken } from "../lib/storage";
 
 type ItemState = "queued" | "uploading" | "done" | "error";
 
@@ -27,6 +30,7 @@ interface UploadItem {
 }
 
 const NATIVE = [".sldprt", ".sldasm", ".f3d"];
+const SOLIDWORKS = [".sldprt", ".sldasm"];
 
 function fmtSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -48,8 +52,8 @@ function extOf(name: string): string {
 /** Quick pre-check so people get an answer before a big upload. The server stays authoritative. */
 function precheck(file: File, cfg: AppConfig): string | null {
   const ext = extOf(file.name);
-  if (NATIVE.includes(ext)) {
-    return `${file.name} is a native CAD file. These are not supported yet. Please export it as STEP (AP242 if you can) and upload that instead.`;
+  if (NATIVE.includes(ext) && !cfg.native_enabled) {
+    return `${file.name} is a native CAD file, and this server is not set up to convert those. Please export it as STEP (AP242 if you can) and upload that instead. Your other files are not affected.`;
   }
   if (!cfg.accepted_extensions.includes(ext)) {
     return `${file.name} has type ${ext || "(no extension)"}, which is not accepted. Accepted types: ${cfg.accepted_extensions.join(", ")}.`;
@@ -88,7 +92,10 @@ export function JobUpload() {
   const [now, setNow] = useState(() => Date.now());
   const [copied, setCopied] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [pendingNative, setPendingNative] = useState<File[] | null>(null);
+  const [consentBusy, setConsentBusy] = useState(false);
   const nextKey = useRef(1);
+  const navigate = useNavigate();
 
   // Load config and the job.
   useEffect(() => {
@@ -114,7 +121,9 @@ export function JobUpload() {
   }, [id, token]);
 
   const started = job !== null && job.status !== "uploading";
-  const running = job !== null && (job.status === "extracting" || job.status === "building");
+  const running =
+    job !== null &&
+    (job.status === "extracting" || job.status === "building" || job.status === "converting");
 
   // The live stream can drop or miss an event. While a build is running, also ask for the job's
   // state every few seconds (the server also stops builds that went silent), and tick a clock.
@@ -209,8 +218,14 @@ export function JobUpload() {
     setItems((prev) => prev.map((it) => (it.key === key ? { ...it, ...p } : it)));
   }, []);
 
-  async function addFiles(files: File[]) {
+  /** Native files need the person's consent first (they leave the server). Others go straight. */
+  async function addFiles(files: File[], consented = false) {
     if (!token || !cfg || files.length === 0) return;
+    const natives = files.filter((f) => cfg.native_enabled && NATIVE.includes(extOf(f.name)));
+    if (natives.length > 0 && !consented && !job?.consent_native_conversion) {
+      setPendingNative(files);
+      return;
+    }
     const fresh: { item: UploadItem; file: File }[] = files.map((file) => {
       const problem = precheck(file, cfg);
       return {
@@ -247,6 +262,22 @@ export function JobUpload() {
       setJob(await getJob(id, token));
     } catch {
       /* the list refreshes on the next action */
+    }
+  }
+
+  async function onConsent() {
+    if (!token || !pendingNative) return;
+    setConsentBusy(true);
+    try {
+      setJob(await setNativeConsent(id, token, true));
+      const files = pendingNative;
+      setPendingNative(null);
+      await addFiles(files, true);
+    } catch (e) {
+      setPendingNative(null);
+      setStartError(e instanceof ApiError ? e.message : "Could not save your consent. Please try again.");
+    } finally {
+      setConsentBusy(false);
     }
   }
 
@@ -307,10 +338,12 @@ export function JobUpload() {
       : status === "building"
         ? 0.65
         : status === "extracting"
-          ? 0.3
-          : started
-            ? 0.1
-            : 0;
+          ? 0.4
+          : status === "converting"
+            ? 0.2
+            : started
+              ? 0.1
+              : 0;
   const hasUploads = (job?.uploads.length ?? 0) > 0;
   const failureReason =
     [...events].reverse().find((e) => e.kind === "notice")?.message ??
@@ -318,6 +351,11 @@ export function JobUpload() {
   const elapsedS = firstAt === null ? 0 : Math.max(0, Math.round((now - firstAt) / 1000));
   const quietS = lastAt === null ? 0 : Math.max(0, Math.round((now - lastAt) / 1000));
   const limitMin = cfg ? Math.ceil(cfg.cad_timeout_s / 60) : null;
+  const hasSolidWorks = (job?.uploads ?? []).some((u) =>
+    SOLIDWORKS.some((x) => u.filename.toLowerCase().endsWith(x)),
+  );
+  const hasStep = (job?.uploads ?? []).some((u) => u.detected_type === "step" && u.origin === "user");
+  const expires = job?.expires_at ? new Date(job.expires_at).toLocaleDateString() : null;
 
   return (
     <div className="stack">
@@ -333,9 +371,8 @@ export function JobUpload() {
           and report progress here.
         </p>
         <p className="small muted">
-          The draft is built by fixed rules from your files. The review screen (edit, accept
-          suggestions, approve, download) arrives in a later release; until then you can download the
-          draft as JSON when it is ready.
+          The draft is built by fixed rules from your files. When it is ready, the review screen lets
+          you edit it, accept or reject suggestions, approve it and download it.
         </p>
       </WhatHappens>
 
@@ -394,6 +431,9 @@ export function JobUpload() {
             <Term word="STEP" meaning="A neutral 3D CAD file format (.step or .stp) that most CAD programs can export." />{" "}
             files up to {cfg?.max_cad_mb ?? "…"} MB; photos, parts lists and PDFs up to{" "}
             {cfg?.max_other_mb ?? "…"} MB.
+            {cfg?.native_enabled
+              ? " SolidWorks (.sldprt, .sldasm) and Fusion (.f3d) files are converted by Autodesk, only after you agree."
+              : ""}
           </span>
         </label>
 
@@ -436,10 +476,22 @@ export function JobUpload() {
                   <span className="file-name">{u.filename}</span>{" "}
                   <span className="muted small">
                     {u.detected_type.toUpperCase()}, {fmtSize(u.size_bytes)}
+                    {u.origin === "converted" ? ", converted by Autodesk" : ""}
                   </span>
                 </li>
               ))}
             </ul>
+            {hasSolidWorks && !hasStep && !started ? (
+              <div className="callout" role="note">
+                <strong className="callout-title">Also add a STEP AP242 export if you can</strong>
+                <p className="small">
+                  SolidWorks files are read from meshes through Autodesk, which gives part names,
+                  part numbers and materials but less exact shapes. A STEP AP242 export of the same
+                  model gives the best result; the properties from the SolidWorks file are then
+                  matched to it by part name.
+                </p>
+              </div>
+            ) : null}
             {job.uploads.some((u) =>
               [".xlsx", ".xls", ".csv"].some((ext) => u.filename.toLowerCase().endsWith(ext))
             ) ? (
@@ -533,6 +585,41 @@ export function JobUpload() {
         </section>
       ) : null}
 
+      <section className="card" aria-labelledby="data-title">
+        <h2 id="data-title">Your data</h2>
+        <p className="small">
+          {expires
+            ? `This job and its files are deleted automatically on ${expires}${cfg?.retention_days ? ` (${cfg.retention_days.toString()} days after the last change)` : ""}.`
+            : "This job and its files are deleted automatically after a while."}{" "}
+          You can delete everything now.
+        </p>
+        <div className="actions">
+          <DeleteJobDialog
+            jobId={id}
+            token={token}
+            disabled={running}
+            onDeleted={() => {
+              forgetToken(id);
+              void navigate("/", { replace: true });
+            }}
+          />
+        </div>
+      </section>
+
+      <NativeConsentDialog
+        open={pendingNative !== null}
+        fileNames={(pendingNative ?? []).filter((f) => NATIVE.includes(extOf(f.name))).map((f) => f.name)}
+        consentText={cfg?.native_consent_text ?? "This file will be sent to Autodesk for conversion. Continue?"}
+        usage={cfg?.native_usage ?? null}
+        busy={consentBusy}
+        onConfirm={() => {
+          void onConsent();
+        }}
+        onCancel={() => {
+          setPendingNative(null);
+        }}
+      />
+
       <Qa
         items={[
           {
@@ -545,7 +632,9 @@ export function JobUpload() {
           },
           {
             q: "Can I use SolidWorks or Fusion files?",
-            a: "Not yet. Export a STEP file (AP242 gives the best result) and upload that.",
+            a: cfg?.native_enabled
+              ? "Yes. They are sent to Autodesk for conversion, only after you agree for this job. Fusion files become STEP; SolidWorks files are read from meshes plus their part properties. A STEP AP242 export from SolidWorks still gives the best shapes, so add one if you can."
+              : "Not on this server: it has no conversion set up. Export a STEP file (AP242 gives the best result) and upload that.",
           },
         ]}
       />

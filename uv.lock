@@ -304,6 +304,7 @@ dependencies = [
     { name = "c2b-domain" },
     { name = "cadquery" },
     { name = "cadquery-ocp" },
+    { name = "numpy" },
 ]
 
 [package.metadata]
@@ -311,6 +312,7 @@ requires-dist = [
     { name = "c2b-domain", editable = "packages/domain" },
     { name = "cadquery", specifier = ">=2.5" },
     { name = "cadquery-ocp", specifier = ">=7.7" },
+    { name = "numpy", specifier = ">=1.26" },
 ]
 
 [[package]]
@@ -347,6 +349,7 @@ version = "0.0.0"
 source = { editable = "tools/fixtures" }
 dependencies = [
     { name = "c2b-library" },
+    { name = "c2b-native-adapter" },
     { name = "cadquery" },
     { name = "cadquery-ocp" },
     { name = "openpyxl" },
@@ -355,6 +358,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "c2b-library", editable = "packages/library" },
+    { name = "c2b-native-adapter", editable = "apps/native-adapter" },
     { name = "cadquery", specifier = ">=2.5" },
     { name = "cadquery-ocp", specifier = ">=7.7" },
     { name = "openpyxl", specifier = ">=3.1" },
@@ -404,10 +408,14 @@ version = "0.0.0"
 source = { editable = "apps/native-adapter" }
 dependencies = [
     { name = "c2b-domain" },
+    { name = "httpx" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "c2b-domain", editable = "packages/domain" }]
+requires-dist = [
+    { name = "c2b-domain", editable = "packages/domain" },
+    { name = "httpx", specifier = ">=0.27" },
+]
 
 [[package]]
 name = "c2b-rules"
@@ -439,6 +447,7 @@ dependencies = [
     { name = "c2b-domain" },
     { name = "c2b-jobs" },
     { name = "c2b-library" },
+    { name = "c2b-native-adapter" },
     { name = "c2b-rules" },
 ]
 
@@ -448,6 +457,7 @@ requires-dist = [
     { name = "c2b-domain", editable = "packages/domain" },
     { name = "c2b-jobs", editable = "packages/jobs" },
     { name = "c2b-library", editable = "packages/library" },
+    { name = "c2b-native-adapter", editable = "apps/native-adapter" },
     { name = "c2b-rules", editable = "packages/rules" },
 ]
 

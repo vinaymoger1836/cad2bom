@@ -1,0 +1,16 @@
+id: B7
+title: Native CAD through Autodesk (scripted APS responses)
+library_version: 2026.11.1
+generated_by: c2b-fixtures build
+inputs:
+- input/bracket.f3d
+- input/assembly.sldprt
+expected:
+- expected/b7.json
+rules_asserted: false
+rules_note: Rule ids are not asserted until the rules engine exists (P3); values below
+  are.
+stand_in: true
+stand_in_note: placeholder native files; APS responses are scripted, not recorded
+llm_calls: 0
+aps_fixtures: aps/

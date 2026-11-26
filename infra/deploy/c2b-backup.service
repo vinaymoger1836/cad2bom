@@ -1,0 +1,12 @@
+[Unit]
+Description=CAD-to-BoM backup (database dump, job files, library store)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# deploy.sh replaces __APP_DIR__ with the install directory and __USER__ with its owner.
+WorkingDirectory=__APP_DIR__
+User=__USER__
+Environment=C2B_ENV_FILE_PROD=1
+ExecStart=/bin/sh __APP_DIR__/scripts/backup.sh

@@ -1,0 +1,14 @@
+{
+  "key": "POST /authentication/v2/token",
+  "responses": [
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "json": {
+        "access_token": "REDACTED",
+        "token_type": "Bearer",
+        "expires_in": 3599
+      }
+    }
+  ]
+}

@@ -1,9 +1,10 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import * as Dialog from "@radix-ui/react-dialog";
 import type { ValidationIssue } from "@c2b/ts-types";
+import { DeleteJobDialog } from "../components/DeleteJobDialog";
 import { Qa, WhatHappens } from "../components/Help";
-import { loadToken, readLocal, saveToken, writeLocal } from "../lib/storage";
+import { forgetToken, loadToken, readLocal, saveToken, writeLocal } from "../lib/storage";
 import { ApproveDialog } from "./ApproveDialog";
 import { BomTable, type Selection } from "./BomTable";
 import { ChatDrawer } from "./ChatDrawer";
@@ -42,6 +43,7 @@ export function ReviewScreen() {
   const { hash } = useLocation();
   const [token] = useState(() => resolveToken(id, hash));
   const [state, actions] = useReview(id, token);
+  const navigate = useNavigate();
   const { job, draft, versions, excluded, bands, busy, error, revision } = state;
 
   const [selection, setSelection] = useState<Selection>({ lineId: null, nodeIds: null });
@@ -227,6 +229,17 @@ export function ReviewScreen() {
           >
             Ask a question
           </button>
+          {token ? (
+            <DeleteJobDialog
+              jobId={id}
+              token={token}
+              triggerClassName="btn btn-quiet"
+              onDeleted={() => {
+                forgetToken(id);
+                void navigate("/", { replace: true });
+              }}
+            />
+          ) : null}
           <button
             type="button"
             className="btn btn-quiet"

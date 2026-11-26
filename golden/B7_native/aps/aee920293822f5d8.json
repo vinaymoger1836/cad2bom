@@ -1,0 +1,12 @@
+{
+  "key": "DELETE /modelderivative/v2/designdata/dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZmJhNGI2MjkxMzZhNGQ4ZTY1MzZmYzJiLmYzZA/manifest",
+  "responses": [
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "json": {
+        "result": "success"
+      }
+    }
+  ]
+}

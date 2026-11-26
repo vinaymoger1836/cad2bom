@@ -14,6 +14,7 @@ COPY tools ./tools
 COPY apps/api ./apps/api
 COPY apps/worker ./apps/worker
 COPY apps/cad-worker ./apps/cad-worker
+COPY apps/native-adapter ./apps/native-adapter
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable --package c2b-worker
 

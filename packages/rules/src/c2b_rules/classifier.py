@@ -253,6 +253,14 @@ def classify_node(
                         )
                     )
 
+    # Shapes measured from meshes (converted SolidWorks files) are less certain (library data).
+    if shape is not None and shape.mesh_based:
+        factor = float(library.confidence.mesh.get("features_factor", 1.0))
+        for ev in evidence_list:
+            if ev.source == "cad_geom":
+                ev.weight *= factor
+                ev.note += " (measured from a mesh, lower confidence)"
+
     # C6: Context boost (parent assembly class, sibling classes)
     if parent_cls and "motor" in parent_cls and any("magnet" in tok for tok in name_tokens):
         evidence_list.append(

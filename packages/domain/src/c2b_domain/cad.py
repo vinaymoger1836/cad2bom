@@ -37,6 +37,8 @@ class ShapeFeatures(ApiModel):
     thin_plate: bool = False
     helix_evidence: bool = False
     closed: bool = True
+    # True when measured from a triangle mesh (converted SolidWorks files), not an exact solid.
+    mesh_based: bool = False
 
 
 class CadNode(ApiModel):

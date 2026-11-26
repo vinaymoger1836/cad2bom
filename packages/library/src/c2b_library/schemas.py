@@ -312,6 +312,23 @@ class ConfidenceFile(Strict):
     llm: dict[str, float]
     tolerances: dict[str, float]
     scoring: dict[str, str]
+    # Shapes measured from meshes (converted SolidWorks files) are less certain than exact solids.
+    mesh: dict[str, Annotated[float, Field(ge=0.0, le=1.0)]] = Field(default_factory=dict)
+
+
+# --- cad_props.yaml ---------------------------------------------------------------------------
+
+
+class CadPropsFile(Strict):
+    """Which property names in native CAD files mean what (docs/03 §2).
+
+    `canonical` maps our key (part_number, description, material, class) to the property names
+    CAD tools use for it, in any language. Names are compared after lower-casing and dropping
+    spaces and punctuation, and a `Group.Name` form is matched on its last part.
+    """
+
+    canonical: dict[str, list[str]] = Field(default_factory=dict)
+    ignore_values: list[str] = Field(default_factory=list)
 
 
 # --- rules/*.yaml -----------------------------------------------------------------------------

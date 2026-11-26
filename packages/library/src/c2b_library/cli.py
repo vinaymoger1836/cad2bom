@@ -135,6 +135,23 @@ def cmd_search(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_diff(args: argparse.Namespace) -> int:
+    from c2b_library.versions import diff_versions
+
+    changes = diff_versions(args.a, args.b)
+    if args.json:
+        print(json.dumps(changes, indent=2))
+        return 0
+    if not changes:
+        print("no differences")
+        return 0
+    for ch in changes:
+        print(f"{ch['status']:<8} {ch['file']}  (+{ch['added']} -{ch['removed']})")
+        if args.patch:
+            print("\n".join(str(ln) for ln in ch["diff"]))  # type: ignore[attr-defined]
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         prog="c2b-library", description="Validate, load and search library/ YAML."
@@ -162,6 +179,13 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--limit", type=int, default=15)
     s.add_argument("--json", action="store_true")
     s.set_defaults(func=cmd_search)
+
+    d = sub.add_parser("diff", help="file-level diff between two library directories")
+    d.add_argument("a", type=Path)
+    d.add_argument("b", type=Path)
+    d.add_argument("--patch", action="store_true", help="also print the unified diffs")
+    d.add_argument("--json", action="store_true")
+    d.set_defaults(func=cmd_diff)
 
     args = p.parse_args(argv)
     return int(args.func(args))

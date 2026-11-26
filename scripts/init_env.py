@@ -21,13 +21,14 @@ def main() -> int:
         return 0
     text = example.read_text(encoding="utf-8")
     text = text.replace("POSTGRES_PASSWORD=change-me", f"POSTGRES_PASSWORD={secrets.token_hex(24)}")
+    text = text.replace("C2B_ADMIN_SECRET=change-me", f"C2B_ADMIN_SECRET={secrets.token_hex(32)}")
     if hasattr(os, "getuid"):  # Linux/macOS: keep data/ writable by the host user
         text = text.replace("C2B_UID=1000", f"C2B_UID={os.getuid()}")
         text = text.replace("C2B_GID=1000", f"C2B_GID={os.getgid()}")
     env.write_text(text, encoding="utf-8")
     with contextlib.suppress(OSError):
         env.chmod(0o600)
-    print("created .env with a random database password (git-ignored)")
+    print("created .env with random database and admin secrets (git-ignored)")
     return 0
 
 

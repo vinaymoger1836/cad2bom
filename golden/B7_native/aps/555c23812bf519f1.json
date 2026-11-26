@@ -1,0 +1,9 @@
+{
+  "key": "DELETE /oss/v2/buckets/c2b-7e13af1920ce1426/objects/fba4b629136a4d8e6536fc2b.f3d",
+  "responses": [
+    {
+      "status": 200,
+      "text": ""
+    }
+  ]
+}

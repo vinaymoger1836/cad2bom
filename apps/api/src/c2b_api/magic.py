@@ -38,8 +38,17 @@ ACCEPTED: dict[str, TypeSpec] = {
     ".csv": TypeSpec("csv", "bom_file", "CSV", "text"),
 }
 
-# Native CAD formats are recognised only to give a helpful refusal (consent flow arrives later).
-NATIVE_CAD = {".sldprt", ".sldasm", ".f3d"}
+# Native CAD formats (ADR-018). Accepted only when native conversion is configured; they are never
+# parsed here, only stored and later sent to Autodesk with the person's consent. The signature check
+# is deliberately loose for SolidWorks (container formats vary by version): anything that is clearly
+# not CAD (programs, images, PDFs, plain text, STEP) is still refused.
+NATIVE_SPECS: dict[str, TypeSpec] = {
+    ".f3d": TypeSpec("f3d", "cad", "Fusion design (.f3d)", "zip"),
+    ".sldprt": TypeSpec("sldprt", "cad", "SolidWorks part (.sldprt)", "sw"),
+    ".sldasm": TypeSpec("sldasm", "cad", "SolidWorks assembly (.sldasm)", "sw"),
+}
+NATIVE_EXTENSIONS = sorted(NATIVE_SPECS)
+_SW_FAMILIES = {"ole", "binary", "zip"}
 
 ACCEPTED_EXTENSIONS = sorted(ACCEPTED)
 
@@ -55,16 +64,24 @@ class UploadRefused(Exception):
         self.detail = detail
 
 
-def spec_for(filename: str) -> TypeSpec:
+NATIVE_NOT_CONFIGURED = (
+    "Native conversion isn't set up on this server, so `{name}` can't be read directly. "
+    "Please export it as STEP (AP242 if you can) and upload that instead. "
+    "Your other files are not affected."
+)
+
+
+def spec_for(filename: str, native_enabled: bool = False) -> TypeSpec:
     ext = Path(filename).suffix.lower()
-    if ext in NATIVE_CAD:
-        raise UploadRefused(
-            415,
-            "unsupported_type",
-            "Native CAD files are not supported yet",
-            f"`{filename}` is a native CAD file. Converting SolidWorks or Fusion files is not "
-            "available yet. Please export it as STEP (AP242 if you can) and upload that instead.",
-        )
+    if ext in NATIVE_SPECS:
+        if not native_enabled:
+            raise UploadRefused(
+                415,
+                "native_not_configured",
+                "Native CAD conversion is not set up",
+                NATIVE_NOT_CONFIGURED.format(name=filename),
+            )
+        return NATIVE_SPECS[ext]
     spec = ACCEPTED.get(ext)
     if spec is None:
         shown = ext or "(no extension)"
@@ -121,6 +138,8 @@ def check_head(filename: str, spec: TypeSpec, head: bytes) -> None:
     """Refuse when the bytes do not match what the extension promises."""
     family, described = sniff(head)
     if family == spec.expected_family:
+        return
+    if spec.expected_family == "sw" and family in _SW_FAMILIES:
         return
     # A STEP file is also "text"; for .csv we accept text, so only the reverse case needs care.
     if spec.expected_family == "text" and family == "step":

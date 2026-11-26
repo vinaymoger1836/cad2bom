@@ -1,6 +1,5 @@
 """Job routes: create, read, upload, start, events."""
 
-import functools
 import re
 from pathlib import Path
 from typing import Annotated, Any, Literal
@@ -51,56 +50,82 @@ async def _reopen_if_approved(pool: Pool, job_id: UUID, job: dict[str, object]) 
         )
 
 
-@functools.cache
+def _job_library(version: str) -> Any:
+    """The library a job is pinned to. A job never silently switches to a newer one (ADR-019)."""
+    from c2b_library.access import VersionError, pinned_library
+
+    try:
+        return pinned_library(version)
+    except VersionError as exc:
+        raise ProblemError(
+            500,
+            "internal_error",
+            "Library error",
+            f"The rule library this job was built with ({version}) could not be loaded.",
+        ) from exc
+
+
 def _confidence_bands() -> dict[str, float]:
     """High / medium confidence cut-offs from the library, so the UI colours match the rules."""
-    from c2b_library.loader import load_library
+    from c2b_library.access import VersionError, active_version, pinned_library
 
-    library, _ = load_library(get_settings().library_dir)
-    if library and library.confidence:
-        return {k: float(v) for k, v in library.confidence.bands.items()}
-    return {"high": 0.85, "medium": 0.6}
+    try:
+        library = pinned_library(active_version())
+    except VersionError:
+        return {"high": 0.85, "medium": 0.6}
+    return {k: float(v) for k, v in library.confidence.bands.items()}
 
 
 @router.get("/config", tags=["meta"])
-async def config() -> dict[str, Any]:
+async def config(request: Request) -> dict[str, Any]:
     """Limits and accepted types, so the UI can pre-check (the server stays authoritative)."""
+    from c2b_api.magic import NATIVE_EXTENSIONS
+    from c2b_api.native import CONSENT_TEXT, CONSENT_TEXT_VERSION
+
     s = get_settings()
+    native_on = s.aps_configured
     return {
         "confidence_bands": _confidence_bands(),
         "max_cad_mb": s.max_cad_mb,
         "max_other_mb": s.max_other_mb,
         "max_files_per_job": s.max_files_per_job,
-        "accepted_extensions": ACCEPTED_EXTENSIONS,
-        "cad_extensions": [".step", ".stp"],
+        "accepted_extensions": ACCEPTED_EXTENSIONS + (NATIVE_EXTENSIONS if native_on else []),
+        "cad_extensions": [".step", ".stp"] + (NATIVE_EXTENSIONS if native_on else []),
         "cad_timeout_s": s.cad_timeout_s,
+        "native_enabled": native_on,
+        "native_extensions": NATIVE_EXTENSIONS,
+        "native_consent_text": CONSENT_TEXT,
+        "native_consent_text_version": CONSENT_TEXT_VERSION,
+        "native_usage": (
+            {"used": await repo.aps_usage(_pool(request)), "cap": s.aps_monthly_cap}
+            if native_on
+            else None
+        ),
+        "retention_days": s.retention_days,
+        "admin_enabled": s.admin_enabled,
     }
-
-
-@functools.cache
-def _library_version() -> str:
-    """The library version a new job is pinned to (first `version:` line of VERSION.yaml)."""
-    path = get_settings().library_dir / "VERSION.yaml"
-    try:
-        m = re.search(r'^version:\s*"?([^"\s#]+)', path.read_text(encoding="utf-8"), re.MULTILINE)
-    except OSError:
-        m = None
-    return m.group(1) if m else get_settings().library_version
 
 
 @router.post("/jobs", status_code=201, tags=["jobs"])
 async def create_job(body: JobCreate, request: Request) -> JobCreated:
+    from c2b_api.native import CONSENT_TEXT_VERSION
+    from c2b_library.access import active_version
+
     job_id = uuid4()
     token = new_token()
     product = ProductInfo.model_validate(body.model_dump(exclude={"consent_native_conversion"}))
+    consent = body.consent_native_conversion and get_settings().aps_configured
     await repo.create_job(
         _pool(request),
         job_id,
         product,
         hash_token(token),
-        _library_version(),
-        consent_native_conversion=body.consent_native_conversion,
+        active_version(),
+        consent_native_conversion=consent,
+        retention_days=get_settings().retention_days,
     )
+    if consent:
+        await repo.set_consent_native_conversion(_pool(request), job_id, True, CONSENT_TEXT_VERSION)
     await repo.add_event(_pool(request), job_id, "status", "Job created", {"status": "uploading"})
     # The token sits in the URL fragment: it is never sent to servers or written to access logs.
     return JobCreated(id=job_id, link=f"/j/{job_id}#{token}", token=token)
@@ -114,6 +139,7 @@ async def _job_out(pool: Pool, row: dict[str, object]) -> JobOut:
         product=ProductInfo.model_validate(row["product"]),
         library_version=str(row["library_version"]),
         consent_native_conversion=bool(row.get("consent_native_conversion", False)),
+        expires_at=row.get("expires_at"),  # type: ignore[arg-type]
         created_at=row["created_at"],  # type: ignore[arg-type]
         uploads=await repo.list_uploads(pool, job_id),
     )
@@ -123,10 +149,11 @@ async def _fail_if_stalled(pool: Pool, job_id: UUID, row: dict[str, object]) -> 
     """Watchdog: a job that reports nothing for longer than the CAD limit plus 5 minutes is
     stopped with a reason, so nobody waits on a build that will never finish (killed worker,
     lost task). Runs whenever the job is read; the state change is idempotent."""
-    if row["status"] not in {"extracting", "building"}:
+    if row["status"] not in {"extracting", "building", "converting"}:
         return row
     idle = await repo.seconds_since_last_event(pool, job_id)
-    limit = get_settings().cad_timeout_s + 300
+    s = get_settings()
+    limit = (s.aps_timeout_s if row["status"] == "converting" else s.cad_timeout_s) + 300
     if idle is None or idle < limit:
         return row
     message = (
@@ -153,9 +180,39 @@ async def update_job(
     body: JobUpdate,
     request: Request,
 ) -> JobOut:
+    from c2b_api.native import CONSENT_TEXT_VERSION
+
     pool = _pool(request)
     if body.consent_native_conversion is not None:
-        await repo.set_consent_native_conversion(pool, job_id, body.consent_native_conversion)
+        if job["status"] != "uploading":
+            raise ProblemError(
+                422,
+                "wrong_state",
+                "This job is already being built",
+                "Consent can only be changed before the build starts.",
+            )
+        if body.consent_native_conversion and not get_settings().aps_configured:
+            raise ProblemError(
+                415,
+                "native_not_configured",
+                "Native conversion is not set up",
+                "This server has no Autodesk conversion configured. "
+                "Export your model as STEP (AP242 if you can) and upload that.",
+            )
+        await repo.set_consent_native_conversion(
+            pool, job_id, body.consent_native_conversion, CONSENT_TEXT_VERSION
+        )
+        await repo.add_event(
+            pool,
+            job_id,
+            "consent",
+            "Consent to send native CAD files to Autodesk for conversion "
+            + ("given" if body.consent_native_conversion else "withdrawn"),
+            {
+                "consent_native_conversion": body.consent_native_conversion,
+                "text_version": CONSENT_TEXT_VERSION,
+            },
+        )
     row = await repo.get_job(pool, job_id)
     assert row is not None
     return await _job_out(pool, row)
@@ -233,16 +290,11 @@ async def _bom_file_path(pool: Pool, job_id: UUID) -> Path | None:
     return None
 
 
-def _detect_mapping(job_id: UUID, bom_path: Path) -> TableMapping:
-    from c2b_library.loader import load_library
+def _detect_mapping(job_id: UUID, bom_path: Path, library_version: str) -> TableMapping:
     from c2b_rules.bom_intake import detect_and_map_bom
 
     s = get_settings()
-    library, _ = load_library(s.library_dir)
-    if not library:
-        raise ProblemError(
-            500, "internal_error", "Library error", "The rule library could not be loaded."
-        )
+    library = _job_library(library_version)
     overrides = mapping_store.load_overrides(s.data_dir, job_id)
     mapping, _rows = detect_and_map_bom(bom_path, library, overrides=overrides)
     return mapping
@@ -266,7 +318,7 @@ async def get_job_mapping(
             "No BoM file found",
             "Upload an Excel or CSV BoM file to map headers.",
         )
-    return _detect_mapping(job_id, bom_path)
+    return _detect_mapping(job_id, bom_path, str(job["library_version"]))
 
 
 @router.post("/jobs/{job_id}/mapping/confirm", tags=["jobs"])
@@ -278,7 +330,6 @@ async def confirm_mapping(
 ) -> dict[str, Any]:
     """Save the user's column choices. They apply to the next build of the BoM and, when a draft
     already exists, are recorded on it too (source=user)."""
-    from c2b_library.loader import load_library
     from c2b_rules.dependency import apply_mapping_confirmation
 
     pool = _pool(request)
@@ -289,11 +340,7 @@ async def confirm_mapping(
         if isinstance(field, str):
             chosen[col] = field
 
-    library, _ = load_library(s.library_dir)
-    if not library:
-        raise ProblemError(
-            500, "internal_error", "Library error", "The rule library could not be loaded."
-        )
+    library = _job_library(str(job["library_version"]))
     allowed = set(library.headers.fields) | {"ignore"}
     bad = sorted(f for f in set(chosen.values()) if f not in allowed)
     if bad:
@@ -309,7 +356,7 @@ async def confirm_mapping(
             raise ProblemError(
                 404, "not_found", "No BoM file found", "Upload an Excel or CSV BoM file first."
             )
-        known = set(_detect_mapping(job_id, bom_path).columns)
+        known = set(_detect_mapping(job_id, bom_path, str(job["library_version"])).columns)
     else:
         known = set(draft.mapping.columns)
     unknown = sorted(set(chosen) - known)
@@ -373,10 +420,9 @@ async def answer_question_endpoint(
         )
 
     from c2b_domain.bom import BomDraft
-    from c2b_library.loader import load_library
     from c2b_rules.dependency import apply_question_answer
 
-    library, _ = load_library(get_settings().library_dir)
+    library = _job_library(str(job["library_version"]))
     draft = BomDraft.model_validate(bom_data)
     asked = next((q for q in draft.questions if q.id == question_id), None)
     before_answer = asked.answer if asked else None
@@ -424,10 +470,9 @@ async def review_suggestion_endpoint(
         )
 
     from c2b_domain.bom import BomDraft
-    from c2b_library.loader import load_library
     from c2b_rules.dependency import apply_suggestion_review
 
-    library, _ = load_library(get_settings().library_dir)
+    library = _job_library(str(job["library_version"]))
     draft = BomDraft.model_validate(bom_data)
     proposal = next((s for s in draft.suggestions if s.id == suggestion_id), None)
     before_review = proposal.review if proposal else None
@@ -475,7 +520,6 @@ async def edit_line_endpoint(
         )
 
     from c2b_domain.bom import BomDraft
-    from c2b_library.loader import load_library
     from c2b_rules.dependency import apply_user_line_edit, get_line_field
 
     if body.field not in EDITABLE_FIELDS:
@@ -485,7 +529,7 @@ async def edit_line_endpoint(
             "This field cannot be edited",
             f"Editable fields: {', '.join(sorted(EDITABLE_FIELDS))}.",
         )
-    library, _ = load_library(get_settings().library_dir)
+    library = _job_library(str(job["library_version"]))
     draft = BomDraft.model_validate(bom_data)
     edited = next((ln for ln in draft.ebom if ln.id == line_id), None)
     before_value = get_line_field(edited, body.field) if edited else None
@@ -543,10 +587,9 @@ async def approve_bom_endpoint(
         )
 
     from c2b_domain.bom import BomDraft
-    from c2b_library.loader import load_library
     from c2b_rules.validator import validate_draft
 
-    library, _ = load_library(get_settings().library_dir)
+    library = _job_library(str(job["library_version"]))
     draft = BomDraft.model_validate(bom_data)
     report = validate_draft(draft, library)
 
@@ -604,6 +647,7 @@ async def approve_bom_endpoint(
     if job.get("status") != "approved":
         await repo.set_status(pool, job_id, "approved")
         await repo.add_event(pool, job_id, "status", "Approved", {"status": "approved"})
+    await repo.extend_expiry(pool, job_id, get_settings().retention_days)
     return {
         "status": "approved",
         "version": version_num,
@@ -659,12 +703,11 @@ _EXPORT_TYPES = {
 }
 
 
-def _export_columns() -> Any:
+def _export_columns(library_version: str) -> Any:
     """Column order from the organisation profile (docs/05 §3); defaults when it has none."""
     from c2b_exports import ExportColumns
-    from c2b_library.loader import load_library
 
-    library, _ = load_library(get_settings().library_dir)
+    library = _job_library(library_version)
     profile = next(iter(library.profiles.values()), None) if library else None
     export = profile.export if profile else {}
     defaults = ExportColumns()
@@ -700,6 +743,7 @@ async def export_version_endpoint(
             404, "not_found", "Version not found", f"Version {version} does not exist."
         )
     ver = BomVersion.model_validate(data)
+    cols = _export_columns(ver.library_version or str(job["library_version"]))
     media, ext = _EXPORT_TYPES[fmt]
     product = ver.product.name if ver.product else "bom"
     stem = f"{_safe_name(product)}_v{version}"
@@ -707,9 +751,9 @@ async def export_version_endpoint(
         stem += f"_{part}"
     body: bytes
     if fmt == "xlsx":
-        body = await asyncio.to_thread(c2b_exports.build_xlsx, ver, _export_columns())
+        body = await asyncio.to_thread(c2b_exports.build_xlsx, ver, cols)
     elif fmt == "csv":
-        body = c2b_exports.build_csv(ver, part, _export_columns())
+        body = c2b_exports.build_csv(ver, part, cols)
     elif fmt == "json":
         body = c2b_exports.build_json(data)
     elif fmt == "schema":
@@ -777,6 +821,22 @@ async def chat_endpoint(
     return response
 
 
+@router.delete("/jobs/{job_id}", status_code=200, tags=["jobs"])
+async def delete_job_now(job_id: UUID, job: JobRow, request: Request) -> dict[str, Any]:
+    """Delete this job and every file made for it, right now (ADR-021). Cannot be undone."""
+    from c2b_api.retention import delete_job_everywhere
+
+    if job["status"] in {"extracting", "building", "converting"}:
+        raise ProblemError(
+            409,
+            "wrong_state",
+            "The job is still running",
+            "Wait for it to finish (or fail) before deleting it.",
+        )
+    await delete_job_everywhere(_pool(request), job_id)
+    return {"status": "deleted", "job_id": str(job_id)}
+
+
 @router.get("/jobs/{job_id}/files", tags=["uploads"])
 async def list_files(job_id: UUID, job: JobRow, request: Request) -> list[UploadOut]:
     return await repo.list_uploads(_pool(request), job_id)
@@ -807,6 +867,10 @@ async def upload_file(
             "Too many files",
             f"A job can hold at most {s.max_files_per_job} files.",
         )
+    from c2b_api import native
+
+    if native.is_native_name(filename) and s.aps_configured:
+        native.require_consent(job)  # consent first: nothing native is stored without it
     upload_id = uuid4()
     stored = await uploads.receive(
         request.stream(),
@@ -816,6 +880,7 @@ async def upload_file(
         file_stem=str(upload_id),
         max_cad=s.max_cad_bytes,
         max_other=s.max_other_bytes,
+        native_enabled=s.aps_configured,
     )
     rel = stored.path.relative_to(s.data_dir).as_posix()
     try:
@@ -857,6 +922,9 @@ async def start_job(job_id: UUID, job: JobRow, request: Request) -> JobOut:
             "Nothing to build from",
             "Upload at least one file (a STEP file is best) before starting.",
         )
+    from c2b_api import native
+
+    await native.check_start(pool, job_id, job)
     # Claim the transition atomically so two quick clicks cannot start the job twice.
     if not await repo.claim_start(pool, job_id):
         raise ProblemError(

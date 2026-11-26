@@ -60,9 +60,10 @@ async def receive(
     file_stem: str,
     max_cad: int,
     max_other: int,
+    native_enabled: bool = False,
 ) -> StoredFile:
     display = clean_filename(filename)
-    spec = spec_for(display)
+    spec = spec_for(display, native_enabled)
     limit = limit_for(spec, max_cad, max_other)
     if content_length is not None and content_length > limit:
         raise too_large(display, spec, content_length, limit)

@@ -1,0 +1,81 @@
+{
+  "case": "B7",
+  "title": "Native CAD through Autodesk (scripted APS responses)",
+  "library_version": "2026.11.1",
+  "aps_fixtures": "scripted from the documented API shapes, not recorded against live APS",
+  "ids": {
+    "bucket": "c2b-7e13af1920ce1426",
+    "f3d": {
+      "urn": "dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZmJhNGI2MjkxMzZhNGQ4ZTY1MzZmYzJiLmYzZA",
+      "object": "fba4b629136a4d8e6536fc2b.f3d"
+    },
+    "solidworks": {
+      "urn": "dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YzJiLTdlMTNhZjE5MjBjZTE0MjYvZDE1M2FhY2RkODkwZTI5Zjc0ZjgyMGNiLnNsZHBydA",
+      "object": "d153aacdd890e29f74f820cb.sldprt"
+    }
+  },
+  "f3d": {
+    "input": "input/bracket.f3d",
+    "consent_required_before_upload": true,
+    "translation_jobs": 1,
+    "converted_step": "aps/converted/bracket.step (identical to B2's bracket_assembly.step)",
+    "downstream": {
+      "same_as": "B2",
+      "ebom_lines": 8,
+      "mbom_lines": 7
+    },
+    "upload_listed_as": "converted"
+  },
+  "solidworks": {
+    "input": "input/assembly.sldprt",
+    "translation_jobs": 2,
+    "parts": [
+      {
+        "cad_name": "Mounting Plate",
+        "part_number_from_cad": "MP-0001",
+        "material_text": "1.4301",
+        "material_in_library": true,
+        "volume_mm3": 24000.0,
+        "mass_g": 190.32,
+        "mesh_based": true
+      },
+      {
+        "cad_name": "Drive Shaft",
+        "part_number_from_cad": "DS-0002",
+        "material_text": "ASTM B221 6061-T6",
+        "material_in_library": true,
+        "volume_mm3": 17280.0,
+        "mass_g": 46.656,
+        "mesh_based": true
+      },
+      {
+        "cad_name": "Cover",
+        "part_number_from_cad": null,
+        "material_text": "Special Alloy X",
+        "material_in_library": false,
+        "volume_mm3": 120000.0,
+        "mass_g": null,
+        "mesh_based": true
+      }
+    ],
+    "notices": [
+      "mesh_based",
+      "material_not_in_library",
+      "props_merged"
+    ],
+    "mesh_confidence_factor": 0.6
+  },
+  "usage": {
+    "after_f3d": 1,
+    "after_solidworks": 3
+  },
+  "assertions": [
+    "A native upload without recorded consent is refused (409 consent_required); with APS unconfigured it is refused with a clear message (415 native_not_configured).",
+    "The F3D conversion counts 1 translation job, the SolidWorks conversion 2.",
+    "The converted STEP is listed as a converted upload and follows the B2 rules and numbers.",
+    "SolidWorks properties reach the nodes: part numbers become source=cad_meta (rule R-NUM-CAD), library materials resolve by designation, an unknown material is reported and left to the rules.",
+    "Mesh-based mass confidence is 0.9 x mesh factor; the mass rule list contains R-MSS-MESH.",
+    "Autodesk objects are deleted after each conversion (DELETE requests are made).",
+    "A conversion past C2B_APS_MONTHLY_CAP is stopped with a clear message and counts nothing."
+  ]
+}

@@ -20,13 +20,15 @@ from c2b_jobs.queue import (
     TASK_RUN_PIPELINE,
     app,
     defer_cad_extract,
+    defer_native_convert,
 )
 from c2b_jobs.repo import Pool
 from c2b_jobs.settings import get_settings
-from c2b_library.loader import load_library
+from c2b_library.access import VersionError, pinned_library
 from c2b_rules.engine import build_ebom
 from c2b_worker import cad_client
 from c2b_worker.context import pool
+from c2b_worker.props_merge import merge_props
 
 log = logging.getLogger("c2b.worker")
 
@@ -53,7 +55,12 @@ async def _build_bom_for_job_inner(
 ) -> None:
     """Build draft EBOM from CAD extract and other uploads (BoM files, datasheets, photos)."""
     settings = get_settings()
-    library, _ = load_library(settings.library_dir)
+    # The job's own library version, not whatever is newest (ADR-019).
+    job_row = await repo.get_job(db, jid)
+    try:
+        library = pinned_library(str(job_row["library_version"])) if job_row else None
+    except VersionError:
+        library = None
     if library is None:
         log.error("Failed to load library for job %s", job_id)
         await _fail(jid, "Internal error: could not load library definitions")
@@ -92,7 +99,6 @@ async def _build_bom_for_job_inner(
     # What the person typed about the product (description, annual volume) feeds the rules too.
     product_desc = ""
     annual_volume: int | None = None
-    job_row = await repo.get_job(db, jid)
     product = job_row.get("product") if job_row else None
     if isinstance(product, dict):
         product_desc = str(product.get("description") or "")
@@ -176,6 +182,14 @@ async def _build_bom_for_job(
 async def run_pipeline(job_id: str) -> None:
     jid = UUID(job_id)
     db = pool()
+    native_upload = await repo.first_native_upload(db, jid)
+    if native_upload is not None:
+        await repo.set_status(db, jid, "converting")
+        await repo.add_event(
+            db, jid, "status", "Converting your CAD file with Autodesk", {"status": "converting"}
+        )
+        await defer_native_convert(jid, native_upload)
+        return
     await repo.set_status(db, jid, "extracting")
     await repo.add_event(db, jid, "status", "Reading your files", {"status": "extracting"})
     cad_upload = await repo.first_cad_upload(db, jid)
@@ -227,6 +241,12 @@ async def _cad_extract_inner(job_id: str, upload_id: str) -> None:
         log.warning("cad-worker unavailable for job %s: %s", job_id, exc)
         await _fail(jid, str(exc))
         return
+    await _handle_cad_result(db, jid, uid, result)
+
+
+async def _handle_cad_result(db: Pool, jid: UUID, uid: UUID, result: dict[str, Any]) -> None:
+    """Check what the CAD reader answered, merge native properties, save, and build the BoM."""
+    job_id = str(jid)
     if result.get("status") == "stub":
         await repo.add_event(
             db, jid, "cad_stub", "CAD reader answered (placeholder result in this version)", result
@@ -243,7 +263,9 @@ async def _cad_extract_inner(job_id: str, upload_id: str) -> None:
         await _fail(jid, first_msg, notices=notices)
         return
 
-    # Real CAD extraction result
+    # Real CAD extraction result. Properties Autodesk returned for a SolidWorks file are merged
+    # into the nodes first, so every later step sees them as authored CAD metadata (docs/03 §2).
+    await _merge_native_props(db, jid, result)
     leaf_count = int(result.get("leaf_count") or len(result.get("nodes") or []))
     await repo.save_cad_extract(db, jid, uid, result, leaf_count=leaf_count)
 
@@ -271,3 +293,39 @@ async def _cad_extract_inner(job_id: str, upload_id: str) -> None:
     # Build BoM
     extract_obj = CadExtractResult.model_validate(result)
     await _build_bom_for_job(db, jid, job_id, extract_obj=extract_obj)
+
+
+async def _merge_native_props(db: Pool, jid: UUID, result: dict[str, Any]) -> None:
+    """Merge SolidWorks properties from Autodesk into the extracted nodes (in place)."""
+    natives = [n for n in await repo.list_job_native(db, jid) if n["status"] == "ok"]
+    props = [p for n in natives for p in (n["properties"] or [])]
+    nodes = result.get("nodes") or []
+    if not props or not nodes:
+        return
+    job = await repo.get_job(db, jid)
+    try:
+        library = pinned_library(str(job["library_version"])) if job else None
+    except VersionError:
+        library = None
+    if library is None:
+        return
+    updated, notices = merge_props(nodes, props, library)
+    notes = result.setdefault("notices", [])
+    notes.extend(notices)
+    if updated:
+        notes.append(
+            {
+                "code": "props_merged",
+                "message": "Part numbers, materials and other properties from the SolidWorks "
+                f"file were applied to {updated} part(s).",
+                "severity": "info",
+            }
+        )
+    else:
+        notes.append(
+            {
+                "code": "props_unmatched",
+                "message": "Autodesk returned properties, but none matched a part by name.",
+                "severity": "info",
+            }
+        )

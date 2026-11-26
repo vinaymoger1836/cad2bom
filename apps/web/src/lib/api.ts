@@ -24,6 +24,16 @@ export interface AppConfig {
   cad_timeout_s: number;
   /** Confidence cut-offs from the library: High >= high, Medium >= medium, else Low. */
   confidence_bands?: { high: number; medium: number };
+  /** True when this server can convert SolidWorks and Fusion files through Autodesk. */
+  native_enabled?: boolean;
+  native_extensions?: string[];
+  /** The exact words the person agrees to before a file is sent to Autodesk. */
+  native_consent_text?: string;
+  native_consent_text_version?: string;
+  /** This month's Autodesk conversions against the server's cap (null when not enabled). */
+  native_usage?: { used: number; cap: number } | null;
+  retention_days?: number;
+  admin_enabled?: boolean;
 }
 
 /** An error whose message is already written for the person using the app. */
@@ -108,6 +118,23 @@ export function getJob(id: string, token: string): Promise<JobOut> {
 export function startJob(id: string, token: string): Promise<JobOut> {
   return request<JobOut>(`/jobs/${id}/start`, {
     method: "POST",
+    headers: authHeaders(token),
+  });
+}
+
+/** Record (or withdraw) consent to send native CAD files to Autodesk. Before any upload. */
+export function setNativeConsent(id: string, token: string, consent: boolean): Promise<JobOut> {
+  return request<JobOut>(`/jobs/${id}`, {
+    method: "PATCH",
+    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    body: JSON.stringify({ consent_native_conversion: consent }),
+  });
+}
+
+/** Delete the job and every file made for it, now. Cannot be undone. */
+export function deleteJob(id: string, token: string): Promise<{ status: string }> {
+  return request<{ status: string }>(`/jobs/${id}`, {
+    method: "DELETE",
     headers: authHeaders(token),
   });
 }

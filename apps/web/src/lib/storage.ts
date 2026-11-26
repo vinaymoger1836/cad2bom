@@ -39,6 +39,18 @@ export function saveToken(jobId: string, token: string): void {
   writeSession("c2b.lastJob", jobId);
 }
 
+/** Forget a job's token (after the job was deleted). */
+export function forgetToken(jobId: string): void {
+  try {
+    window.sessionStorage.removeItem(tokenKey(jobId));
+    if (window.sessionStorage.getItem("c2b.lastJob") === jobId) {
+      window.sessionStorage.removeItem("c2b.lastJob");
+    }
+  } catch {
+    /* nothing to forget */
+  }
+}
+
 export function loadToken(jobId: string): string | null {
   return readSession(tokenKey(jobId));
 }
